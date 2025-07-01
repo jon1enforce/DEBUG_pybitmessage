@@ -233,7 +233,6 @@ class DonRenderer(IdenticonRendererBase):
                (sideType, sideInvert, sideTurn),\
             foreColor, secondColor, swap_cross
 
-
 def render_identicon(
         code, size, twoColor=False, opacity=255, penwidth=0, renderer=None):
     """Render identicon with debug logging"""
