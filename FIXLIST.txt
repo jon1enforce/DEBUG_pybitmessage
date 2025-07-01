@@ -1,0 +1,13 @@
+#src/bitmessageqt/qidenticon.py
+def render_identicon(code, size, padding=0.08):
+    try:
+        # Vor der ursprünglichen Logik:
+        if not code or len(code) < 15:  # Mindestlänge für Hash
+            code = hashlib.sha256(code.encode() if isinstance(code, str) else code).hexdigest()
+        
+        # Sicherstellen, dass die Palette existiert
+        if not hasattr(render_identicon, 'palette'):
+            render_identicon.palette = [...]  # Deine Standardpalette
+    except Exception as e:
+        logger.error("Error generating qidenticon: %s", str(e))
+        raise
