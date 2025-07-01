@@ -1,10 +1,13 @@
 """
 A thread to handle network concerns
 """
+import logging
 import network.asyncore_pollchoose as asyncore
 from network import connectionpool
 from queues import excQueue
 from .threads import StoppableThread
+
+logger = logging.getLogger('default')
 
 
 class BMNetworkThread(StoppableThread):
@@ -12,30 +15,51 @@ class BMNetworkThread(StoppableThread):
     name = "Asyncore"
 
     def run(self):
+        logger.debug("DEBUG: BMNetworkThread starting main loop")
         try:
             while not self._stopped:
+                logger.debug("DEBUG: Starting network loop iteration")
                 connectionpool.pool.loop()
+                logger.debug("DEBUG: Completed network loop iteration")
         except Exception as e:
+            logger.error("DEBUG: Exception in network thread: %s", str(e), exc_info=True)
             excQueue.put((self.name, e))
+            logger.debug("DEBUG: Exception added to excQueue")
             raise
+        logger.debug("DEBUG: BMNetworkThread exiting main loop")
 
     def stopThread(self):
+        logger.debug("DEBUG: BMNetworkThread stopThread called")
         super(BMNetworkThread, self).stopThread()
-        for i in connectionpool.pool.listeningSockets.values():
+        
+        # Close listening sockets
+        logger.debug("DEBUG: Closing listening sockets")
+        for addr, sock in connectionpool.pool.listeningSockets.items():
             try:
-                i.close()
-            except:  # nosec B110 # pylint:disable=bare-except
-                pass
-        for i in connectionpool.pool.outboundConnections.values():
+                logger.debug("DEBUG: Closing listening socket %s", addr)
+                sock.close()
+            except Exception as e:
+                logger.debug("DEBUG: Error closing listening socket %s: %s", addr, str(e))
+        
+        # Close outbound connections
+        logger.debug("DEBUG: Closing outbound connections")
+        for addr, conn in connectionpool.pool.outboundConnections.items():
             try:
-                i.close()
-            except:  # nosec B110 # pylint:disable=bare-except
-                pass
-        for i in connectionpool.pool.inboundConnections.values():
+                logger.debug("DEBUG: Closing outbound connection to %s", addr)
+                conn.close()
+            except Exception as e:
+                logger.debug("DEBUG: Error closing outbound connection to %s: %s", addr, str(e))
+        
+        # Close inbound connections
+        logger.debug("DEBUG: Closing inbound connections")
+        for addr, conn in connectionpool.pool.inboundConnections.items():
             try:
-                i.close()
-            except:  # nosec B110 # pylint:disable=bare-except
-                pass
+                logger.debug("DEBUG: Closing inbound connection from %s", addr)
+                conn.close()
+            except Exception as e:
+                logger.debug("DEBUG: Error closing inbound connection from %s: %s", addr, str(e))
 
-        # just in case
+        # Final cleanup
+        logger.debug("DEBUG: Performing final asyncore cleanup")
         asyncore.close_all()
+        logger.debug("DEBUG: Network thread shutdown complete")

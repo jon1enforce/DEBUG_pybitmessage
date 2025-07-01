@@ -38,10 +38,13 @@ def getSOCKSProxyType(config):
     try:
         result = SafeConfigParser.get(
             config, 'bitmessagesettings', 'socksproxytype')
-    except (configparser.NoSectionError, configparser.NoOptionError):
+        debug.dprint(f"DEBUG: Got SOCKS proxy type from config: {result}")
+    except (configparser.NoSectionError, configparser.NoOptionError) as e:
+        debug.dprint(f"DEBUG: No SOCKS proxy type found in config: {e}")
         return None
     else:
         if result.lower() in ('', 'none', 'false'):
+            debug.dprint("DEBUG: SOCKS proxy type is empty/None/False")
             result = None
     return result
 
@@ -50,6 +53,7 @@ class SettingsDialog(QtWidgets.QDialog):
     """The "Settings" dialog"""
     # pylint: disable=too-many-instance-attributes
     def __init__(self, parent=None, firstrun=False):
+        debug.dprint("DEBUG: Initializing SettingsDialog")
         super(SettingsDialog, self).__init__(parent)
         widgets.load('settings.ui', self)
 
@@ -62,31 +66,32 @@ class SettingsDialog(QtWidgets.QDialog):
         self.timer = QtCore.QTimer()
 
         if self.config.safeGetBoolean('bitmessagesettings', 'dontconnect'):
+            debug.dprint("DEBUG: dontconnect is True, setting firstrun to False")
             self.firstrun = False
+            
         try:
             import pkg_resources
-        except ImportError:
-            pass
+        except ImportError as e:
+            debug.dprint(f"DEBUG: Could not import pkg_resources: {e}")
         else:
-            # Append proxy types defined in plugins
-            # FIXME: this should be a function in mod:`plugin`
+            debug.dprint("DEBUG: Appending proxy types from plugins")
             for ep in pkg_resources.iter_entry_points(
                     'bitmessage.proxyconfig'):
                 try:
                     ep.load()
-                except Exception:  # it should add only functional plugins
-                    # many possible exceptions, which are don't matter
-                    pass
+                except Exception as e:
+                    debug.dprint(f"DEBUG: Failed to load plugin {ep.name}: {e}")
                 else:
+                    debug.dprint(f"DEBUG: Adding proxy type: {ep.name}")
                     self.comboBoxProxyType.addItem(ep.name)
 
         self.lineEditMaxOutboundConnections.setValidator(
             QtGui.QIntValidator(0, 8, self.lineEditMaxOutboundConnections))
 
+        debug.dprint("DEBUG: Adjusting from config")
         self.adjust_from_config(self.config)
         if firstrun:
-            # switch to "Network Settings" tab if user selected
-            # "Let me configure special network settings first" on first run
+            debug.dprint("DEBUG: First run, switching to Network Settings tab")
             self.tabWidgetSettings.setCurrentIndex(
                 self.tabWidgetSettings.indexOf(self.tabNetworkSettings)
             )
@@ -95,16 +100,20 @@ class SettingsDialog(QtWidgets.QDialog):
     def adjust_from_config(self, config):
         """Adjust all widgets state according to config settings"""
         # pylint: disable=too-many-branches,too-many-statements
+        debug.dprint("DEBUG: adjust_from_config started")
 
         current_style = self.app.get_windowstyle()
+        debug.dprint(f"DEBUG: Current window style: {current_style}")
         for i, sk in enumerate(QtWidgets.QStyleFactory.keys()):
             self.comboBoxStyle.addItem(sk)
             if sk == current_style:
                 self.comboBoxStyle.setCurrentIndex(i)
+                debug.dprint(f"DEBUG: Set current style to index {i}")
 
         self.save_font_setting(self.app.font())
 
         if not self.parent.tray.isSystemTrayAvailable():
+            debug.dprint("DEBUG: System tray not available")
             self.groupBoxTray.setEnabled(False)
             self.groupBoxTray.setTitle(_translate(
                 "MainWindow", "Tray (not available in your system)"))
@@ -112,6 +121,7 @@ class SettingsDialog(QtWidgets.QDialog):
                     'minimizetotray', 'trayonclose', 'startintray'):
                 config.set('bitmessagesettings', setting, 'false')
         else:
+            debug.dprint("DEBUG: System tray available, setting tray options")
             self.checkBoxMinimizeToTray.setChecked(
                 config.getboolean('bitmessagesettings', 'minimizetotray'))
             self.checkBoxTrayOnClose.setChecked(
@@ -137,16 +147,20 @@ class SettingsDialog(QtWidgets.QDialog):
             config.safeGetBoolean('bitmessagesettings', 'replybelow'))
 
         if state.appdata == paths.lookupExeFolder():
+            debug.dprint("DEBUG: Running in portable mode")
             self.checkBoxPortableMode.setChecked(True)
         else:
+            debug.dprint("DEBUG: Not in portable mode, checking if possible")
             try:
                 tempfile.NamedTemporaryFile(
                     dir=paths.lookupExeFolder(), delete=True
                 ).close()  # should autodelete
-            except Exception:
+            except Exception as e:
+                debug.dprint(f"DEBUG: Portable mode not possible: {e}")
                 self.checkBoxPortableMode.setDisabled(True)
 
         if 'darwin' in sys.platform:
+            debug.dprint("DEBUG: On macOS, disabling some tray features")
             self.checkBoxMinimizeToTray.setDisabled(True)
             self.checkBoxMinimizeToTray.setText(_translate(
                 "MainWindow",
@@ -157,11 +171,13 @@ class SettingsDialog(QtWidgets.QDialog):
                 "Tray notifications not yet supported on your OS."))
 
         if not sys.platform.startswith('win') and not self.parent.desktop:
+            debug.dprint("DEBUG: Not on Windows, disabling start-on-logon")
             self.checkBoxStartOnLogon.setDisabled(True)
             self.checkBoxStartOnLogon.setText(_translate(
                 "MainWindow", "Start-on-login not yet supported on your OS."))
 
         # On the Network settings tab:
+        debug.dprint("DEBUG: Setting network options")
         self.lineEditTCPPort.setText(str(
             config.get('bitmessagesettings', 'port')))
         self.checkBoxUPnP.setChecked(
@@ -176,12 +192,14 @@ class SettingsDialog(QtWidgets.QDialog):
             config.safeGetBoolean('bitmessagesettings', 'onionservicesonly'))
 
         self._proxy_type = getSOCKSProxyType(config)
+        debug.dprint(f"DEBUG: Current proxy type: {self._proxy_type}")
         self.comboBoxProxyType.setCurrentIndex(
             0 if not self._proxy_type
             else self.comboBoxProxyType.findText(self._proxy_type))
         self.comboBoxProxyTypeChanged(self.comboBoxProxyType.currentIndex())
 
         if self._proxy_type:
+            debug.dprint("DEBUG: Checking onion nodes")
             for node, info in six.iteritems(
                 knownnodes.knownNodes.get(
                     min(connectionpool.pool.streams), [])
@@ -193,12 +211,14 @@ class SettingsDialog(QtWidgets.QDialog):
                     break
             else:
                 if self.checkBoxOnionOnly.isChecked():
+                    debug.dprint("DEBUG: No onion nodes found but onion-only enabled")
                     self.checkBoxOnionOnly.setText(
                         ustr(self.checkBoxOnionOnly.text()) + ", " + _translate(
                             "MainWindow", "may cause connection problems!"))
                     self.checkBoxOnionOnly.setStyleSheet(
                         "QCheckBox { color : red; }")
                 else:
+                    debug.dprint("DEBUG: No onion nodes found, disabling onion-only")
                     self.checkBoxOnionOnly.setEnabled(False)
 
         self.lineEditSocksHostname.setText(
@@ -218,6 +238,7 @@ class SettingsDialog(QtWidgets.QDialog):
             config.get('bitmessagesettings', 'maxoutboundconnections')))
 
         # Demanded difficulty tab
+        debug.dprint("DEBUG: Setting difficulty options")
         self.lineEditTotalDifficulty.setText(str((float(
             config.getint(
                 'bitmessagesettings', 'defaultnoncetrialsperbyte')
@@ -238,7 +259,10 @@ class SettingsDialog(QtWidgets.QDialog):
         ) / defaults.networkDefaultPayloadLengthExtraBytes)))
 
         # OpenCL
-        self.comboBoxOpenCL.setEnabled(openclpow.openclAvailable())
+        debug.dprint("DEBUG: Setting OpenCL options")
+        opencl_available = openclpow.openclAvailable()
+        debug.dprint(f"DEBUG: OpenCL available: {opencl_available}")
+        self.comboBoxOpenCL.setEnabled(opencl_available)
         self.comboBoxOpenCL.clear()
         self.comboBoxOpenCL.addItem("None")
         self.comboBoxOpenCL.addItems(openclpow.vendors)
@@ -246,11 +270,14 @@ class SettingsDialog(QtWidgets.QDialog):
         for i in range(self.comboBoxOpenCL.count()):
             if self.comboBoxOpenCL.itemText(i) == config.safeGet(
                     'bitmessagesettings', 'opencl'):
+                debug.dprint(f"DEBUG: Found OpenCL config match at index {i}")
                 self.comboBoxOpenCL.setCurrentIndex(i)
                 break
 
         # Namecoin integration tab
+        debug.dprint("DEBUG: Setting Namecoin options")
         nmctype = config.get('bitmessagesettings', 'namecoinrpctype')
+        debug.dprint(f"DEBUG: Namecoin type: {nmctype}")
         self.lineEditNamecoinHost.setText(
             config.get('bitmessagesettings', 'namecoinrpchost'))
         self.lineEditNamecoinPort.setText(str(
@@ -261,17 +288,21 @@ class SettingsDialog(QtWidgets.QDialog):
             config.get('bitmessagesettings', 'namecoinrpcpassword'))
 
         if nmctype == "namecoind":
+            debug.dprint("DEBUG: Namecoin type is namecoind")
             self.radioButtonNamecoinNamecoind.setChecked(True)
         elif nmctype == "nmcontrol":
+            debug.dprint("DEBUG: Namecoin type is nmcontrol")
             self.radioButtonNamecoinNmcontrol.setChecked(True)
             self.lineEditNamecoinUser.setEnabled(False)
             self.labelNamecoinUser.setEnabled(False)
             self.lineEditNamecoinPassword.setEnabled(False)
             self.labelNamecoinPassword.setEnabled(False)
         else:
+            debug.dprint(f"DEBUG: Unknown Namecoin type: {nmctype}")
             assert False
 
         # Message Resend tab
+        debug.dprint("DEBUG: Setting message resend options")
         self.lineEditDays.setText(str(
             config.get('bitmessagesettings', 'stopresendingafterxdays')))
         self.lineEditMonths.setText(str(
@@ -279,7 +310,9 @@ class SettingsDialog(QtWidgets.QDialog):
 
     def comboBoxProxyTypeChanged(self, comboBoxIndex):
         """A callback for currentIndexChanged event of comboBoxProxyType"""
+        debug.dprint(f"DEBUG: Proxy type changed to index {comboBoxIndex}")
         if comboBoxIndex == 0:
+            debug.dprint("DEBUG: No proxy selected, disabling proxy fields")
             self.lineEditSocksHostname.setEnabled(False)
             self.lineEditSocksPort.setEnabled(False)
             self.lineEditSocksUsername.setEnabled(False)
@@ -288,12 +321,14 @@ class SettingsDialog(QtWidgets.QDialog):
             self.checkBoxSocksListen.setEnabled(False)
             self.checkBoxOnionOnly.setEnabled(False)
         else:
+            debug.dprint("DEBUG: Proxy selected, enabling proxy fields")
             self.lineEditSocksHostname.setEnabled(True)
             self.lineEditSocksPort.setEnabled(True)
             self.checkBoxAuthentication.setEnabled(True)
             self.checkBoxSocksListen.setEnabled(True)
             self.checkBoxOnionOnly.setEnabled(True)
             if self.checkBoxAuthentication.isChecked():
+                debug.dprint("DEBUG: Authentication enabled, enabling auth fields")
                 self.lineEditSocksUsername.setEnabled(True)
                 self.lineEditSocksPassword.setEnabled(True)
 
@@ -303,30 +338,38 @@ class SettingsDialog(QtWidgets.QDialog):
         and translate it to a string as in the options.
         """
         if self.radioButtonNamecoinNamecoind.isChecked():
+            debug.dprint("DEBUG: Namecoin type is namecoind")
             return "namecoind"
         if self.radioButtonNamecoinNmcontrol.isChecked():
+            debug.dprint("DEBUG: Namecoin type is nmcontrol")
             return "nmcontrol"
+        debug.dprint("DEBUG: Unknown Namecoin type")
         assert False
 
     # Namecoin connection type was changed.
     def namecoinTypeChanged(self, checked):  # pylint: disable=unused-argument
         """A callback for toggled event of radioButtonNamecoinNamecoind"""
+        debug.dprint("DEBUG: Namecoin type changed")
         nmctype = self.getNamecoinType()
         assert nmctype == "namecoind" or nmctype == "nmcontrol"
 
         isNamecoind = (nmctype == "namecoind")
+        debug.dprint(f"DEBUG: isNamecoind: {isNamecoind}")
         self.lineEditNamecoinUser.setEnabled(isNamecoind)
         self.labelNamecoinUser.setEnabled(isNamecoind)
         self.lineEditNamecoinPassword.setEnabled(isNamecoind)
         self.labelNamecoinPassword.setEnabled(isNamecoind)
 
         if isNamecoind:
+            debug.dprint("DEBUG: Setting default namecoind port")
             self.lineEditNamecoinPort.setText(defaults.namecoinDefaultRpcPort)
         else:
+            debug.dprint("DEBUG: Setting default nmcontrol port")
             self.lineEditNamecoinPort.setText("9000")
 
     def click_pushButtonNamecoinTest(self):
         """Test the namecoin settings specified in the settings dialog."""
+        debug.dprint("DEBUG: Testing Namecoin connection")
         self.labelNamecoinTestResult.setText(
             _translate("MainWindow", "Testing..."))
         nc = namecoin.namecoinConnection({
@@ -337,28 +380,37 @@ class SettingsDialog(QtWidgets.QDialog):
             'password': ustr(self.lineEditNamecoinPassword.text())
         })
         status, text = nc.test()
+        debug.dprint(f"DEBUG: Namecoin test result: {status}, {text}")
         self.labelNamecoinTestResult.setText(text)
         if status == 'success':
+            debug.dprint("DEBUG: Namecoin test successful")
             self.parent.namecoin = nc
 
     def save_font_setting(self, font):
         """Save user font setting and set the buttonFont text"""
+        debug.dprint("DEBUG: Saving font setting")
         font_setting = (font.family(), font.pointSize())
         self.buttonFont.setText('{} {}'.format(*font_setting))
         self.font_setting = '{},{}'.format(*font_setting)
 
     def choose_font(self):
         """Show the font selection dialog"""
+        debug.dprint("DEBUG: Showing font dialog")
         font, valid = QtWidgets.QFontDialog.getFont()
         if valid:
+            debug.dprint("DEBUG: Font selected")
             self.save_font_setting(font)
 
     def accept(self):
         """A callback for accepted event of buttonBox (OK button pressed)"""
         # pylint: disable=too-many-branches,too-many-statements
+        debug.dprint("DEBUG: Settings dialog accepted, saving settings")
         super(SettingsDialog, self).accept()
         if self.firstrun:
+            debug.dprint("DEBUG: First run, removing dontconnect option")
             self.config.remove_option('bitmessagesettings', 'dontconnect')
+            
+        debug.dprint("DEBUG: Saving basic settings")
         self.config.set('bitmessagesettings', 'startonlogon', str(
             self.checkBoxStartOnLogon.isChecked()))
         self.config.set('bitmessagesettings', 'minimizetotray', str(
@@ -383,6 +435,7 @@ class SettingsDialog(QtWidgets.QDialog):
         if self.app.get_windowstyle() != window_style or self.config.safeGet(
             'bitmessagesettings', 'font'
         ) != self.font_setting:
+            debug.dprint("DEBUG: Window style or font changed")
             self.config.set('bitmessagesettings', 'windowstyle', window_style)
             self.config.set('bitmessagesettings', 'font', self.font_setting)
             queues.UISignalQueue.put((
@@ -395,11 +448,13 @@ class SettingsDialog(QtWidgets.QDialog):
 
         lang = ustr(self.languageComboBox.itemData(
             self.languageComboBox.currentIndex()))
+        debug.dprint(f"DEBUG: Setting language to {lang}")
         self.config.set('bitmessagesettings', 'userlocale', lang)
         self.parent.change_translation()
 
         if int(self.config.get('bitmessagesettings', 'port')) != int(
                 self.lineEditTCPPort.text()):
+            debug.dprint("DEBUG: Port changed, network restart needed")
             self.config.set(
                 'bitmessagesettings', 'port', str(self.lineEditTCPPort.text()))
             if not self.config.safeGetBoolean(
@@ -408,10 +463,12 @@ class SettingsDialog(QtWidgets.QDialog):
 
         if self.checkBoxUPnP.isChecked() != self.config.safeGetBoolean(
                 'bitmessagesettings', 'upnp'):
+            debug.dprint("DEBUG: UPnP setting changed")
             self.config.set(
                 'bitmessagesettings', 'upnp',
                 str(self.checkBoxUPnP.isChecked()))
             if self.checkBoxUPnP.isChecked():
+                debug.dprint("DEBUG: UPnP enabled, starting thread")
                 import upnp
                 upnpThread = upnp.uPnPThread()
                 upnpThread.start()
@@ -419,25 +476,32 @@ class SettingsDialog(QtWidgets.QDialog):
         udp_enabled = self.checkBoxUDP.isChecked()
         if udp_enabled != self.config.safeGetBoolean(
                 'bitmessagesettings', 'udp'):
+            debug.dprint(f"DEBUG: UDP setting changed to {udp_enabled}")
             self.config.set('bitmessagesettings', 'udp', str(udp_enabled))
             if udp_enabled:
+                debug.dprint("DEBUG: UDP enabled, starting announce thread")
                 announceThread = AnnounceThread()
                 announceThread.daemon = True
                 announceThread.start()
             else:
+                debug.dprint("DEBUG: UDP disabled, stopping announce thread")
                 try:
                     state.announceThread.stopThread()
-                except AttributeError:
-                    pass
+                except AttributeError as e:
+                    debug.dprint(f"DEBUG: Error stopping announce thread: {e}")
 
         proxytype_index = self.comboBoxProxyType.currentIndex()
+        debug.dprint(f"DEBUG: Proxy type index: {proxytype_index}")
         if proxytype_index == 0:
             if self._proxy_type and state.statusIconColor != 'red':
+                debug.dprint("DEBUG: Proxy disabled but was enabled, network restart needed")
                 self.net_restart_needed = True
         elif state.statusIconColor == 'red' and self.config.safeGetBoolean(
                 'bitmessagesettings', 'dontconnect'):
+            debug.dprint("DEBUG: Proxy enabled but not connected, no restart needed")
             self.net_restart_needed = False
         elif self.comboBoxProxyType.currentText() != self._proxy_type:
+            debug.dprint("DEBUG: Proxy type changed, network restart needed")
             self.net_restart_needed = True
             self.parent.statusbar.clearMessage()
 
@@ -447,8 +511,10 @@ class SettingsDialog(QtWidgets.QDialog):
             else str(self.comboBoxProxyType.currentText())
         )
         if proxytype_index > 2:  # last literal proxytype in ui
+            debug.dprint("DEBUG: Custom proxy type, starting proxy config")
             start_proxyconfig()
 
+        debug.dprint("DEBUG: Saving proxy settings")
         self.config.set('bitmessagesettings', 'socksauthentication', str(
             self.checkBoxAuthentication.isChecked()))
         self.config.set('bitmessagesettings', 'sockshostname', str(
@@ -466,16 +532,19 @@ class SettingsDialog(QtWidgets.QDialog):
             and not self.config.safeGetBoolean(
                 'bitmessagesettings', 'onionservicesonly')
         ):
+            debug.dprint("DEBUG: Onion-only enabled, network restart needed")
             self.net_restart_needed = True
         self.config.set('bitmessagesettings', 'onionservicesonly', str(
             self.checkBoxOnionOnly.isChecked()))
         try:
+            debug.dprint("DEBUG: Saving rate limits")
             # Rounding to integers just for aesthetics
             self.config.set('bitmessagesettings', 'maxdownloadrate', str(
                 int(float(self.lineEditMaxDownloadRate.text()))))
             self.config.set('bitmessagesettings', 'maxuploadrate', str(
                 int(float(self.lineEditMaxUploadRate.text()))))
-        except ValueError:
+        except ValueError as e:
+            debug.dprint(f"DEBUG: Invalid rate values: {e}")
             QtWidgets.QMessageBox.about(
                 self, _translate("MainWindow", "Number needed"),
                 _translate(
@@ -484,6 +553,7 @@ class SettingsDialog(QtWidgets.QDialog):
                     " Ignoring what you typed.")
             )
         else:
+            debug.dprint("DEBUG: Setting new rates")
             set_rates(
                 self.config.safeGetInt('bitmessagesettings', 'maxdownloadrate'),
                 self.config.safeGetInt('bitmessagesettings', 'maxuploadrate'))
@@ -491,6 +561,7 @@ class SettingsDialog(QtWidgets.QDialog):
         self.config.set('bitmessagesettings', 'maxoutboundconnections', str(
             int(float(self.lineEditMaxOutboundConnections.text()))))
 
+        debug.dprint("DEBUG: Saving Namecoin settings")
         self.config.set(
             'bitmessagesettings', 'namecoinrpctype', self.getNamecoinType())
         self.config.set('bitmessagesettings', 'namecoinrpchost', ustr(
@@ -504,6 +575,7 @@ class SettingsDialog(QtWidgets.QDialog):
         self.parent.resetNamecoinConnection()
 
         # Demanded difficulty tab
+        debug.dprint("DEBUG: Saving difficulty settings")
         if float(self.lineEditTotalDifficulty.text()) >= 1:
             self.config.set(
                 'bitmessagesettings', 'defaultnoncetrialsperbyte',
@@ -519,6 +591,7 @@ class SettingsDialog(QtWidgets.QDialog):
 
         if ustr(self.comboBoxOpenCL.currentText()) != ustr(self.config.safeGet(
                 'bitmessagesettings', 'opencl')):
+            debug.dprint("DEBUG: OpenCL setting changed")
             self.config.set(
                 'bitmessagesettings', 'opencl',
                 ustr(self.comboBoxOpenCL.currentText()))
@@ -535,7 +608,7 @@ class SettingsDialog(QtWidgets.QDialog):
             ) != str(int(
                 float(self.lineEditMaxAcceptableTotalDifficulty.text())
                     * defaults.networkDefaultProofOfWorkNonceTrialsPerByte)):
-                # the user changed the max acceptable total difficulty
+                debug.dprint("DEBUG: Max acceptable total difficulty changed")
                 acceptableDifficultyChanged = True
                 self.config.set(
                     'bitmessagesettings', 'maxacceptablenoncetrialsperbyte',
@@ -552,7 +625,7 @@ class SettingsDialog(QtWidgets.QDialog):
             ) != str(int(
                 float(self.lineEditMaxAcceptableSmallMessageDifficulty.text())
                     * defaults.networkDefaultPayloadLengthExtraBytes)):
-                # the user changed the max acceptable small message difficulty
+                debug.dprint("DEBUG: Max acceptable small message difficulty changed")
                 acceptableDifficultyChanged = True
                 self.config.set(
                     'bitmessagesettings', 'maxacceptablepayloadlengthextrabytes',
@@ -561,11 +634,7 @@ class SettingsDialog(QtWidgets.QDialog):
                         * defaults.networkDefaultPayloadLengthExtraBytes))
                 )
         if acceptableDifficultyChanged:
-            # It might now be possible to send msgs which were previously
-            # marked as toodifficult. Let us change them to 'msgqueued'.
-            # The singleWorker will try to send them and will again mark
-            # them as toodifficult if the receiver's required difficulty
-            # is still higher than we are willing to do.
+            debug.dprint("DEBUG: Acceptable difficulty changed, updating messages")
             sqlExecute(
                 "UPDATE sent SET status='msgqueued'"
                 " WHERE status='toodifficult'")
@@ -573,11 +642,9 @@ class SettingsDialog(QtWidgets.QDialog):
 
         stopResendingDefaults = False
 
-        # UI setting to stop trying to send messages after X days/months
-        # I'm open to changing this UI to something else if someone has a better idea.
+        debug.dprint("DEBUG: Processing message resend settings")
         if self.lineEditDays.text() == '' and self.lineEditMonths.text() == '':
-            # We need to handle this special case. Bitmessage has its
-            # default behavior. The input is blank/blank
+            debug.dprint("DEBUG: Using default resend behavior")
             self.config.set('bitmessagesettings', 'stopresendingafterxdays', '')
             self.config.set('bitmessagesettings', 'stopresendingafterxmonths', '')
             state.maximumLengthOfTimeToBotherResendingMessages = float('inf')
@@ -586,11 +653,13 @@ class SettingsDialog(QtWidgets.QDialog):
         try:
             days = float(self.lineEditDays.text())
         except ValueError:
+            debug.dprint("DEBUG: Invalid days value, setting to 0")
             self.lineEditDays.setText("0")
             days = 0.0
         try:
             months = float(self.lineEditMonths.text())
         except ValueError:
+            debug.dprint("DEBUG: Invalid months value, setting to 0")
             self.lineEditMonths.setText("0")
             months = 0.0
 
@@ -598,8 +667,7 @@ class SettingsDialog(QtWidgets.QDialog):
             state.maximumLengthOfTimeToBotherResendingMessages = \
                 days * 24 * 60 * 60 + months * 60 * 60 * 24 * 365 / 12
             if state.maximumLengthOfTimeToBotherResendingMessages < 432000:
-                # If the time period is less than 5 hours, we give
-                # zero values to all fields. No message will be sent again.
+                debug.dprint("DEBUG: Resend time too short, setting to never")
                 QtWidgets.QMessageBox.about(
                     self,
                     _translate("MainWindow", "Will not resend ever"),
@@ -616,15 +684,18 @@ class SettingsDialog(QtWidgets.QDialog):
                     'bitmessagesettings', 'stopresendingafterxmonths', '0')
                 state.maximumLengthOfTimeToBotherResendingMessages = 0.0
             else:
+                debug.dprint(f"DEBUG: Setting resend time to {state.maximumLengthOfTimeToBotherResendingMessages} seconds")
                 self.config.set(
                     'bitmessagesettings', 'stopresendingafterxdays', str(days))
                 self.config.set(
                     'bitmessagesettings', 'stopresendingafterxmonths',
                     str(months))
 
+        debug.dprint("DEBUG: Saving config")
         self.config.save()
 
         if self.net_restart_needed:
+            debug.dprint("DEBUG: Network restart needed, scheduling")
             self.net_restart_needed = False
             self.config.setTemp('bitmessagesettings', 'dontconnect', 'true')
             self.timer.singleShot(
@@ -639,44 +710,45 @@ class SettingsDialog(QtWidgets.QDialog):
             state.appdata != paths.lookupExeFolder()
             and self.checkBoxPortableMode.isChecked()
         ):
-            # If we are NOT using portable mode now but the user selected
-            # that we should...
-            # Write the keys.dat file to disk in the new location
+            debug.dprint("DEBUG: Switching to portable mode")
             sqlStoredProcedure('movemessagstoprog')
             with open(paths.lookupExeFolder() + 'keys.dat', 'wb') as configfile:
                 self.config.write(configfile)
-            # Write the knownnodes.dat file to disk in the new location
             knownnodes.saveKnownNodes(paths.lookupExeFolder())
-            os.remove(state.appdata + 'keys.dat')
-            os.remove(state.appdata + 'knownnodes.dat')
+            try:
+                os.remove(state.appdata + 'keys.dat')
+                os.remove(state.appdata + 'knownnodes.dat')
+            except Exception as e:
+                debug.dprint(f"DEBUG: Error removing old files: {e}")
             previousAppdataLocation = state.appdata
             state.appdata = paths.lookupExeFolder()
             debug.resetLogging()
             try:
                 os.remove(previousAppdataLocation + 'debug.log')
                 os.remove(previousAppdataLocation + 'debug.log.1')
-            except Exception:
-                pass
+            except Exception as e:
+                debug.dprint(f"DEBUG: Error removing old log files: {e}")
 
         if (
             state.appdata == paths.lookupExeFolder()
             and not self.checkBoxPortableMode.isChecked()
         ):
-            # If we ARE using portable mode now but the user selected
-            # that we shouldn't...
+            debug.dprint("DEBUG: Switching from portable mode")
             state.appdata = paths.lookupAppdataFolder()
             if not os.path.exists(state.appdata):
+                debug.dprint("DEBUG: Creating appdata directory")
                 os.makedirs(state.appdata)
             sqlStoredProcedure('movemessagstoappdata')
-            # Write the keys.dat file to disk in the new location
             self.config.save()
-            # Write the knownnodes.dat file to disk in the new location
             knownnodes.saveKnownNodes(state.appdata)
-            os.remove(paths.lookupExeFolder() + 'keys.dat')
-            os.remove(paths.lookupExeFolder() + 'knownnodes.dat')
+            try:
+                os.remove(paths.lookupExeFolder() + 'keys.dat')
+                os.remove(paths.lookupExeFolder() + 'knownnodes.dat')
+            except Exception as e:
+                debug.dprint(f"DEBUG: Error removing portable files: {e}")
             debug.resetLogging()
             try:
                 os.remove(paths.lookupExeFolder() + 'debug.log')
                 os.remove(paths.lookupExeFolder() + 'debug.log.1')
-            except Exception:
-                pass
+            except Exception as e:
+                debug.dprint(f"DEBUG: Error removing portable log files: {e}")

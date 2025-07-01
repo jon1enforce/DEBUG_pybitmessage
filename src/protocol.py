@@ -87,26 +87,37 @@ VersionPacket = Struct('>LqQ20s4s36sH')
 
 def getBitfield(address):
     """Get a bitfield from an address"""
+    logger.debug("DEBUG: getBitfield called for address: %s", address)
     # bitfield of features supported by me (see the wiki).
     bitfield = 0
     # send ack
     if not config.safeGetBoolean(address, 'dontsendack'):
         bitfield |= BITFIELD_DOESACK
-    return pack('>I', bitfield)
+    result = pack('>I', bitfield)
+    logger.debug("DEBUG: getBitfield result: %s", hexlify(result))
+    return result
 
 
 def checkBitfield(bitfieldBinary, flags):
     """Check if a bitfield matches the given flags"""
+    logger.debug("DEBUG: checkBitfield called with bitfield: %s, flags: %s", 
+                hexlify(bitfieldBinary), flags)
     bitfield, = unpack('>I', bitfieldBinary)
-    return (bitfield & flags) == flags
+    result = (bitfield & flags) == flags
+    logger.debug("DEBUG: checkBitfield result: %s", result)
+    return result
 
 
 def isBitSetWithinBitfield(fourByteString, n):
     """Check if a particular bit is set in a bitfeld"""
+    logger.debug("DEBUG: isBitSetWithinBitfield called with data: %s, bit: %d", 
+                hexlify(fourByteString), n)
     # Uses MSB 0 bit numbering across 4 bytes of data
     n = 31 - n
     x, = unpack('>L', fourByteString)
-    return x & 2**n != 0
+    result = x & 2**n != 0
+    logger.debug("DEBUG: isBitSetWithinBitfield result: %s", result)
+    return result
 
 # Streams
 
@@ -119,49 +130,66 @@ MAX_VALID_STREAM = 2**63 - 1
 
 def encodeHost(host):
     """Encode a given host to be used in low-level socket operations"""
+    logger.debug("DEBUG: encodeHost called with host: %s", host)
     if host.endswith('.onion'):
-        return b'\xfd\x87\xd8\x7e\xeb\x43' + base64.b32decode(
+        result = b'\xfd\x87\xd8\x7e\xeb\x43' + base64.b32decode(
             host.split(".")[0], True)
     elif host.find(':') == -1:
-        return b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF' + \
+        result = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF' + \
             socket.inet_aton(host)
-    return socket.inet_pton(socket.AF_INET6, host)
+    else:
+        result = socket.inet_pton(socket.AF_INET6, host)
+    logger.debug("DEBUG: encodeHost result: %s", hexlify(result))
+    return result
 
 
 def networkType(host):
     """Determine if a host is IPv4, IPv6 or an onion address"""
+    logger.debug("DEBUG: networkType called with host: %s", host)
     if host.endswith('.onion'):
-        return 'onion'
+        result = 'onion'
     elif host.find(':') == -1:
-        return 'IPv4'
-    return 'IPv6'
+        result = 'IPv4'
+    else:
+        result = 'IPv6'
+    logger.debug("DEBUG: networkType result: %s", result)
+    return result
 
 
 def network_group(host):
     """Canonical identifier of network group
        simplified, borrowed from
        GetGroup() in src/netaddresses.cpp in bitcoin core"""
+    logger.debug("DEBUG: network_group called with host: %s", host)
     if not isinstance(host, str):
+        logger.debug("DEBUG: network_group - host is not string, returning None")
         return None
     network_type = networkType(host)
     try:
         raw_host = encodeHost(host)
     except socket.error:
+        logger.debug("DEBUG: network_group - socket error, returning host")
         return host
     if network_type == 'IPv4':
         decoded_host = checkIPv4Address(raw_host[12:], True)
         if decoded_host:
             # /16 subnet
-            return raw_host[12:14]
+            result = raw_host[12:14]
+            logger.debug("DEBUG: network_group IPv4 result: %s", hexlify(result))
+            return result
     elif network_type == 'IPv6':
         decoded_host = checkIPv6Address(raw_host, True)
         if decoded_host:
             # /32 subnet
-            return raw_host[0:12]
+            result = raw_host[0:12]
+            logger.debug("DEBUG: network_group IPv6 result: %s", hexlify(result))
+            return result
     else:
         # just host, e.g. for tor
+        logger.debug("DEBUG: network_group returning host: %s", host)
         return host
     # global network type group for local, private, unroutable
+    logger.debug("DEBUG: network_group returning network_type: %s", network_type)
     return network_type
 
 
@@ -170,25 +198,33 @@ def checkIPAddress(host, private=False):
     Returns hostStandardFormat if it is a valid IP address,
     otherwise returns False
     """
+    logger.debug("DEBUG: checkIPAddress called with host: %s, private: %s", 
+                hexlify(host), private)
     if host[0:12] == b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF':
         hostStandardFormat = socket.inet_ntop(socket.AF_INET, bytes(host[12:]))
-        return checkIPv4Address(host[12:], hostStandardFormat, private)
+        result = checkIPv4Address(host[12:], hostStandardFormat, private)
     elif host[0:6] == b'\xfd\x87\xd8\x7e\xeb\x43':
         # Onion, based on BMD/bitcoind
         hostStandardFormat = base64.b32encode(host[6:]).lower() + b".onion"
         if private:
-            return False
-        return hostStandardFormat
+            result = False
+        else:
+            result = hostStandardFormat
     else:
         try:
             hostStandardFormat = socket.inet_ntop(socket.AF_INET6, host)
         except ValueError:
+            logger.debug("DEBUG: checkIPAddress - ValueError, returning False")
             return False
         if len(hostStandardFormat) == 0:
             # This can happen on Windows systems which are
             # not 64-bit compatible so let us drop the IPv6 address.
+            logger.debug("DEBUG: checkIPAddress - empty host, returning False")
             return False
-        return checkIPv6Address(host, hostStandardFormat, private)
+        result = checkIPv6Address(host, hostStandardFormat, private)
+    
+    logger.debug("DEBUG: checkIPAddress result: %s", result)
+    return result
 
 
 def checkIPv4Address(host, hostStandardFormat, private=False):
@@ -196,28 +232,34 @@ def checkIPv4Address(host, hostStandardFormat, private=False):
     Returns hostStandardFormat if it is an IPv4 address,
     otherwise returns False
     """
+    logger.debug("DEBUG: checkIPv4Address called with host: %s, format: %s, private: %s",
+                hexlify(host), hostStandardFormat, private)
     if host[0:1] == b'\x7F':  # 127/8
         if not private:
             logger.debug(
                 'Ignoring IP address in loopback range: %s',
                 hostStandardFormat)
-        return hostStandardFormat if private else False
-    if host[0:1] == b'\x0A':  # 10/8
+        result = hostStandardFormat if private else False
+    elif host[0:1] == b'\x0A':  # 10/8
         if not private:
             logger.debug(
                 'Ignoring IP address in private range: %s', hostStandardFormat)
-        return hostStandardFormat if private else False
-    if host[0:2] == b'\xC0\xA8':  # 192.168/16
+        result = hostStandardFormat if private else False
+    elif host[0:2] == b'\xC0\xA8':  # 192.168/16
         if not private:
             logger.debug(
                 'Ignoring IP address in private range: %s', hostStandardFormat)
-        return hostStandardFormat if private else False
-    if host[0:2] >= b'\xAC\x10' and host[0:2] < b'\xAC\x20':  # 172.16/12
+        result = hostStandardFormat if private else False
+    elif host[0:2] >= b'\xAC\x10' and host[0:2] < b'\xAC\x20':  # 172.16/12
         if not private:
             logger.debug(
                 'Ignoring IP address in private range: %s', hostStandardFormat)
-        return hostStandardFormat if private else False
-    return False if private else hostStandardFormat
+        result = hostStandardFormat if private else False
+    else:
+        result = False if private else hostStandardFormat
+    
+    logger.debug("DEBUG: checkIPv4Address result: %s", result)
+    return result
 
 
 def checkIPv6Address(host, hostStandardFormat, private=False):
@@ -225,24 +267,31 @@ def checkIPv6Address(host, hostStandardFormat, private=False):
     Returns hostStandardFormat if it is an IPv6 address,
     otherwise returns False
     """
+    logger.debug("DEBUG: checkIPv6Address called with host: %s, format: %s, private: %s",
+                hexlify(host), hostStandardFormat, private)
     if host == b'\x00' * 15 + b'\x01':
         if not private:
             logger.debug('Ignoring loopback address: %s', hostStandardFormat)
-        return False
-    try:
-        host = [six.byte2int(c) for c in host[:2]]
-    except TypeError:  # python3 has ints already
-        pass
-    if host[0] == 0xfe and host[1] & 0xc0 == 0x80:
-        if not private:
-            logger.debug('Ignoring local address: %s', hostStandardFormat)
-        return hostStandardFormat if private else False
-    if host[0] & 0xfe == 0xfc:
-        if not private:
-            logger.debug(
-                'Ignoring unique local address: %s', hostStandardFormat)
-        return hostStandardFormat if private else False
-    return False if private else hostStandardFormat
+        result = False
+    else:
+        try:
+            host = [six.byte2int(c) for c in host[:2]]
+        except TypeError:  # python3 has ints already
+            pass
+        if host[0] == 0xfe and host[1] & 0xc0 == 0x80:
+            if not private:
+                logger.debug('Ignoring local address: %s', hostStandardFormat)
+            result = hostStandardFormat if private else False
+        elif host[0] & 0xfe == 0xfc:
+            if not private:
+                logger.debug(
+                    'Ignoring unique local address: %s', hostStandardFormat)
+            result = hostStandardFormat if private else False
+        else:
+            result = False if private else hostStandardFormat
+    
+    logger.debug("DEBUG: checkIPv6Address result: %s", result)
+    return result
 
 
 def haveSSL(server=False):
@@ -252,15 +301,21 @@ def haveSSL(server=False):
     python < 2.7.9's ssl library does not support ECDSA server due to
     missing initialisation of available curves, but client works ok
     """
+    logger.debug("DEBUG: haveSSL called with server: %s", server)
     if not server:
-        return True
+        result = True
     elif sys.version_info >= (2, 7, 9):
-        return True
-    return False
+        result = True
+    else:
+        result = False
+    
+    logger.debug("DEBUG: haveSSL result: %s", result)
+    return result
 
 
 def checkSocksIP(host):
     """Predicate to check if we're using a SOCKS proxy"""
+    logger.debug("DEBUG: checkSocksIP called with host: %s", host)
     sockshostname = config.safeGet(
         'bitmessagesettings', 'sockshostname')
     try:
@@ -270,7 +325,10 @@ def checkSocksIP(host):
         state.socksIP = socket.gethostbyname(sockshostname)
     except (TypeError, socket.gaierror):  # None, resolving failure
         state.socksIP = sockshostname
-    return state.socksIP == host
+    
+    result = state.socksIP == host
+    logger.debug("DEBUG: checkSocksIP result: %s", result)
+    return result
 
 
 def isProofOfWorkSufficient(
@@ -287,20 +345,29 @@ def isProofOfWorkSufficient(
     Returns:
         True if PoW valid and sufficient, False in all other cases
     """
+    logger.debug("DEBUG: isProofOfWorkSufficient called with data length: %d, "
+                "nonceTrialsPerByte: %d, payloadLengthExtraBytes: %d, recvTime: %s",
+                len(data), nonceTrialsPerByte, payloadLengthExtraBytes, recvTime)
+    
     if nonceTrialsPerByte < defaults.networkDefaultProofOfWorkNonceTrialsPerByte:
         nonceTrialsPerByte = defaults.networkDefaultProofOfWorkNonceTrialsPerByte
     if payloadLengthExtraBytes < defaults.networkDefaultPayloadLengthExtraBytes:
         payloadLengthExtraBytes = defaults.networkDefaultPayloadLengthExtraBytes
+    
     endOfLifeTime, = unpack('>Q', data[8:16])
     TTL = endOfLifeTime - int(recvTime if recvTime else time.time())
     if TTL < 300:
         TTL = 300
+    
     POW, = unpack('>Q', highlevelcrypto.double_sha512(
         bytes(data[:8]) + hashlib.sha512(data[8:]).digest())[0:8])
-    return POW <= 2 ** 64 / (
+    result = POW <= 2 ** 64 / (
         nonceTrialsPerByte * (
             len(data) + payloadLengthExtraBytes
             + ((TTL * (len(data) + payloadLengthExtraBytes)) / (2 ** 16))))
+    
+    logger.debug("DEBUG: isProofOfWorkSufficient result: %s", result)
+    return result
 
 
 # Packet creation
@@ -308,20 +375,27 @@ def isProofOfWorkSufficient(
 
 def CreatePacket(command, payload=b''):
     """Construct and return a packet"""
+    logger.debug("DEBUG: CreatePacket called with command: %s, payload length: %d",
+                command, len(payload))
     payload_length = len(payload)
     checksum = hashlib.sha512(payload).digest()[0:4]
 
     b = bytearray(Header.size + payload_length)
     Header.pack_into(b, 0, magic, command, payload_length, checksum)
     b[Header.size:] = payload
+    
+    logger.debug("DEBUG: CreatePacket result length: %d", len(b))
     return bytes(b)
 
 
 def assembleAddrMessage(peerList):
     """Create address command"""
+    logger.debug("DEBUG: assembleAddrMessage called with peerList length: %d",
+                0 if peerList is None else len(peerList))
     if isinstance(peerList, Peer):
         peerList = [peerList]
     if not peerList:
+        logger.debug("DEBUG: assembleAddrMessage - empty peerList, returning empty bytes")
         return b''
     retval = b''
     for i in range(0, len(peerList), MAX_ADDR_COUNT):
@@ -336,6 +410,8 @@ def assembleAddrMessage(peerList):
             # remote port
             payload += pack('>H', peer.port)
         retval += CreatePacket(b'addr', payload)
+    
+    logger.debug("DEBUG: assembleAddrMessage result length: %d", len(retval))
     return retval
 
 
@@ -346,6 +422,11 @@ def assembleVersionMessage(  # pylint: disable=too-many-arguments
     Construct the payload of a version message,
     return the resulting bytes of running `CreatePacket` on it
     """
+    logger.debug("DEBUG: assembleVersionMessage called with remoteHost: %s, remotePort: %d, "
+                "participatingStreams count: %d, dandelion_enabled: %s, server: %s, nodeid: %s",
+                remoteHost, remotePort, len(participatingStreams), dandelion_enabled, server,
+                hexlify(nodeid) if nodeid else None)
+    
     payload = b''
     payload += pack('>L', 3)  # protocol version.
     # bitflags of the services I offer.
@@ -415,9 +496,12 @@ def assembleVersionMessage(  # pylint: disable=too-many-arguments
         count += 1
         # protocol limit, see specification
         if count >= 160000:
+            logger.debug("DEBUG: assembleVersionMessage - reached max stream count")
             break
 
-    return CreatePacket(b'version', payload)
+    result = CreatePacket(b'version', payload)
+    logger.debug("DEBUG: assembleVersionMessage result length: %d", len(result))
+    return result
 
 
 def assembleErrorMessage(fatal=0, banTime=0, inventoryVector=b'', errorText=''):
@@ -425,6 +509,10 @@ def assembleErrorMessage(fatal=0, banTime=0, inventoryVector=b'', errorText=''):
     Construct the payload of an error message,
     return the resulting bytes of running `CreatePacket` on it
     """
+    logger.debug("DEBUG: assembleErrorMessage called with fatal: %d, banTime: %d, "
+                "inventoryVector length: %d, errorText: %s",
+                fatal, banTime, len(inventoryVector), errorText)
+    
     payload = encodeVarint(fatal)
     payload += encodeVarint(banTime)
     payload += encodeVarint(len(inventoryVector))
@@ -433,7 +521,10 @@ def assembleErrorMessage(fatal=0, banTime=0, inventoryVector=b'', errorText=''):
         errorText = errorText.encode("utf-8", "replace")
     payload += encodeVarint(len(errorText))
     payload += errorText
-    return CreatePacket(b'error', payload)
+    
+    result = CreatePacket(b'error', payload)
+    logger.debug("DEBUG: assembleErrorMessage result length: %d", len(result))
+    return result
 
 
 # Packet decoding
@@ -441,12 +532,16 @@ def assembleErrorMessage(fatal=0, banTime=0, inventoryVector=b'', errorText=''):
 
 def decodeObjectParameters(data):
     """Decode the parameters of a raw object needed to put it in inventory"""
+    logger.debug("DEBUG: decodeObjectParameters called with data length: %d", len(data))
     # BMProto.decode_payload_content("QQIvv")
     expiresTime = unpack('>Q', data[8:16])[0]
     objectType = unpack('>I', data[16:20])[0]
     parserPos = 20 + decodeVarint(data[20:30])[1]
     toStreamNumber = decodeVarint(data[parserPos:parserPos + 10])[0]
 
+    logger.debug("DEBUG: decodeObjectParameters result - objectType: %d, "
+                "toStreamNumber: %d, expiresTime: %d",
+                objectType, toStreamNumber, expiresTime)
     return objectType, toStreamNumber, expiresTime
 
 
@@ -458,6 +553,8 @@ def decryptAndCheckPubkeyPayload(data, address):
     already in our inventory when we tried to send a msg to this
     particular address.
     """
+    logger.debug("DEBUG: decryptAndCheckPubkeyPayload called with data length: %d, address: %s",
+                len(data), address)
     try:
         addressVersion, streamNumber, ripe = decodeAddress(address)[1:]
 
@@ -476,11 +573,15 @@ def decryptAndCheckPubkeyPayload(data, address):
             logger.info(
                 'Pubkey decryption was UNsuccessful'
                 ' due to address version mismatch.')
+            logger.debug("DEBUG: decryptAndCheckPubkeyPayload - address version mismatch: "
+                        "expected %d, got %d", addressVersion, embeddedAddressVersion)
             return 'failed'
         if streamNumber != embeddedStreamNumber:
             logger.info(
                 'Pubkey decryption was UNsuccessful'
                 ' due to stream number mismatch.')
+            logger.debug("DEBUG: decryptAndCheckPubkeyPayload - stream number mismatch: "
+                        "expected %d, got %d", streamNumber, embeddedStreamNumber)
             return 'failed'
 
         tag = data[readPosition:readPosition + 32]
@@ -499,18 +600,15 @@ def decryptAndCheckPubkeyPayload(data, address):
                 ' toAddress: %s, address %s',
                 toAddress, address
             )
-            # the only way I can think that this could happen
-            # is if someone encodes their address data two different ways.
-            # That sort of address-malleability should have been caught
-            # by the UI or API and an error given to the user.
+            logger.debug("DEBUG: decryptAndCheckPubkeyPayload - address mismatch: "
+                        "expected %s, got %s", toAddress, address)
             return 'failed'
         try:
             decryptedData = cryptorObject.decrypt(encryptedData)
         except:  # noqa:E722
             # FIXME: use a proper exception after `pyelliptic.ecc` is refactored.
-            # Someone must have encrypted some data with a different key
-            # but tagged it with a tag for which we are watching.
             logger.info('Pubkey decryption was unsuccessful.')
+            logger.debug("DEBUG: decryptAndCheckPubkeyPayload - decryption failed", exc_info=True)
             return 'failed'
 
         readPosition = 0
@@ -537,20 +635,20 @@ def decryptAndCheckPubkeyPayload(data, address):
                 signedData, signature, hexlify(pubSigningKey)):
             logger.info(
                 'ECDSA verify failed (within decryptAndCheckPubkeyPayload)')
+            logger.debug("DEBUG: decryptAndCheckPubkeyPayload - ECDSA verification failed")
             return 'failed'
 
         logger.info(
             'ECDSA verify passed (within decryptAndCheckPubkeyPayload)')
+        logger.debug("DEBUG: decryptAndCheckPubkeyPayload - ECDSA verification passed")
 
         embeddedRipe = highlevelcrypto.to_ripe(pubSigningKey, pubEncryptionKey)
 
         if embeddedRipe != ripe:
-            # Although this pubkey object had the tag were were looking for
-            # and was encrypted with the correct encryption key,
-            # it doesn't contain the correct pubkeys. Someone is
-            # either being malicious or using buggy software.
             logger.info(
                 'Pubkey decryption was UNsuccessful due to RIPE mismatch.')
+            logger.debug("DEBUG: decryptAndCheckPubkeyPayload - RIPE mismatch: "
+                        "expected %s, got %s", hexlify(ripe), hexlify(embeddedRipe))
             return 'failed'
 
         # Everything checked out. Insert it into the pubkeys table.
@@ -565,10 +663,12 @@ def decryptAndCheckPubkeyPayload(data, address):
 
         t = (dbstr(address), addressVersion, sqlite3.Binary(storedData), int(time.time()), dbstr('yes'))
         sqlExecute('''INSERT INTO pubkeys VALUES (?,?,?,?,?)''', *t)
+        logger.debug("DEBUG: decryptAndCheckPubkeyPayload - successfully stored pubkey")
         return 'successful'
     except varintDecodeError:
         logger.info(
             'Pubkey decryption was UNsuccessful due to a malformed varint.')
+        logger.debug("DEBUG: decryptAndCheckPubkeyPayload - varint decode error", exc_info=True)
         return 'failed'
     except Exception:
         logger.critical(

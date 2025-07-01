@@ -18,6 +18,7 @@ from tr import _translate
 
 
 configSection = "bitmessagesettings"
+logger.debug("DEBUG: Namecoin module initialized with config section: %s", configSection)
 
 
 class RPCError(Exception):
@@ -25,6 +26,7 @@ class RPCError(Exception):
     error = None
 
     def __init__(self, data):
+        logger.debug("DEBUG: RPCError created with data: %s", data)
         super(RPCError, self).__init__()
         self.error = data
 
@@ -47,105 +49,118 @@ class namecoinConnection(object):
     def __init__(self, options=None):
         """
         Initialise. If options are given, take the connection settings from
-        them instead of loading from the configs. This can be used to test
-        currently entered connection settings in the config dialog without
-        actually changing the values (yet).
+        them instead of loading from the configs.
         """
+        logger.debug("DEBUG: namecoinConnection.__init__ called with options: %s", options)
+        
         if options is None:
-            self.nmctype = config.get(
-                configSection, "namecoinrpctype")
-            self.host = config.get(
-                configSection, "namecoinrpchost")
-            self.port = int(config.get(
-                configSection, "namecoinrpcport"))
-            self.user = config.get(
-                configSection, "namecoinrpcuser")
-            self.password = config.get(
-                configSection, "namecoinrpcpassword")
+            logger.debug("DEBUG: Loading settings from config")
+            self.nmctype = config.get(configSection, "namecoinrpctype")
+            self.host = config.get(configSection, "namecoinrpchost")
+            self.port = int(config.get(configSection, "namecoinrpcport"))
+            self.user = config.get(configSection, "namecoinrpcuser")
+            self.password = config.get(configSection, "namecoinrpcpassword")
         else:
+            logger.debug("DEBUG: Using provided options")
             self.nmctype = options["type"]
             self.host = options["host"]
             self.port = int(options["port"])
             self.user = options["user"]
             self.password = options["password"]
 
+        logger.debug("DEBUG: Connection type: %s, host: %s, port: %d", 
+                    self.nmctype, self.host, self.port)
+        
         assert self.nmctype in ("namecoind", "nmcontrol")
         if self.nmctype == "namecoind":
+            logger.debug("DEBUG: Creating HTTP connection for namecoind")
             self.con = httplib.HTTPConnection(self.host, self.port, timeout=3)
 
     def query(self, identity):
         """
         Query for the bitmessage address corresponding to the given identity
-        string. If it doesn't contain a slash, id/ is prepended. We return
-        the result as (Error, Address) pair, where the Error is an error
-        message to display or None in case of success.
+        string.
         """
+        logger.debug("DEBUG: query called with identity: %s", identity)
+        
         slashPos = identity.find("/")
         if slashPos < 0:
             display_name = identity
             identity = "id/" + identity
+            logger.debug("DEBUG: Added 'id/' prefix to identity: %s", identity)
         else:
             display_name = identity.split("/")[1]
+            logger.debug("DEBUG: Extracted display name: %s", display_name)
 
         try:
             if self.nmctype == "namecoind":
+                logger.debug("DEBUG: Querying namecoind for identity: %s", identity)
                 res = self.callRPC("name_show", [identity])
                 res = res["value"]
             elif self.nmctype == "nmcontrol":
+                logger.debug("DEBUG: Querying nmcontrol for identity: %s", identity)
                 res = self.callRPC("data", ["getValue", identity])
                 res = res["reply"]
                 if not res:
-                    return (_translate(
-                        "MainWindow", "The name {0} was not found."
-                    ).format(identity.decode("utf-8", "ignore")), None)
+                    msg = _translate("MainWindow", "The name {0} was not found.").format(
+                        identity.decode("utf-8", "ignore"))
+                    logger.debug("DEBUG: Name not found: %s", identity)
+                    return (msg, None)
             else:
                 assert False
         except RPCError as exc:
-            logger.exception("Namecoin query RPC exception")
+            logger.exception("DEBUG: Namecoin query RPC exception")
             if isinstance(exc.error, dict):
                 errmsg = exc.error["message"]
             else:
                 errmsg = exc.error
-            return (_translate(
-                "MainWindow", "The namecoin query failed ({0})"
-            ).format(errmsg.decode("utf-8", "ignore")), None)
+            msg = _translate("MainWindow", "The namecoin query failed ({0})").format(
+                errmsg.decode("utf-8", "ignore"))
+            logger.debug("DEBUG: RPC error: %s", msg)
+            return (msg, None)
         except AssertionError:
-            return (_translate(
-                "MainWindow", "Unknown namecoin interface type: {0}"
-            ).format(self.nmctype.decode("utf-8", "ignore")), None)
+            msg = _translate("MainWindow", "Unknown namecoin interface type: {0}").format(
+                self.nmctype.decode("utf-8", "ignore"))
+            logger.debug("DEBUG: Assertion error: %s", msg)
+            return (msg, None)
         except Exception:
-            logger.exception("Namecoin query exception")
-            return (_translate(
-                "MainWindow", "The namecoin query failed."), None)
+            logger.exception("DEBUG: Namecoin query exception")
+            msg = _translate("MainWindow", "The namecoin query failed.")
+            logger.debug("DEBUG: General query error: %s", msg)
+            return (msg, None)
 
         try:
+            logger.debug("DEBUG: Trying to parse JSON response: %s", res)
             res = json.loads(res)
         except ValueError:
+            logger.debug("DEBUG: Response is not JSON, using raw value")
             pass
         else:
             try:
                 display_name = res["name"]
+                logger.debug("DEBUG: Found display name in JSON: %s", display_name)
             except KeyError:
                 pass
             res = res.get("bitmessage")
 
+        logger.debug("DEBUG: Validating Bitmessage address: %s", res)
         valid = decodeAddress(res)[0] == "success"
-        return (
-            None, "%s <%s>" % (display_name, res)
-        ) if valid else (
-            _translate(
-                "MainWindow",
-                "The name {0} has no associated Bitmessage address."
-            ).format(identity.decode("utf-8", "ignore")), None)
+        if valid:
+            result = "%s <%s>" % (display_name, res)
+            logger.debug("DEBUG: Valid address found: %s", result)
+            return (None, result)
+        else:
+            msg = _translate("MainWindow", "The name {0} has no associated Bitmessage address.").format(
+                identity.decode("utf-8", "ignore"))
+            logger.debug("DEBUG: No valid address found: %s", msg)
+            return (msg, None)
 
     def test(self):
-        """
-        Test the connection settings. This routine tries to query a "getinfo"
-        command, and builds either an error message or a success message with
-        some info from it.
-        """
+        """Test the connection settings."""
+        logger.debug("DEBUG: test connection called")
         try:
             if self.nmctype == "namecoind":
+                logger.debug("DEBUG: Testing namecoind connection")
                 try:
                     vers = self.callRPC("getinfo", [])["version"]
                 except RPCError:
@@ -160,70 +175,82 @@ class namecoinConnection(object):
                     versStr = "0.%d.%d" % (v1, v2)
                 else:
                     versStr = "0.%d.%d.%d" % (v1, v2, v3)
-                return (
-                    'success', _translate(
-                        "MainWindow",
-                        "Success!  Namecoind version {0} running.").format(
-                            versStr.decode("utf-8", "ignore")))
+                
+                msg = _translate("MainWindow", "Success!  Namecoind version {0} running.").format(
+                    versStr.decode("utf-8", "ignore"))
+                logger.debug("DEBUG: namecoind test success: %s", msg)
+                return ('success', msg)
 
             elif self.nmctype == "nmcontrol":
+                logger.debug("DEBUG: Testing nmcontrol connection")
                 res = self.callRPC("data", ["status"])
                 prefix = "Plugin data running"
                 if ("reply" in res) and res["reply"][:len(prefix)] == prefix:
-                    return (
-                        'success', _translate(
-                            "MainWindow",
-                            "Success! NMControll is up and running.")
-                    )
+                    msg = _translate("MainWindow", "Success! NMControll is up and running.")
+                    logger.debug("DEBUG: nmcontrol test success: %s", msg)
+                    return ('success', msg)
 
-                logger.error("Unexpected nmcontrol reply: %s", res)
-                return (
-                    'failed', _translate(
-                        "MainWindow", "Couldn\'t understand NMControl.")
-                )
+                logger.error("DEBUG: Unexpected nmcontrol reply: %s", res)
+                msg = _translate("MainWindow", "Couldn\'t understand NMControl.")
+                logger.debug("DEBUG: nmcontrol test failed: %s", msg)
+                return ('failed', msg)
 
             else:
                 sys.exit("Unsupported Namecoin type")
 
         except Exception:
-            logger.info("Namecoin connection test failure")
-            return (
-                'failed', _translate(
-                    "MainWindow", "The connection to namecoin failed.")
-            )
+            logger.exception("DEBUG: Namecoin connection test failure")
+            msg = _translate("MainWindow", "The connection to namecoin failed.")
+            logger.debug("DEBUG: Test failed with error: %s", msg)
+            return ('failed', msg)
 
     def callRPC(self, method, params):
-        """Helper routine that actually performs an JSON RPC call."""
-
+        """Perform an JSON RPC call."""
+        logger.debug("DEBUG: callRPC called with method: %s, params: %s", method, params)
+        
         data = {"method": method, "params": params, "id": self.queryid}
+        logger.debug("DEBUG: RPC request data: %s", data)
+        
         if self.nmctype == "namecoind":
+            logger.debug("DEBUG: Using HTTP transport")
             resp = self.queryHTTP(json.dumps(data))
         elif self.nmctype == "nmcontrol":
+            logger.debug("DEBUG: Using socket transport")
             resp = self.queryServer(json.dumps(data))
         else:
             assert False
+            
+        logger.debug("DEBUG: RPC raw response: %s", resp)
         val = json.loads(resp)
 
         if val["id"] != self.queryid:
+            logger.error("DEBUG: ID mismatch in RPC response: expected %d, got %d", 
+                       self.queryid, val["id"])
             raise Exception("ID mismatch in JSON RPC answer.")
 
         if self.nmctype == "namecoind":
             self.queryid = self.queryid + 1
+            logger.debug("DEBUG: Incremented query ID to %d", self.queryid)
 
         error = val["error"]
         if error is None:
+            logger.debug("DEBUG: RPC call successful, result: %s", val["result"])
             return val["result"]
 
         if isinstance(error, bool):
+            logger.error("DEBUG: RPC error (boolean): %s", val["result"])
             raise RPCError(val["result"])
+        
+        logger.error("DEBUG: RPC error: %s", error)
         raise RPCError(error)
 
     def queryHTTP(self, data):
         """Query the server via HTTP."""
-
+        logger.debug("DEBUG: queryHTTP called with data length: %d", len(data))
         result = None
 
         try:
+            logger.debug("DEBUG: Preparing HTTP request")
             self.con.putrequest("POST", "/")
             self.con.putheader("Connection", "Keep-Alive")
             self.con.putheader("User-Agent", "bitmessage")
@@ -232,30 +259,32 @@ class namecoinConnection(object):
             self.con.putheader("Content-Length", str(len(data)))
             self.con.putheader("Accept", "application/json")
             authstr = "%s:%s" % (self.user, self.password)
-            self.con.putheader(
-                "Authorization", "Basic %s" % base64.b64encode(authstr))
+            self.con.putheader("Authorization", "Basic %s" % base64.b64encode(authstr))
             self.con.endheaders()
             self.con.send(data)
+            
             try:
+                logger.debug("DEBUG: Getting HTTP response")
                 resp = self.con.getresponse()
                 result = resp.read()
                 if resp.status != 200:
-                    raise Exception(
-                        "Namecoin returned status %i: %s" %
-                        (resp.status, resp.reason))
-            except:  # noqa:E722
-                logger.info("HTTP receive error")
-        except:  # noqa:E722
-            logger.info("HTTP connection error")
+                    msg = "Namecoin returned status %i: %s" % (resp.status, resp.reason)
+                    logger.error("DEBUG: HTTP error: %s", msg)
+                    raise Exception(msg)
+            except Exception as e:
+                logger.error("DEBUG: HTTP receive error: %s", str(e))
+        except Exception as e:
+            logger.error("DEBUG: HTTP connection error: %s", str(e))
 
+        logger.debug("DEBUG: HTTP query result length: %d", len(result) if result else 0)
         return result
 
     def queryServer(self, data):
-        """
-        Helper routine sending data to the RPC server and returning the result.
-        """
-
+        """Send data to the RPC server and return the result."""
+        logger.debug("DEBUG: queryServer called with data length: %d", len(data))
+        
         try:
+            logger.debug("DEBUG: Creating socket connection")
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.settimeout(3)
@@ -270,94 +299,99 @@ class namecoinConnection(object):
                 result += tmp
 
             s.close()
-
+            logger.debug("DEBUG: Socket query result length: %d", len(result))
             return result
 
         except socket.error as exc:
+            logger.error("DEBUG: Socket error in RPC connection: %s", str(exc))
             raise Exception("Socket error in RPC connection: %s" % exc)
 
 
 def lookupNamecoinFolder():
-    """
-    Look up the namecoin data folder.
-
-    .. todo:: Check whether this works on other platforms as well!
-    """
-
+    """Look up the namecoin data folder."""
+    logger.debug("DEBUG: lookupNamecoinFolder called")
+    
     app = "namecoin"
+    logger.debug("DEBUG: Platform: %s", sys.platform)
 
     if sys.platform == "darwin":
         try:
-            dataFolder = os.path.join(
-                os.getenv("HOME"), "Library/Application Support/", app)
-        except TypeError:  # getenv is None
-            sys.exit(
-                "Could not find home folder, please report this message"
-                " and your OS X version to the BitMessage Github."
-            )  # TODO: remove exits from utility modules
+            dataFolder = os.path.join(os.getenv("HOME"), "Library/Application Support/", app)
+            logger.debug("DEBUG: MacOS data folder: %s", dataFolder)
+        except TypeError:
+            msg = "Could not find home folder"
+            logger.error("DEBUG: %s", msg)
+            sys.exit(msg + ", please report this message and your OS X version to the BitMessage Github.")
 
     dataFolder = (
         os.path.join(os.getenv("APPDATA"), app)
         if sys.platform.startswith('win') else
         os.path.join(os.getenv("HOME"), ".%s" % app)
     )
+    logger.debug("DEBUG: Determined data folder: %s", dataFolder)
 
     return dataFolder + os.path.sep
 
 
 def ensureNamecoinOptions():
-    """
-    Ensure all namecoin options are set, by setting those to default values
-    that aren't there.
-    """
+    """Ensure all namecoin options are set with default values if missing."""
+    logger.debug("DEBUG: ensureNamecoinOptions called")
 
     if not config.has_option(configSection, "namecoinrpctype"):
+        logger.debug("DEBUG: Setting default namecoinrpctype")
         config.set(configSection, "namecoinrpctype", "namecoind")
     if not config.has_option(configSection, "namecoinrpchost"):
+        logger.debug("DEBUG: Setting default namecoinrpchost")
         config.set(configSection, "namecoinrpchost", "localhost")
 
     hasUser = config.has_option(configSection, "namecoinrpcuser")
     hasPass = config.has_option(configSection, "namecoinrpcpassword")
     hasPort = config.has_option(configSection, "namecoinrpcport")
 
-    # Try to read user/password from .namecoin configuration file.
+    logger.debug("DEBUG: Checking namecoin config: user=%s, pass=%s, port=%s", 
+                hasUser, hasPass, hasPort)
+
+    # Try to read user/password from .namecoin configuration file
     defaultUser = ""
     defaultPass = ""
     nmcFolder = lookupNamecoinFolder()
     nmcConfig = nmcFolder + "namecoin.conf"
+    logger.debug("DEBUG: Looking for namecoin config at: %s", nmcConfig)
+
     try:
-        nmc = open(nmcConfig, "r")
+        with open(nmcConfig, "r") as nmc:
+            logger.debug("DEBUG: Reading namecoin config file")
+            while True:
+                line = nmc.readline()
+                if line == "":
+                    break
+                parts = line.split("=")
+                if len(parts) == 2:
+                    key = parts[0]
+                    val = parts[1].rstrip()
 
-        while True:
-            line = nmc.readline()
-            if line == "":
-                break
-            parts = line.split("=")
-            if len(parts) == 2:
-                key = parts[0]
-                val = parts[1].rstrip()
+                    if key == "rpcuser" and not hasUser:
+                        defaultUser = val
+                        logger.debug("DEBUG: Found rpcuser in config")
+                    if key == "rpcpassword" and not hasPass:
+                        defaultPass = val
+                        logger.debug("DEBUG: Found rpcpassword in config")
+                    if key == "rpcport":
+                        defaults.namecoinDefaultRpcPort = val
+                        logger.debug("DEBUG: Found rpcport in config: %s", val)
 
-                if key == "rpcuser" and not hasUser:
-                    defaultUser = val
-                if key == "rpcpassword" and not hasPass:
-                    defaultPass = val
-                if key == "rpcport":
-                    defaults.namecoinDefaultRpcPort = val
-
-        nmc.close()
     except IOError:
-        logger.warning(
-            "%s unreadable or missing, Namecoin support deactivated", nmcConfig
-        )
+        logger.warning("DEBUG: %s unreadable or missing, Namecoin support deactivated", nmcConfig)
     except Exception:
-        logger.warning("Error processing namecoin.conf", exc_info=True)
+        logger.warning("DEBUG: Error processing namecoin.conf", exc_info=True)
 
-    # If still nothing found, set empty at least.
+    # Set defaults if not found
     if not hasUser:
+        logger.debug("DEBUG: Setting default rpcuser")
         config.set(configSection, "namecoinrpcuser", defaultUser)
     if not hasPass:
+        logger.debug("DEBUG: Setting default rpcpassword")
         config.set(configSection, "namecoinrpcpassword", defaultPass)
-
-    # Set default port now, possibly to found value.
     if not hasPort:
+        logger.debug("DEBUG: Setting default rpcport: %s", defaults.namecoinDefaultRpcPort)
         config.set(configSection, "namecoinrpcport", defaults.namecoinDefaultRpcPort)

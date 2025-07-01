@@ -23,6 +23,7 @@ import gc
 import os
 import time
 import sqlite3
+import traceback
 
 import queues
 import state
@@ -50,6 +51,8 @@ class singleCleaner(StoppableThread):
         gc.disable()
         timeWeLastClearedInventoryAndPubkeysTables = 0
         try:
+            print("DEBUG: singleCleaner thread started")
+            print("DEBUG: Loading maximumLengthOfTimeToBotherResendingMessages from config")
             state.maximumLengthOfTimeToBotherResendingMessages = (
                 config.getfloat(
                     'bitmessagesettings', 'stopresendingafterxdays')
@@ -58,14 +61,19 @@ class singleCleaner(StoppableThread):
                 config.getfloat(
                     'bitmessagesettings', 'stopresendingafterxmonths')
                 * (60 * 60 * 24 * 365) / 12)
-        except:  # noqa:E722
+            print(f"DEBUG: maximumLengthOfTimeToBotherResendingMessages set to {state.maximumLengthOfTimeToBotherResendingMessages}")
+        except Exception as e:  # noqa:E722
+            print(f"DEBUG: Error loading resend timing config: {str(e)}")
+            print("DEBUG: Using default infinite value for maximumLengthOfTimeToBotherResendingMessages")
             # Either the user hasn't set stopresendingafterxdays and
             # stopresendingafterxmonths yet or the options are missing
             # from the config file.
             state.maximumLengthOfTimeToBotherResendingMessages = float('inf')
 
         while state.shutdown == 0:
+            print("DEBUG: singleCleaner cycle starting")
             self.stop.wait(self.cycleLength)
+            print("DEBUG: Flushing inventory to disk")
             queues.UISignalQueue.put((
                 'updateStatusBar',
                 'Doing housekeeping (Flushing inventory in memory to disk...)'
@@ -78,10 +86,12 @@ class singleCleaner(StoppableThread):
             # save memory.
             # FIXME redundant?
             if state.thisapp.daemon or not state.enableGUI:
+                print("DEBUG: Clearing UISignalQueue as running in daemon mode or GUI disabled")
                 queues.UISignalQueue.queue.clear()
 
             tick = int(time.time())
             if timeWeLastClearedInventoryAndPubkeysTables < tick - 7380:
+                print("DEBUG: Cleaning inventory and pubkeys tables")
                 timeWeLastClearedInventoryAndPubkeysTables = tick
                 state.Inventory.clean()
                 queues.workerQueue.put(('sendOnionPeerObj', ''))
@@ -100,21 +110,28 @@ class singleCleaner(StoppableThread):
                     tick,
                     tick - state.maximumLengthOfTimeToBotherResendingMessages
                 )
+                print(f"DEBUG: Found {len(queryreturn)} messages to potentially resend")
                 for toAddress, ackData, status in queryreturn:
                     toAddress = toAddress.decode("utf-8", "replace")
                     status = status.decode("utf-8", "replace")
+                    print(f"DEBUG: Processing message - toAddress: {toAddress}, status: {status}")
                     if status == 'awaitingpubkey':
+                        print("DEBUG: Resending pubkey request")
                         self.resendPubkeyRequest(toAddress)
                     elif status == 'msgsent':
+                        print("DEBUG: Resending message")
                         self.resendMsg(ackData)
 
             try:
                 # Cleanup knownnodes and handle possible severe exception
                 # while writing it to disk
                 if state.enableNetwork:
+                    print("DEBUG: Cleaning up known nodes")
                     knownnodes.cleanupKnownNodes(connectionpool.pool)
             except Exception as err:
+                print(f"DEBUG: Error in knownnodes cleanup: {str(err)}")
                 if "Errno 28" in str(err):
+                    print("DEBUG: Disk full error detected")
                     self.logger.fatal(
                         '(while writing knownnodes to disk)'
                         ' Alert: Your disk or data storage volume is full.'
@@ -130,39 +147,49 @@ class singleCleaner(StoppableThread):
                     ))
                     # FIXME redundant?
                     if state.thisapp.daemon or not state.enableGUI:
+                        print("DEBUG: Exiting due to disk full")
                         os._exit(1)  # pylint: disable=protected-access
 
             # inv/object tracking
+            print("DEBUG: Cleaning connections")
             for connection in connectionpool.pool.connections():
                 connection.clean()
 
             # discovery tracking
+            print("DEBUG: Cleaning discovered peers")
             exp = time.time() - singleCleaner.expireDiscoveredPeers
             reaper = (k for k, v in state.discoveredPeers.items() if v < exp)
             for k in reaper:
                 try:
                     del state.discoveredPeers[k]
                 except KeyError:
+                    print(f"DEBUG: Key {k} not found in discoveredPeers during cleanup")
                     pass
             # ..todo:: cleanup pending upload / download
 
+            print("DEBUG: Running garbage collection")
             gc.collect()
+            print("DEBUG: singleCleaner cycle completed")
 
     def resendPubkeyRequest(self, address):
         """Resend pubkey request for address"""
+        print(f"DEBUG: Resending pubkey request for address: {address}")
         self.logger.debug(
             'It has been a long time and we haven\'t heard a response to our'
             ' getpubkey request. Sending again.'
         )
         try:
+            print(f"DEBUG: Removing address {address} from neededPubkeys")
             # We need to take this entry out of the neededPubkeys structure
             # because the queues.workerQueue checks to see whether the entry
             # is already present and will not do the POW and send the message
             # because it assumes that it has already done it recently.
             del state.neededPubkeys[address]
         except KeyError:
+            print(f"DEBUG: Address {address} not found in neededPubkeys")
             pass
         except RuntimeError:
+            print(f"DEBUG: RuntimeError while removing {address} from neededPubkeys")
             self.logger.warning(
                 "Can't remove %s from neededPubkeys, requesting pubkey will be delayed", address, exc_info=True)
 
@@ -170,21 +197,26 @@ class singleCleaner(StoppableThread):
             'updateStatusBar',
             'Doing work necessary to again attempt to request a public key...'
         ))
+        print(f"DEBUG: Updating sent table for address {address}")
         sqlExecute(
             "UPDATE sent SET status = 'msgqueued'"
             " WHERE toaddress = ? AND folder = 'sent'", dbstr(address))
         queues.workerQueue.put(('sendmessage', ''))
+        print("DEBUG: Pubkey request resent successfully")
 
     def resendMsg(self, ackdata):
         """Resend message by ackdata"""
+        print(f"DEBUG: Resending message with ackdata: {ackdata}")
         self.logger.debug(
             'It has been a long time and we haven\'t heard an acknowledgement'
             ' to our msg. Sending again.'
         )
+        print("DEBUG: Updating sent table with binary ackdata")
         rowcount = sqlExecute(
             "UPDATE sent SET status = 'msgqueued'"
             " WHERE ackdata = ? AND folder = 'sent'", sqlite3.Binary(ackdata))
         if rowcount < 1:
+            print("DEBUG: Trying with text ackdata as binary didn't match")
             sqlExecute(
                 "UPDATE sent SET status = 'msgqueued'"
                 " WHERE ackdata = CAST(? AS TEXT) AND folder = 'sent'", ackdata)
@@ -193,3 +225,4 @@ class singleCleaner(StoppableThread):
             'updateStatusBar',
             'Doing work necessary to again attempt to deliver a message...'
         ))
+        print("DEBUG: Message resent successfully")

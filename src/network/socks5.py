@@ -15,7 +15,7 @@ logger = logging.getLogger('default')
 
 
 class Socks5AuthError(ProxyError):
-    """Rised when the socks5 protocol encounters an authentication error"""
+    """Raised when the socks5 protocol encounters an authentication error"""
     errorCodes = (
         "Succeeded",
         "Authentication is required",
@@ -24,9 +24,14 @@ class Socks5AuthError(ProxyError):
         "Unknown error"
     )
 
+    def __init__(self, code):
+        super(Socks5AuthError, self).__init__(code)
+        logger.debug("DEBUG: Socks5AuthError created with code %d: %s", 
+                    code, self.errorCodes[code])
+
 
 class Socks5Error(ProxyError):
-    """Rised when socks5 protocol encounters an error"""
+    """Raised when socks5 protocol encounters an error"""
     errorCodes = (
         "Succeeded",
         "General SOCKS server failure",
@@ -40,80 +45,100 @@ class Socks5Error(ProxyError):
         "Unknown error"
     )
 
+    def __init__(self, code):
+        super(Socks5Error, self).__init__(code)
+        logger.debug("DEBUG: Socks5Error created with code %d: %s", 
+                    code, self.errorCodes[code])
+
 
 class Socks5(Proxy):
     """A socks5 proxy base class"""
     def __init__(self, address=None):
+        logger.debug("DEBUG: Initializing Socks5 proxy with address: %s", address)
         Proxy.__init__(self, address)
         self.ipaddr = None
-        self.destport = address[1]
+        self.destport = address[1] if address else None
+        logger.debug("DEBUG: Socks5 initialized with destport: %s", self.destport)
 
     def state_init(self):
         """Protocol initialization (before connection is established)"""
+        logger.debug("DEBUG: Entering state_init")
         if self._auth:
+            logger.debug("DEBUG: Using authentication, sending methods 0x00 and 0x02")
             self.append_write_buf(struct.pack('BBBB', 0x05, 0x02, 0x00, 0x02))
         else:
+            logger.debug("DEBUG: No authentication, sending method 0x00")
             self.append_write_buf(struct.pack('BBB', 0x05, 0x01, 0x00))
+        
         self.set_state("auth_1", length=0, expectBytes=2)
+        logger.debug("DEBUG: Transitioning to state auth_1")
         return True
 
     def state_auth_1(self):
         """Perform authentication if peer is requesting it."""
+        logger.debug("DEBUG: Entering state_auth_1 with read_buf: %s", self.read_buf[:2])
         ret = struct.unpack('BB', self.read_buf[:2])
         if ret[0] != 5:
-            # general error
+            logger.error("DEBUG: Invalid SOCKS version: %d", ret[0])
             raise GeneralProxyError(1)
         elif ret[1] == 0:
-            # no auth required
+            logger.debug("DEBUG: No authentication required")
             self.set_state("auth_done", length=2)
         elif ret[1] == 2:
-            # username/password
-            self.append_write_buf(
-                struct.pack(
-                    'BB', 1, len(self._auth[0])) + self._auth[0] + struct.pack(
-                        'B', len(self._auth[1])) + self._auth[1])
+            logger.debug("DEBUG: Username/password authentication required")
+            auth_packet = struct.pack('BB', 1, len(self._auth[0])) + self._auth[0] + \
+                         struct.pack('B', len(self._auth[1])) + self._auth[1]
+            self.append_write_buf(auth_packet)
             self.set_state("auth_needed", length=2, expectBytes=2)
         else:
             if ret[1] == 0xff:
-                # auth error
+                logger.error("DEBUG: All authentication methods rejected")
                 raise Socks5AuthError(2)
             else:
-                # other error
+                logger.error("DEBUG: Unknown authentication method: %d", ret[1])
                 raise GeneralProxyError(1)
         return True
 
     def state_auth_needed(self):
         """Handle response to authentication attempt"""
+        logger.debug("DEBUG: Entering state_auth_needed with read_buf: %s", self.read_buf[:2])
         ret = struct.unpack('BB', self.read_buf[0:2])
         if ret[0] != 1:
-            # general error
+            logger.error("DEBUG: Invalid authentication version: %d", ret[0])
             raise GeneralProxyError(1)
         if ret[1] != 0:
-            # auth error
+            logger.error("DEBUG: Authentication failed with code: %d", ret[1])
             raise Socks5AuthError(3)
-        # all ok
+            
+        logger.debug("DEBUG: Authentication successful")
         self.set_state("auth_done", length=2)
         return True
 
     def state_pre_connect(self):
         """Handle feedback from socks5 while it is connecting on our behalf."""
-        # Get the response
+        logger.debug("DEBUG: Entering state_pre_connect")
         if self.read_buf[0:1] != six.int2byte(0x05):
+            logger.error("DEBUG: Invalid SOCKS version in response")
             self.close()
             raise GeneralProxyError(1)
         elif self.read_buf[1:2] != six.int2byte(0x00):
-            # Connection failed
+            error_code = six.byte2int(self.read_buf[1:2])
+            logger.error("DEBUG: Connection failed with code: %d", error_code)
             self.close()
-            if six.byte2int(self.read_buf[1:2]) <= 8:
-                raise Socks5Error(six.byte2int(self.read_buf[1:2]))
+            if error_code <= 8:
+                raise Socks5Error(error_code)
             else:
                 raise Socks5Error(9)
-        # Get the bound address/port
-        elif self.read_buf[3:4] == six.int2byte(0x01):
+                
+        addr_type = self.read_buf[3:4]
+        if addr_type == six.int2byte(0x01):
+            logger.debug("DEBUG: IPv4 address type received")
             self.set_state("proxy_addr_1", length=4, expectBytes=4)
-        elif self.read_buf[3:4] == six.int2byte(0x03):
+        elif addr_type == six.int2byte(0x03):
+            logger.debug("DEBUG: Domain name address type received")
             self.set_state("proxy_addr_2_1", length=4, expectBytes=1)
         else:
+            logger.error("DEBUG: Unsupported address type: %s", addr_type)
             self.close()
             raise GeneralProxyError(1)
         return True
@@ -121,79 +146,82 @@ class Socks5(Proxy):
     def state_proxy_addr_1(self):
         """Handle IPv4 address returned for peer"""
         self.boundaddr = self.read_buf[0:4]
+        logger.debug("DEBUG: Received IPv4 bound address: %s", self.boundaddr)
         self.set_state("proxy_port", length=4, expectBytes=2)
         return True
 
     def state_proxy_addr_2_1(self):
-        """
-        Handle other addresses than IPv4 returned for peer
-        (e.g. IPv6, onion, ...). This is part 1 which retrieves the
-        length of the data.
-        """
+        """Handle domain name length"""
         self.address_length = six.byte2int(self.read_buf[0:1])
-        self.set_state(
-            "proxy_addr_2_2", length=1, expectBytes=self.address_length)
+        logger.debug("DEBUG: Received domain name length: %d", self.address_length)
+        self.set_state("proxy_addr_2_2", length=1, expectBytes=self.address_length)
         return True
 
     def state_proxy_addr_2_2(self):
-        """
-        Handle other addresses than IPv4 returned for peer
-        (e.g. IPv6, onion, ...). This is part 2 which retrieves the data.
-        """
+        """Handle domain name"""
         self.boundaddr = self.read_buf[0:self.address_length]
+        logger.debug("DEBUG: Received domain name: %s", self.boundaddr)
         self.set_state("proxy_port", length=self.address_length, expectBytes=2)
         return True
 
     def state_proxy_port(self):
         """Handle peer's port being returned."""
         self.boundport = struct.unpack(">H", self.read_buf[0:2])[0]
+        logger.debug("DEBUG: Received bound port: %d", self.boundport)
+        
         self.__proxysockname = (self.boundaddr, self.boundport)
         if self.ipaddr is not None:
-            self.__proxypeername = (
-                socket.inet_ntoa(self.ipaddr), self.destination[1])
+            self.__proxypeername = (socket.inet_ntoa(self.ipaddr), self.destination[1])
         else:
             self.__proxypeername = (self.destination[0], self.destport)
+            
+        logger.debug("DEBUG: Proxy sockname: %s, peername: %s", 
+                    self.__proxysockname, self.__proxypeername)
+        
         self.set_state("proxy_handshake_done", length=2)
         return True
 
     def proxy_sock_name(self):
-        """Handle return value when using SOCKS5
-        for DNS resolving instead of connecting."""
-        return socket.inet_ntoa(self.__proxysockname[0])
+        """Return resolved address when using SOCKS5 for DNS resolving"""
+        result = socket.inet_ntoa(self.__proxysockname[0])
+        logger.debug("DEBUG: proxy_sock_name returning: %s", result)
+        return result
 
 
 class Socks5Connection(Socks5):
     """Child socks5 class used for making outbound connections."""
     def state_auth_done(self):
         """Request connection to be made"""
-        # Now we can request the actual connection
+        logger.debug("DEBUG: Socks5Connection state_auth_done")
         self.append_write_buf(struct.pack('BBB', 0x05, 0x01, 0x00))
-        # If the given destination address is an IP address, we'll
-        # use the IPv4 address request even if remote resolving was specified.
+        
         try:
             self.ipaddr = socket.inet_aton(self.destination[0])
+            logger.debug("DEBUG: Using IPv4 address type for: %s", self.destination[0])
             self.append_write_buf(six.int2byte(0x01) + self.ipaddr)
-        except socket.error:  # may be IPv6!
-            # Well it's not an IP number,  so it's probably a DNS name.
+        except socket.error:
             if self._remote_dns:
-                # Resolve remotely
+                logger.debug("DEBUG: Using remote DNS for: %s", self.destination[0])
                 self.ipaddr = None
                 self.append_write_buf(six.int2byte(0x03) + six.int2byte(
                     len(self.destination[0])) + self.destination[0].encode("utf-8", "replace"))
             else:
-                # Resolve locally
+                logger.debug("DEBUG: Resolving locally: %s", self.destination[0])
                 self.ipaddr = socket.inet_aton(
                     socket.gethostbyname(self.destination[0]))
                 self.append_write_buf(six.int2byte(0x01) + self.ipaddr)
+                
         self.append_write_buf(struct.pack(">H", self.destination[1]))
         self.set_state("pre_connect", length=0, expectBytes=4)
         return True
 
     def state_pre_connect(self):
         """Tell socks5 to initiate a connection"""
+        logger.debug("DEBUG: Socks5Connection state_pre_connect")
         try:
             return Socks5.state_pre_connect(self)
         except Socks5Error as e:
+            logger.error("DEBUG: Socks5Error in state_pre_connect: %s", e.message)
             self.close_reason = e.message
             self.set_state("close")
 
@@ -201,13 +229,14 @@ class Socks5Connection(Socks5):
 class Socks5Resolver(Socks5):
     """DNS resolver class using socks5"""
     def __init__(self, host):
+        logger.debug("DEBUG: Initializing Socks5Resolver for host: %s", host)
         self.host = host
         self.port = 8444
         Socks5.__init__(self, address=Peer(self.host, self.port))
 
     def state_auth_done(self):
         """Perform resolving"""
-        # Now we can request the actual connection
+        logger.debug("DEBUG: Socks5Resolver state_auth_done")
         self.append_write_buf(struct.pack('BBB', 0x05, 0xF0, 0x00))
         self.append_write_buf(six.int2byte(0x03) + six.int2byte(
             len(self.host)) + bytes(self.host))
@@ -216,10 +245,7 @@ class Socks5Resolver(Socks5):
         return True
 
     def resolved(self):
-        """
-        Resolving is done, process the return value.
-        To use this within PyBitmessage, a callback needs to be
-        implemented which hasn't been done yet.
-        """
-        logger.debug(
-            'Resolved %s as %s', self.host, self.proxy_sock_name())
+        """Log resolved address"""
+        resolved_addr = self.proxy_sock_name()
+        logger.debug('DEBUG: Resolved %s as %s', self.host, resolved_addr)
+        return resolved_addr

@@ -14,74 +14,109 @@ logger = logging.getLogger('default')
 # namespace.  This can be used to setup a different code path for
 # binary distributions vs source distributions.
 frozen = getattr(sys, 'frozen', None)
+logger.debug("DEBUG: frozen attribute: %s", frozen)
 
 
 def lookupExeFolder():
     """Returns executable folder path"""
+    logger.debug("DEBUG: lookupExeFolder called")
     if frozen:
-        exeFolder = (
-            # targetdir/Bitmessage.app/Contents/MacOS/Bitmessage
-            os.path.dirname(sys.executable).split(os.path.sep)[0]
-            if frozen == "macosx_app" else os.path.dirname(sys.executable))
+        logger.debug("DEBUG: lookupExeFolder - frozen environment detected")
+        if frozen == "macosx_app":
+            logger.debug("DEBUG: lookupExeFolder - MacOS app bundle detected")
+            exeFolder = os.path.dirname(sys.executable).split(os.path.sep)[0]
+        else:
+            logger.debug("DEBUG: lookupExeFolder - other frozen environment")
+            exeFolder = os.path.dirname(sys.executable)
     elif os.getenv('APPIMAGE'):
+        logger.debug("DEBUG: lookupExeFolder - APPIMAGE environment detected")
         exeFolder = os.path.dirname(os.getenv('APPIMAGE'))
     elif __file__:
+        logger.debug("DEBUG: lookupExeFolder - using __file__ path")
         exeFolder = os.path.dirname(__file__)
     else:
+        logger.debug("DEBUG: lookupExeFolder - no path found, returning empty string")
         return ''
-    return exeFolder + os.path.sep
+    
+    result = exeFolder + os.path.sep
+    logger.debug("DEBUG: lookupExeFolder returning: %s", result)
+    return result
 
 
 def lookupAppdataFolder():
     """Returns path of the folder where application data is stored"""
+    logger.debug("DEBUG: lookupAppdataFolder called")
     APPNAME = "PyBitmessage"
     dataFolder = os.environ.get('BITMESSAGE_HOME')
+    
     if dataFolder:
+        logger.debug("DEBUG: lookupAppdataFolder - BITMESSAGE_HOME found: %s", dataFolder)
         if dataFolder[-1] not in (os.path.sep, os.path.altsep):
             dataFolder += os.path.sep
     elif sys.platform == 'darwin':
+        logger.debug("DEBUG: lookupAppdataFolder - Darwin platform detected")
         try:
             dataFolder = os.path.join(
                 os.environ['HOME'],
                 'Library/Application Support/', APPNAME
             ) + '/'
-
+            logger.debug("DEBUG: lookupAppdataFolder - MacOS data folder: %s", dataFolder)
         except KeyError:
+            logger.error("DEBUG: lookupAppdataFolder - Could not find home folder")
             sys.exit(
                 'Could not find home folder, please report this message'
                 ' and your OS X version to the BitMessage Github.')
     elif sys.platform.startswith('win'):
+        logger.debug("DEBUG: lookupAppdataFolder - Windows platform detected")
         dataFolder = os.path.join(os.environ['APPDATA'], APPNAME) + os.path.sep
+        logger.debug("DEBUG: lookupAppdataFolder - Windows data folder: %s", dataFolder)
     else:
+        logger.debug("DEBUG: lookupAppdataFolder - assuming Unix-like platform")
         try:
             dataFolder = os.path.join(os.environ['XDG_CONFIG_HOME'], APPNAME)
+            logger.debug("DEBUG: lookupAppdataFolder - XDG_CONFIG_HOME found: %s", dataFolder)
         except KeyError:
             dataFolder = os.path.join(os.environ['HOME'], '.config', APPNAME)
+            logger.debug("DEBUG: lookupAppdataFolder - using default config location: %s", dataFolder)
 
         # Migrate existing data to the proper location
         # if this is an existing install
+        old_path = os.path.join(os.environ['HOME'], '.%s' % APPNAME)
+        logger.debug("DEBUG: lookupAppdataFolder - checking old data path: %s", old_path)
         try:
-            move(os.path.join(os.environ['HOME'], '.%s' % APPNAME), dataFolder)
+            move(old_path, dataFolder)
             logger.info('Moving data folder to %s', dataFolder)
         except IOError:
-            # Old directory may not exist.
+            logger.debug("DEBUG: lookupAppdataFolder - old directory does not exist or move failed")
             pass
         dataFolder = dataFolder + os.path.sep
+    
+    logger.debug("DEBUG: lookupAppdataFolder returning: %s", dataFolder)
     return dataFolder
 
 
 def codePath():
     """Returns path to the program sources"""
+    logger.debug("DEBUG: codePath called")
     if not frozen:
-        return os.path.dirname(__file__)
-    return (
-        os.environ.get('RESOURCEPATH')
-        # pylint: disable=protected-access
-        if frozen == "macosx_app" else sys._MEIPASS)
+        logger.debug("DEBUG: codePath - not frozen, using __file__")
+        result = os.path.dirname(__file__)
+    else:
+        if frozen == "macosx_app":
+            logger.debug("DEBUG: codePath - MacOS app bundle detected")
+            result = os.environ.get('RESOURCEPATH')
+        else:
+            logger.debug("DEBUG: codePath - other frozen environment, using MEIPASS")
+            # pylint: disable=protected-access
+            result = sys._MEIPASS
+    
+    logger.debug("DEBUG: codePath returning: %s", result)
+    return result
 
 
 def tail(f, lines=20):
     """Returns last lines in the f file object"""
+    logger.debug("DEBUG: tail called with lines=%d", lines)
     total_lines_wanted = lines
 
     BLOCK_SIZE = 1024
@@ -106,24 +141,42 @@ def tail(f, lines=20):
         lines_to_go -= lines_found
         block_end_byte -= BLOCK_SIZE
         block_number -= 1
+        logger.debug("DEBUG: tail - lines_to_go=%d, block_end_byte=%d", lines_to_go, block_end_byte)
+    
     all_read_text = ''.join(reversed(blocks))
-    return '\n'.join(all_read_text.splitlines()[-total_lines_wanted:])
+    result = '\n'.join(all_read_text.splitlines()[-total_lines_wanted:])
+    logger.debug("DEBUG: tail returning %d lines", len(result.splitlines()))
+    return result
 
 
 def lastCommit():
     """
     Returns last commit information as dict with 'commit' and 'time' keys
     """
+    logger.debug("DEBUG: lastCommit called")
     githeadfile = os.path.join(codePath(), '..', '.git', 'logs', 'HEAD')
     result = {}
+    
     if os.path.isfile(githeadfile):
+        logger.debug("DEBUG: lastCommit - git head file found: %s", githeadfile)
         try:
             with open(githeadfile, 'rt') as githead:
                 line = tail(githead, 1)
+                logger.debug("DEBUG: lastCommit - last line: %s", line)
+            
             result['commit'] = line.split()[1]
-            result['time'] = datetime.fromtimestamp(
-                float(re.search(r'>\s*(.*?)\s', line).group(1))
-            )
-        except (IOError, AttributeError, TypeError):
+            logger.debug("DEBUG: lastCommit - commit hash: %s", result['commit'])
+            
+            timestamp_match = re.search(r'>\s*(.*?)\s', line)
+            if timestamp_match:
+                timestamp = float(timestamp_match.group(1))
+                result['time'] = datetime.fromtimestamp(timestamp)
+                logger.debug("DEBUG: lastCommit - commit time: %s", result['time'])
+        except (IOError, AttributeError, TypeError) as e:
+            logger.debug("DEBUG: lastCommit - error processing git file: %s", str(e))
             pass
+    else:
+        logger.debug("DEBUG: lastCommit - git head file not found")
+    
+    logger.debug("DEBUG: lastCommit returning: %s", result)
     return result

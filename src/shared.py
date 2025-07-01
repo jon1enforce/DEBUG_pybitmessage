@@ -1,5 +1,5 @@
 """
-Some shared functions
+Shared functions with enhanced debugging
 
 .. deprecated:: 0.6.3
   Should be moved to different places and this file removed,
@@ -7,229 +7,276 @@ Some shared functions
 """
 from __future__ import division
 
-# Libraries.
+import sys
+import logging
 import hashlib
 import os
 import stat
 import subprocess  # nosec B404
-import sys
 from binascii import hexlify
 from six.moves.reprlib import repr
+
+# Setup debug logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='DEBUG: %(asctime)s - %(levelname)s - %(message)s',
+    stream=sys.stdout
+)
+logger = logging.getLogger(__name__)
+
+logger.debug("Initializing shared module")
 
 # Project imports.
 import highlevelcrypto
 import state
 from addresses import decodeAddress, encodeVarint
 from bmconfigparser import config
-from debug import logger
+from debug import logger as debug_logger
 from helper_sql import sqlQuery
 from dbcompat import dbstr
 
+logger.debug("Imported all required modules")
 
+# Global dictionaries
 myECCryptorObjects = {}
 MyECSubscriptionCryptorObjects = {}
-# The key in this dictionary is the RIPE hash which is encoded
-# in an address and value is the address itself.
 myAddressesByHash = {}
-# The key in this dictionary is the tag generated from the address.
 myAddressesByTag = {}
 broadcastSendersForWhichImWatching = {}
 
+logger.debug("Initialized global dictionaries")
 
 def isAddressInMyAddressBook(address):
-    """Is address in my addressbook?"""
+    """Check if address exists in addressbook with debug logging"""
+    logger.debug("Checking if address exists in addressbook: %s", address)
     queryreturn = sqlQuery(
         '''select TRUE from addressbook where address=?''',
         dbstr(address))
-    return queryreturn != []
+    result = queryreturn != []
+    logger.debug("Address %s %s in addressbook", address, "exists" if result else "does not exist")
+    return result
 
-
-# At this point we should really just have a isAddressInMy(book, address)...
 def isAddressInMySubscriptionsList(address):
-    """Am I subscribed to this address?"""
+    """Check if address exists in subscriptions with debug logging"""
+    logger.debug("Checking if address exists in subscriptions: %s", address)
     queryreturn = sqlQuery(
         '''select TRUE from subscriptions where address=?''',
         dbstr(address))
-    return queryreturn != []
-
+    result = queryreturn != []
+    logger.debug("Address %s %s in subscriptions", address, "exists" if result else "does not exist")
+    return result
 
 def isAddressInMyAddressBookSubscriptionsListOrWhitelist(address):
-    """
-    Am I subscribed to this address, is it in my addressbook or whitelist?
-    """
+    """Check address presence in multiple lists with debug logging"""
+    logger.debug("Checking address presence in multiple lists: %s", address)
+    
     if isAddressInMyAddressBook(address):
+        logger.debug("Address found in addressbook")
         return True
 
+    logger.debug("Checking whitelist for address")
     queryreturn = sqlQuery(
         '''SELECT address FROM whitelist where address=?'''
         ''' and enabled = '1' ''',
         dbstr(address))
     if queryreturn != []:
+        logger.debug("Address found in whitelist")
         return True
 
+    logger.debug("Checking subscriptions for address")
     queryreturn = sqlQuery(
         '''select address from subscriptions where address=?'''
         ''' and enabled = '1' ''',
         dbstr(address))
-    if queryreturn != []:
-        return True
-    return False
-
+    result = queryreturn != []
+    logger.debug("Address %s %s in enabled subscriptions", address, "exists" if result else "does not exist")
+    return result
 
 def reloadMyAddressHashes():
-    """Reload keys for user's addresses from the config file"""
-    logger.debug('reloading keys from keys.dat file')
+    """Reload address hashes with detailed debugging"""
+    logger.debug("Reloading address hashes from keys.dat")
+    
+    # Clear existing data
     myECCryptorObjects.clear()
     myAddressesByHash.clear()
     myAddressesByTag.clear()
-    # myPrivateKeys.clear()
+    logger.debug("Cleared existing address hash data")
 
-    keyfileSecure = checkSensitiveFilePermissions(os.path.join(
-        state.appdata, 'keys.dat'))
+    # Check file permissions
+    keyfile = os.path.join(state.appdata, 'keys.dat')
+    keyfileSecure = checkSensitiveFilePermissions(keyfile)
     hasEnabledKeys = False
+    logger.debug("Keys.dat permissions secure: %s", keyfileSecure)
+
+    # Process each address
     for addressInKeysFile in config.addresses():
         if not config.getboolean(addressInKeysFile, 'enabled'):
+            logger.debug("Skipping disabled address: %s", addressInKeysFile)
             continue
 
         hasEnabledKeys = True
+        logger.debug("Processing enabled address: %s", addressInKeysFile)
 
-        addressVersionNumber, streamNumber, hashobj = decodeAddress(
-            addressInKeysFile)[1:]
-        if addressVersionNumber not in (2, 3, 4):
-            logger.error(
-                'Error in reloadMyAddressHashes: Can\'t handle'
-                ' address versions other than 2, 3, or 4.')
-            continue
-
-        # Returns a simple 32 bytes of information encoded in 64 Hex characters
         try:
+            addressVersionNumber, streamNumber, hashobj = decodeAddress(
+                addressInKeysFile)[1:]
+            logger.debug("Decoded address: version=%s, stream=%s", 
+                        addressVersionNumber, streamNumber)
+            
+            if addressVersionNumber not in (2, 3, 4):
+                logger.error(
+                    'Cannot handle address version %s for address %s',
+                    addressVersionNumber, addressInKeysFile)
+                continue
+
+            # Process private key
             privEncryptionKey = hexlify(
                 highlevelcrypto.decodeWalletImportFormat(config.get(
                     addressInKeysFile, 'privencryptionkey').encode()
                 ))
+            logger.debug("Decoded private key for address")
+
+            if len(privEncryptionKey) == 64:
+                myECCryptorObjects[hashobj] = \
+                    highlevelcrypto.makeCryptor(privEncryptionKey)
+                myAddressesByHash[bytes(hashobj)] = addressInKeysFile
+                tag = highlevelcrypto.double_sha512(
+                    encodeVarint(addressVersionNumber)
+                    + encodeVarint(streamNumber) + hashobj)[32:]
+                myAddressesByTag[bytes(tag)] = addressInKeysFile
+                logger.debug("Added cryptor objects for address")
         except ValueError:
             logger.error(
-                'Error in reloadMyAddressHashes: failed to decode'
-                ' one of the private keys for address %s', addressInKeysFile)
+                'Failed to decode private key for address %s',
+                addressInKeysFile)
             continue
-        # It is 32 bytes encoded as 64 hex characters
-        if len(privEncryptionKey) == 64:
-            myECCryptorObjects[hashobj] = \
-                highlevelcrypto.makeCryptor(privEncryptionKey)
-            myAddressesByHash[bytes(hashobj)] = addressInKeysFile
-            tag = highlevelcrypto.double_sha512(
-                encodeVarint(addressVersionNumber)
-                + encodeVarint(streamNumber) + hashobj)[32:]
-            myAddressesByTag[bytes(tag)] = addressInKeysFile
+        except Exception as e:
+            logger.error(
+                'Unexpected error processing address %s: %s',
+                addressInKeysFile, str(e))
+            continue
 
+    # Fix permissions if needed
     if not keyfileSecure:
-        fixSensitiveFilePermissions(os.path.join(
-            state.appdata, 'keys.dat'), hasEnabledKeys)
-
+        logger.debug("Attempting to fix keyfile permissions")
+        fixSensitiveFilePermissions(keyfile, hasEnabledKeys)
+    else:
+        logger.debug("Keyfile permissions are secure")
 
 def reloadBroadcastSendersForWhichImWatching():
-    """
-    Reinitialize runtime data for the broadcasts I'm subscribed to
-    from the config file
-    """
+    """Reload broadcast senders with detailed debugging"""
+    logger.debug("Reloading broadcast senders")
+    
     broadcastSendersForWhichImWatching.clear()
     MyECSubscriptionCryptorObjects.clear()
+    logger.debug("Cleared existing broadcast sender data")
+
     queryreturn = sqlQuery('SELECT address FROM subscriptions where enabled=1')
-    logger.debug('reloading subscriptions...')
+    logger.debug("Found %d enabled subscriptions", len(queryreturn))
+    
     for row in queryreturn:
         address, = row
         address = address.decode("utf-8", "replace")
-        # status
-        addressVersionNumber, streamNumber, hashobj = decodeAddress(address)[1:]
-        if addressVersionNumber == 2:
-            broadcastSendersForWhichImWatching[hashobj] = 0
-        # Now, for all addresses, even version 2 addresses,
-        # we should create Cryptor objects in a dictionary which we will
-        # use to attempt to decrypt encrypted broadcast messages.
+        logger.debug("Processing subscription: %s", address)
+        
+        try:
+            addressVersionNumber, streamNumber, hashobj = decodeAddress(address)[1:]
+            logger.debug("Decoded subscription address: version=%s", addressVersionNumber)
+            
+            if addressVersionNumber == 2:
+                broadcastSendersForWhichImWatching[hashobj] = 0
+                logger.debug("Added version 2 address to broadcast senders")
 
-        if addressVersionNumber <= 3:
-            privEncryptionKey = hashlib.sha512(
-                encodeVarint(addressVersionNumber)
-                + encodeVarint(streamNumber) + hashobj
-            ).digest()[:32]
-            MyECSubscriptionCryptorObjects[bytes(hashobj)] = \
-                highlevelcrypto.makeCryptor(hexlify(privEncryptionKey))
-        else:
-            doubleHashOfAddressData = highlevelcrypto.double_sha512(
-                encodeVarint(addressVersionNumber)
-                + encodeVarint(streamNumber) + hashobj
-            )
-            tag = doubleHashOfAddressData[32:]
-            privEncryptionKey = doubleHashOfAddressData[:32]
-            MyECSubscriptionCryptorObjects[bytes(tag)] = \
-                highlevelcrypto.makeCryptor(hexlify(privEncryptionKey))
-
+            # Create cryptor objects
+            if addressVersionNumber <= 3:
+                privEncryptionKey = hashlib.sha512(
+                    encodeVarint(addressVersionNumber)
+                    + encodeVarint(streamNumber) + hashobj
+                ).digest()[:32]
+                MyECSubscriptionCryptorObjects[bytes(hashobj)] = \
+                    highlevelcrypto.makeCryptor(hexlify(privEncryptionKey))
+                logger.debug("Created cryptor for version <= 3 address")
+            else:
+                doubleHashOfAddressData = highlevelcrypto.double_sha512(
+                    encodeVarint(addressVersionNumber)
+                    + encodeVarint(streamNumber) + hashobj
+                )
+                tag = doubleHashOfAddressData[32:]
+                privEncryptionKey = doubleHashOfAddressData[:32]
+                MyECSubscriptionCryptorObjects[bytes(tag)] = \
+                    highlevelcrypto.makeCryptor(hexlify(privEncryptionKey))
+                logger.debug("Created cryptor for version > 3 address")
+        except Exception as e:
+            logger.error("Error processing subscription %s: %s", address, str(e))
+            continue
 
 def fixPotentiallyInvalidUTF8Data(text):
-    """Sanitise invalid UTF-8 strings"""
+    """Sanitize UTF-8 data with debug logging"""
+    logger.debug("Checking text for valid UTF-8 encoding")
     try:
         text.decode('utf-8')
+        logger.debug("Text is valid UTF-8")
         return text
     except UnicodeDecodeError:
+        logger.debug("Text contains invalid UTF-8, applying replacement")
         return 'Part of the message is corrupt. The message cannot be' \
             ' displayed the normal way.\n\n' + text.decode("utf-8", "replace")
 
-
 def checkSensitiveFilePermissions(filename):
-    """
-    :param str filename: path to the file
-    :return: True if file appears to have appropriate permissions.
-    """
+    """Check file permissions with debug logging"""
+    logger.debug("Checking permissions for file: %s", filename)
+    
     if sys.platform == 'win32':
-        # .. todo:: This might deserve extra checks by someone familiar with
-        # Windows systems.
+        logger.debug("Windows platform - skipping permission check")
         return True
-    elif sys.platform[:7] == 'freebsd':
-        # FreeBSD file systems are the same as major Linux file systems
+    elif sys.platform[:7] == 'freebsd' or sys.platform[:7] == 'openbsd':
+        logger.debug("FreeBSD platform - checking permissions")
         present_permissions = os.stat(filename)[0]
         disallowed_permissions = stat.S_IRWXG | stat.S_IRWXO
-        return present_permissions & disallowed_permissions == 0
+        result = present_permissions & disallowed_permissions == 0
+        logger.debug("FreeBSD permissions check result: %s", result)
+        return result
+
     try:
-        # Skip known problems for non-Win32 filesystems
-        # without POSIX permissions.
         fstype = subprocess.check_output(
             ['/usr/bin/stat', '-f', '-c', '%T', filename],
             stderr=subprocess.STDOUT
         )  # nosec B603
         if b'fuseblk' in fstype:
             logger.info(
-                'Skipping file permissions check for %s.'
-                ' Filesystem fuseblk detected.', filename)
+                'Skipping permissions check for fuseblk filesystem: %s',
+                filename)
             return True
-    except:  # noqa:E722
-        # Swallow exception here, but we might run into trouble later!
-        logger.error('Could not determine filesystem type. %s', filename)
+    except Exception as e:
+        logger.error('Could not determine filesystem type for %s: %s',
+                   filename, str(e))
+
     present_permissions = os.stat(filename)[0]
     disallowed_permissions = stat.S_IRWXG | stat.S_IRWXO
-    return present_permissions & disallowed_permissions == 0
+    result = present_permissions & disallowed_permissions == 0
+    logger.debug("File permissions check result: %s", result)
+    return result
 
-
-# Fixes permissions on a sensitive file.
 def fixSensitiveFilePermissions(filename, hasEnabledKeys):
-    """Try to change file permissions to be more restrictive"""
+    """Fix file permissions with debug logging"""
+    logger.debug("Attempting to fix permissions for file: %s", filename)
+    
     if hasEnabledKeys:
         logger.warning(
-            'Keyfile had insecure permissions, and there were enabled'
-            ' keys. The truly paranoid should stop using them immediately.')
+            'Insecure permissions on keyfile with enabled keys - paranoid users'
+            ' should stop using them')
     else:
-        logger.warning(
-            'Keyfile had insecure permissions, but there were no enabled keys.'
-        )
+        logger.warning('Insecure permissions on keyfile without enabled keys')
+
     try:
         present_permissions = os.stat(filename)[0]
         disallowed_permissions = stat.S_IRWXG | stat.S_IRWXO
         allowed_permissions = ((1 << 32) - 1) ^ disallowed_permissions
-        new_permissions = (
-            allowed_permissions & present_permissions)
+        new_permissions = (allowed_permissions & present_permissions)
         os.chmod(filename, new_permissions)
-
-        logger.info('Keyfile permissions automatically fixed.')
-
-    except Exception:
-        logger.exception('Keyfile permissions could not be fixed.')
+        logger.info('Successfully fixed keyfile permissions')
+    except Exception as e:
+        logger.error('Failed to fix keyfile permissions: %s', str(e))
         raise
+
+logger.debug("shared module initialization complete")

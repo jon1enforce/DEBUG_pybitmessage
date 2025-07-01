@@ -49,12 +49,12 @@ class BMConnectionPool(object):
     """
 
     def __init__(self):
-        asyncore.set_rates(
-            config.safeGetInt(
-                "bitmessagesettings", "maxdownloadrate"),
-            config.safeGetInt(
-                "bitmessagesettings", "maxuploadrate")
-        )
+        logger.debug("DEBUG: Initializing BMConnectionPool")
+        max_download = config.safeGetInt("bitmessagesettings", "maxdownloadrate")
+        max_upload = config.safeGetInt("bitmessagesettings", "maxuploadrate")
+        logger.debug("DEBUG: Setting asyncore rates - download: %s, upload: %s", max_download, max_upload)
+        asyncore.set_rates(max_download, max_upload)
+        
         self.outboundConnections = {}
         self.inboundConnections = {}
         self.listeningSockets = {}
@@ -63,36 +63,44 @@ class BMConnectionPool(object):
         self._lastSpawned = 0
         self._spawnWait = 2
         self._bootstrapped = False
+        logger.debug("DEBUG: Initialized empty connection pools")
 
-        trustedPeer = config.safeGet(
-            'bitmessagesettings', 'trustedpeer')
+        trustedPeer = config.safeGet('bitmessagesettings', 'trustedpeer')
         try:
             if trustedPeer:
                 host, port = trustedPeer.split(':')
                 self.trustedPeer = Peer(host, int(port))
+                logger.debug("DEBUG: Set trusted peer: %s:%s", host, port)
         except ValueError:
+            logger.error("DEBUG: Invalid trustedpeer config: %s", trustedPeer)
             sys.exit(
                 'Bad trustedpeer config setting! It should be set as'
                 ' trustedpeer=<hostname>:<portnumber>'
             )
 
     def __len__(self):
-        return len(self.outboundConnections) + len(self.inboundConnections)
+        total = len(self.outboundConnections) + len(self.inboundConnections)
+        logger.debug("DEBUG: Total connections count: %s", total)
+        return total
 
     def connections(self):
         """
         Shortcut for combined list of connections from
         `inboundConnections` and `outboundConnections` dicts
         """
-        return list(self.inboundConnections.values()) + list(self.outboundConnections.values())
+        connections = list(self.inboundConnections.values()) + list(self.outboundConnections.values())
+        logger.debug("DEBUG: Getting all connections - count: %s", len(connections))
+        return connections
 
     def establishedConnections(self):
         """Shortcut for list of connections having fullyEstablished == True"""
-        return [
-            x for x in self.connections() if x.fullyEstablished]
+        established = [x for x in self.connections() if x.fullyEstablished]
+        logger.debug("DEBUG: Getting established connections - count: %s", len(established))
+        return established
 
     def connectToStream(self, streamNumber):
         """Connect to a bitmessage stream"""
+        logger.debug("DEBUG: Adding stream %s to streams list", streamNumber)
         self.streams.append(streamNumber)
 
     def getConnectionByAddr(self, addr):
@@ -100,86 +108,110 @@ class BMConnectionPool(object):
         Return an (existing) connection object based on a `Peer` object
         (IP and port)
         """
+        logger.debug("DEBUG: Looking up connection by address: %s", addr)
         try:
-            return self.inboundConnections[addr]
+            conn = self.inboundConnections[addr]
+            logger.debug("DEBUG: Found inbound connection by addr")
+            return conn
         except KeyError:
             pass
         try:
-            return self.inboundConnections[addr.host]
+            conn = self.inboundConnections[addr.host]
+            logger.debug("DEBUG: Found inbound connection by host")
+            return conn
         except (KeyError, AttributeError):
             pass
         try:
-            return self.outboundConnections[addr]
+            conn = self.outboundConnections[addr]
+            logger.debug("DEBUG: Found outbound connection by addr")
+            return conn
         except KeyError:
             pass
         try:
-            return self.udpSockets[addr.host]
+            conn = self.udpSockets[addr.host]
+            logger.debug("DEBUG: Found UDP socket by host")
+            return conn
         except (KeyError, AttributeError):
             pass
+        logger.debug("DEBUG: No connection found for address")
         raise KeyError
 
     def isAlreadyConnected(self, nodeid):
         """Check if we're already connected to this peer"""
+        logger.debug("DEBUG: Checking if already connected to node: %s", nodeid)
         for i in self.connections():
             try:
                 if nodeid == i.nodeid:
+                    logger.debug("DEBUG: Found existing connection to node")
                     return True
             except AttributeError:
                 pass
+        logger.debug("DEBUG: No existing connection to node found")
         return False
 
     def addConnection(self, connection):
         """Add a connection object to our internal dict"""
+        logger.debug("DEBUG: Adding connection: %s", connection)
         if isinstance(connection, UDPSocket):
+            logger.debug("DEBUG: Skipping UDP socket addition")
             return
         if connection.isOutbound:
+            logger.debug("DEBUG: Adding outbound connection")
             self.outboundConnections[connection.destination] = connection
         else:
             if connection.destination.host in self.inboundConnections:
+                logger.debug("DEBUG: Adding inbound connection by destination")
                 self.inboundConnections[connection.destination] = connection
             else:
-                self.inboundConnections[connection.destination.host] = \
-                    connection
+                logger.debug("DEBUG: Adding inbound connection by host")
+                self.inboundConnections[connection.destination.host] = connection
+        logger.debug("DEBUG: Connection added successfully")
 
     def removeConnection(self, connection):
         """Remove a connection from our internal dict"""
+        logger.debug("DEBUG: Removing connection: %s", connection)
         if isinstance(connection, UDPSocket):
+            logger.debug("DEBUG: Removing UDP socket")
             del self.udpSockets[connection.listening.host]
         elif isinstance(connection, TCPServer):
+            logger.debug("DEBUG: Removing TCP server")
             del self.listeningSockets[Peer(
                 connection.destination.host, connection.destination.port)]
         elif connection.isOutbound:
+            logger.debug("DEBUG: Removing outbound connection")
             try:
                 del self.outboundConnections[connection.destination]
             except KeyError:
+                logger.debug("DEBUG: Outbound connection not found in pool")
                 pass
         else:
+            logger.debug("DEBUG: Removing inbound connection")
             try:
                 del self.inboundConnections[connection.destination]
             except KeyError:
                 try:
                     del self.inboundConnections[connection.destination.host]
                 except KeyError:
+                    logger.debug("DEBUG: Inbound connection not found in pool")
                     pass
+        logger.debug("DEBUG: Closing connection")
         connection.handle_close()
 
     @staticmethod
     def getListeningIP():
         """What IP are we supposed to be listening on?"""
-        if _ends_with(config.safeGet(
-                "bitmessagesettings", "onionhostname", ""), ".onion"):
-            host = config.safeGet(
-                "bitmessagesettings", "onionbindip")
+        onionhost = config.safeGet("bitmessagesettings", "onionhostname", "")
+        if _ends_with(onionhost, ".onion"):
+            host = config.safeGet("bitmessagesettings", "onionbindip")
+            logger.debug("DEBUG: Using onion bind IP: %s", host)
         else:
             host = '127.0.0.1'
-        if (
-            config.safeGetBoolean("bitmessagesettings", "sockslisten")
-            or config.safeGet("bitmessagesettings", "socksproxytype")
-            == "none"
-        ):
-            # python doesn't like bind + INADDR_ANY?
-            # host = socket.INADDR_ANY
+            logger.debug("DEBUG: Using default localhost IP")
+        
+        if (config.safeGetBoolean("bitmessagesettings", "sockslisten") or 
+            config.safeGet("bitmessagesettings", "socksproxytype") == "none"):
             host = config.get("network", "bind")
+            logger.debug("DEBUG: Using network bind IP: %s", host)
         return host
 
     def startListening(self, bind=None):
@@ -187,9 +219,10 @@ class BMConnectionPool(object):
         if bind is None:
             bind = self.getListeningIP()
         port = config.safeGetInt("bitmessagesettings", "port")
-        # correct port even if it changed
+        logger.debug("DEBUG: Starting listening socket on %s:%s", bind, port)
         ls = TCPServer(host=bind, port=port)
         self.listeningSockets[ls.destination] = ls
+        logger.debug("DEBUG: Listening socket started successfully")
 
     def startUDPSocket(self, bind=None):
         """
@@ -198,178 +231,200 @@ class BMConnectionPool(object):
         """
         if bind is None:
             host = self.getListeningIP()
+            logger.debug("DEBUG: Starting UDP socket on %s (announcing)", host)
             udpSocket = UDPSocket(host=host, announcing=True)
         else:
             if bind is False:
+                logger.debug("DEBUG: Starting UDP socket (non-announcing)")
                 udpSocket = UDPSocket(announcing=False)
             else:
+                logger.debug("DEBUG: Starting UDP socket on %s (announcing)", bind)
                 udpSocket = UDPSocket(host=bind, announcing=True)
         self.udpSockets[udpSocket.listening.host] = udpSocket
+        logger.debug("DEBUG: UDP socket started successfully")
 
     def startBootstrappers(self):
         """Run the process of resolving bootstrap hostnames"""
-        proxy_type = config.safeGet(
-            'bitmessagesettings', 'socksproxytype')
-        # A plugins may be added here
+        logger.debug("DEBUG: Starting bootstrappers")
+        proxy_type = config.safeGet('bitmessagesettings', 'socksproxytype')
+        logger.debug("DEBUG: Proxy type: %s", proxy_type)
+        
         hostname = None
         if not proxy_type or proxy_type == 'none':
             connection_base = TCPConnection
+            logger.debug("DEBUG: Using direct TCP connection")
         elif proxy_type == 'SOCKS5':
             connection_base = Socks5BMConnection
-            hostname = random.choice([  # nosec B311
-                'quzwelsuziwqgpt2.onion', None
-            ])
+            hostname = random.choice(['quzwelsuziwqgpt2.onion', None])  # nosec B311
+            logger.debug("DEBUG: Using SOCKS5 proxy with hostname: %s", hostname)
         elif proxy_type == 'SOCKS4a':
-            connection_base = Socks4aBMConnection  # FIXME: I cannot test
+            connection_base = Socks4aBMConnection
+            logger.debug("DEBUG: Using SOCKS4a proxy")
         else:
-            # This should never happen because socksproxytype setting
-            # is handled in bitmessagemain before starting the connectionpool
+            logger.error("DEBUG: Invalid proxy type: %s", proxy_type)
             return
 
         bootstrapper = bootstrap(connection_base)
         if not hostname:
             port = random.choice([8080, 8444])  # nosec B311
             hostname = 'bootstrap%s.bitmessage.org' % port
+            logger.debug("DEBUG: Using bootstrap hostname: %s", hostname)
         else:
             port = 8444
+            logger.debug("DEBUG: Using fixed port: %s", port)
+        
         self.addConnection(bootstrapper(hostname, port))
+        logger.debug("DEBUG: Bootstrapper connection added")
 
     def loop(self):  # pylint: disable=too-many-branches,too-many-statements
         """Main Connectionpool's loop"""
-        # pylint: disable=too-many-locals
-        # defaults to empty loop if outbound connections are maxed
+        logger.debug("DEBUG: Starting main connection pool loop")
+        
         spawnConnections = False
         acceptConnections = True
-        if config.safeGetBoolean(
-                'bitmessagesettings', 'dontconnect'):
+        if config.safeGetBoolean('bitmessagesettings', 'dontconnect'):
             acceptConnections = False
-        elif config.safeGetBoolean(
-                'bitmessagesettings', 'sendoutgoingconnections'):
+            logger.debug("DEBUG: dontconnect=True - not accepting connections")
+        elif config.safeGetBoolean('bitmessagesettings', 'sendoutgoingconnections'):
             spawnConnections = True
-        socksproxytype = config.safeGet(
-            'bitmessagesettings', 'socksproxytype', '')
-        onionsocksproxytype = config.safeGet(
-            'bitmessagesettings', 'onionsocksproxytype', '')
-        if (
-            socksproxytype[:5] == 'SOCKS'
-            and not config.safeGetBoolean(
-                'bitmessagesettings', 'sockslisten')
-            and '.onion' not in config.safeGet(
-                'bitmessagesettings', 'onionhostname', '')
-        ):
-            acceptConnections = False
+            logger.debug("DEBUG: sendoutgoingconnections=True - spawning connections")
 
-        # pylint: disable=too-many-nested-blocks
+        socksproxytype = config.safeGet('bitmessagesettings', 'socksproxytype', '')
+        onionsocksproxytype = config.safeGet('bitmessagesettings', 'onionsocksproxytype', '')
+        if (socksproxytype[:5] == 'SOCKS' and 
+            not config.safeGetBoolean('bitmessagesettings', 'sockslisten') and 
+            '.onion' not in config.safeGet('bitmessagesettings', 'onionhostname', '')):
+            acceptConnections = False
+            logger.debug("DEBUG: SOCKS proxy detected - not accepting connections")
+
         if spawnConnections:
             if not knownnodes.knownNodesActual:
+                logger.debug("DEBUG: No known nodes - starting bootstrappers")
                 self.startBootstrappers()
                 knownnodes.knownNodesActual = True
+
             if not self._bootstrapped:
+                logger.debug("DEBUG: First bootstrapping")
                 self._bootstrapped = True
                 Proxy.proxy = (
-                    config.safeGet(
-                        'bitmessagesettings', 'sockshostname'),
-                    config.safeGetInt(
-                        'bitmessagesettings', 'socksport')
+                    config.safeGet('bitmessagesettings', 'sockshostname'),
+                    config.safeGetInt('bitmessagesettings', 'socksport')
                 )
-                # TODO AUTH
-                # TODO reset based on GUI settings changes
+                logger.debug("DEBUG: Set main proxy: %s:%s", Proxy.proxy[0], Proxy.proxy[1])
+                
                 try:
                     if not onionsocksproxytype.startswith("SOCKS"):
                         raise ValueError
                     Proxy.onion_proxy = (
-                        config.safeGet(
-                            'network', 'onionsockshostname', None),
-                        config.safeGet(
-                            'network', 'onionsocksport', None)
+                        config.safeGet('network', 'onionsockshostname', None),
+                        config.safeGet('network', 'onionsocksport', None)
                     )
+                    logger.debug("DEBUG: Set onion proxy: %s:%s", 
+                               Proxy.onion_proxy[0], Proxy.onion_proxy[1])
                 except ValueError:
                     Proxy.onion_proxy = None
-            established = sum(
-                1 for c in self.outboundConnections.values()
-                if (c.connected and c.fullyEstablished))
+                    logger.debug("DEBUG: No valid onion proxy configured")
+
+            established = sum(1 for c in self.outboundConnections.values() 
+                            if (c.connected and c.fullyEstablished))
             pending = len(self.outboundConnections) - established
-            if established < config.safeGetInt(
-                    'bitmessagesettings', 'maxoutboundconnections'):
-                for i in range(
-                        state.maximumNumberOfHalfOpenConnections - pending):
+            logger.debug("DEBUG: Connection stats - established: %s, pending: %s", established, pending)
+
+            if established < config.safeGetInt('bitmessagesettings', 'maxoutboundconnections'):
+                logger.debug("DEBUG: Need more connections (current: %s, max: %s)", 
+                           established, config.safeGetInt('bitmessagesettings', 'maxoutboundconnections'))
+                
+                for i in range(state.maximumNumberOfHalfOpenConnections - pending):
                     try:
-                        chosen = self.trustedPeer or chooseConnection(
-                            random.choice(self.streams))  # nosec B311
+                        chosen = self.trustedPeer or chooseConnection(random.choice(self.streams))  # nosec B311
+                        logger.debug("DEBUG: Chosen connection: %s", chosen)
                     except ValueError:
+                        logger.debug("DEBUG: No valid connection chosen")
                         continue
+
                     if chosen in self.outboundConnections:
+                        logger.debug("DEBUG: Already connected to chosen outbound")
                         continue
                     if chosen.host in self.inboundConnections:
+                        logger.debug("DEBUG: Already connected to chosen inbound")
                         continue
-                    # don't connect to self
                     if chosen in state.ownAddresses:
+                        logger.debug("DEBUG: Chosen connection is self")
                         continue
-                    # don't connect to the hosts from the same
-                    # network group, defense against sibyl attacks
-                    host_network_group = protocol.network_group(
-                        chosen.host)
+
+                    host_network_group = protocol.network_group(chosen.host)
                     same_group = False
                     for j in self.outboundConnections.values():
                         if host_network_group == j.network_group:
                             same_group = True
                             if chosen.host == j.destination.host:
                                 knownnodes.decreaseRating(chosen)
+                                logger.debug("DEBUG: Decreased rating for duplicate host")
                             break
                     if same_group:
+                        logger.debug("DEBUG: Same network group - skipping")
                         continue
 
                     try:
                         if _ends_with(chosen.host, ".onion") and Proxy.onion_proxy:
+                            logger.debug("DEBUG: Creating onion connection")
                             if onionsocksproxytype == "SOCKS5":
                                 self.addConnection(Socks5BMConnection(chosen))
                             elif onionsocksproxytype == "SOCKS4a":
                                 self.addConnection(Socks4aBMConnection(chosen))
                         elif socksproxytype == "SOCKS5":
+                            logger.debug("DEBUG: Creating SOCKS5 connection")
                             self.addConnection(Socks5BMConnection(chosen))
                         elif socksproxytype == "SOCKS4a":
+                            logger.debug("DEBUG: Creating SOCKS4a connection")
                             self.addConnection(Socks4aBMConnection(chosen))
                         else:
+                            logger.debug("DEBUG: Creating direct TCP connection")
                             self.addConnection(TCPConnection(chosen))
                     except socket.error as e:
                         if e.errno == errno.ENETUNREACH:
+                            logger.debug("DEBUG: Network unreachable error")
                             continue
 
                     self._lastSpawned = time.time()
+                    logger.debug("DEBUG: Updated last spawned time: %s", self._lastSpawned)
         else:
+            logger.debug("DEBUG: Closing all outbound connections")
             for i in self.outboundConnections.values():
-                # FIXME: rating will be increased after next connection
                 i.handle_close()
 
         if acceptConnections:
             if not self.listeningSockets:
                 if config.safeGet('network', 'bind') == '':
+                    logger.debug("DEBUG: Starting default listening socket")
                     self.startListening()
                 else:
-                    for bind in re.sub(
-                        r'[^\w.]+', ' ',
-                        config.safeGet('network', 'bind')
-                    ).split():
+                    binds = re.sub(r'[^\w.]+', ' ', config.safeGet('network', 'bind')).split()
+                    logger.debug("DEBUG: Starting listening sockets on: %s", binds)
+                    for bind in binds:
                         self.startListening(bind)
                 logger.info('Listening for incoming connections.')
+
             if not self.udpSockets:
                 if config.safeGet('network', 'bind') == '':
+                    logger.debug("DEBUG: Starting default UDP socket")
                     self.startUDPSocket()
                 else:
-                    for bind in re.sub(
-                        r'[^\w.]+', ' ',
-                        config.safeGet('network', 'bind')
-                    ).split():
+                    binds = re.sub(r'[^\w.]+', ' ', config.safeGet('network', 'bind')).split()
+                    logger.debug("DEBUG: Starting UDP sockets on: %s", binds)
+                    for bind in binds:
                         self.startUDPSocket(bind)
                     self.startUDPSocket(False)
                 logger.info('Starting UDP socket(s).')
         else:
             if self.listeningSockets:
+                logger.debug("DEBUG: Closing listening sockets")
                 for i in self.listeningSockets.values():
                     i.close_reason = "Stopping listening"
                     i.accepting = i.connecting = i.connected = False
                 logger.info('Stopped listening for incoming connections.')
             if self.udpSockets:
+                logger.debug("DEBUG: Closing UDP sockets")
                 for i in self.udpSockets.values():
                     i.close_reason = "Stopping UDP socket"
                     i.accepting = i.connecting = i.connected = False
@@ -378,32 +433,41 @@ class BMConnectionPool(object):
         loopTime = float(self._spawnWait)
         if self._lastSpawned < time.time() - self._spawnWait:
             loopTime = 2.0
+        logger.debug("DEBUG: Running asyncore loop with timeout: %s", loopTime)
         asyncore.loop(timeout=loopTime, count=1000)
 
         reaper = []
+        minTx = time.time() - 20
+        logger.debug("DEBUG: Checking for stale connections (minTx: %s)", minTx)
         for i in self.connections():
-            minTx = time.time() - 20
+            conn_minTx = minTx
             if i.fullyEstablished:
-                minTx -= 300 - 20
-            if i.lastTx < minTx:
+                conn_minTx -= 300 - 20
+                logger.debug("DEBUG: Connection %s is fully established", i)
+            
+            if i.lastTx < conn_minTx:
                 if i.fullyEstablished:
+                    logger.debug("DEBUG: Sending ping to connection %s", i)
                     i.append_write_buf(protocol.CreatePacket(b'ping'))
                 else:
-                    i.close_reason = "Timeout (%is)" % (
-                        time.time() - i.lastTx)
+                    timeout = time.time() - i.lastTx
+                    i.close_reason = "Timeout (%is)" % timeout
                     i.set_state("close")
-        for i in (
-            self.connections()
-            + list(self.listeningSockets.values()) + list(self.udpSockets.values())
-        ):
+                    logger.debug("DEBUG: Timing out connection %s (lastTx: %s)", i, i.lastTx)
+
+        for i in (self.connections() + list(self.listeningSockets.values()) + list(self.udpSockets.values())):
             if not (i.accepting or i.connecting or i.connected):
+                logger.debug("DEBUG: Adding to reaper: %s", i)
                 reaper.append(i)
             else:
                 try:
                     if i.state == "close":
+                        logger.debug("DEBUG: Adding closed connection to reaper: %s", i)
                         reaper.append(i)
                 except AttributeError:
                     pass
+
+        logger.debug("DEBUG: Reaping %s connections", len(reaper))
         for i in reaper:
             self.removeConnection(i)
 
