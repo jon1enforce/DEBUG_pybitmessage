@@ -5,10 +5,12 @@ Thread for performing PoW
 # pylint: disable=no-self-use,too-many-lines,too-many-locals
 
 from __future__ import division
-
+import sys
 import hashlib
 import time
-from binascii import hexlify, unhexlify
+from binascii import unhexlify
+import binascii
+sys.modules['hexlify'] = binascii.hexlify  # Globaler Hexlify-Alias
 from struct import pack
 from subprocess import call  # nosec
 import sqlite3
@@ -159,9 +161,34 @@ class singleWorker(StoppableThread):
         while state.shutdown == 0:
             self.busy = 0
             try:
-                command, data = queues.workerQueue.get()
-                logger.debug("DEBUG: Received command: %s", command)
-                self.busy = 1
+                # Warte auf SQL-Bereitschaft
+                while not helper_sql.sql_ready.wait(1.0) and state.shutdown == 0:
+                    self.stop.wait(1.0)
+            
+                if state.shutdown > 0:
+                    logger.debug("DEBUG: Shutdown detected, exiting singleWorker")
+                    return
+
+                # Queue-Item verarbeiten
+                item = queues.workerQueue.get()
+                if not isinstance(item, tuple):
+                    logger.error("RAW INVALID ITEM: %s (Type: %s)", item, type(item))
+                    logger.error("FULL TRACEBACK:\n%s", "".join(traceback.format_stack()))
+                    continue
+                
+                if len(item) != 2:
+                    logger.error("MALFORMED TUPLE: %s (Length: %d)", item, len(item))
+                    logger.error("ORIGIN TRACE:\n%s", "".join(traceback.extract_stack()))
+                    continue
+                # Validierung des Queue-Items
+                if not isinstance(item, tuple) or len(item) != 2:
+                    logger.error("INVALID QUEUE ITEM RECEIVED: %s (Type: %s)", item, type(item))
+                    logger.error("TRACE: %s", ''.join(traceback.format_stack()))
+                    queues.workerQueue.task_done()  # Wichtig für Queue-Handling
+                    continue
+                
+                command, data = item
+                logger.debug("DEBUG: Processing command: %s", command)
 
                 if command == 'sendmessage':
                     try:
@@ -239,6 +266,7 @@ class singleWorker(StoppableThread):
         logger.info("DEBUG: singleWorker quitting...")
 
     def _getKeysForAddress(self, address):
+        from binascii import hexlify, unhexlify
         logger.debug("DEBUG: Getting keys for address %s", address)
         try:
             privSigningKeyBase58 = config.get(address, 'privsigningkey')

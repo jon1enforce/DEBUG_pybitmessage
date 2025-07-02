@@ -11,7 +11,8 @@ import state
 from network import connectionpool
 from network import dandelion_ins, invQueue
 from .threads import StoppableThread
-
+import logging
+logger = logging.getLogger(__name__)
 
 def handleExpiredDandelion(expired):
     """For expired dandelion objects, mark all remotes as not having

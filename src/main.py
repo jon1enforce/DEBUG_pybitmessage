@@ -2,13 +2,15 @@
 # flake8: noqa:E401, E402
 
 """Mock kivy app with mock threads."""
-
+import sys
 import os
 import logging
 from kivy.config import Config
 from mockbm import multiqueue
 import state
 
+import binascii
+sys.modules['hexlify'] = binascii.hexlify  # Globaler Hexlify-Alias
 from mockbm.class_addressGenerator import FakeAddressGenerator  # noqa:E402
 from bitmessagekivy.mpybit import NavigateApp  # noqa:E402
 from mockbm import network  # noqa:E402

@@ -232,12 +232,10 @@ class addressGenerator(StoppableThread):
                 
                 if addressVersionNumber == 3:
                     print("DEBUG: Queueing V3 pubkey broadcast")
-                    queues.workerQueue.put((
-                        'sendOutOrStoreMyV3Pubkey', ripe))
+                    queues.workerQueue.put(('sendOutOrStoreMyV3Pubkey', ripe))
                 elif addressVersionNumber == 4:
                     print("DEBUG: Queueing V4 pubkey broadcast")
-                    queues.workerQueue.put((
-                        'sendOutOrStoreMyV4Pubkey', address))
+                    queues.workerQueue.put(('sendOutOrStoreMyV4Pubkey', address))
 
             elif command in (
                 'createDeterministicAddresses', 'createChan',
@@ -414,12 +412,10 @@ class addressGenerator(StoppableThread):
                                 # the worker thread won't send out
                                 # the pubkey over the network.
                                 print("DEBUG: Queueing V3 pubkey broadcast")
-                                queues.workerQueue.put((
-                                    'sendOutOrStoreMyV3Pubkey', ripe))
+                                queues.workerQueue.put(('sendOutOrStoreMyV3Pubkey', ripe))
                             elif addressVersionNumber == 4:
                                 print("DEBUG: Queueing V4 pubkey broadcast")
-                                queues.workerQueue.put((
-                                    'sendOutOrStoreMyV4Pubkey', address))
+                                queues.workerQueue.put(('sendOutOrStoreMyV4Pubkey', address))
                             queues.UISignalQueue.put((
                                 'updateStatusBar',
                                 _translate(
