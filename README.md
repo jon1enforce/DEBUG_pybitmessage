@@ -1,6 +1,6 @@
 # DEBUG version of pybitmessage
 source: https://github.com/kashikoibumi/PyBitmessage
-# Openbsd instructions
+# OpenBSD instructions
 look https://github.com/jon1enforce/libressl-2.5.0
 PATH:
     elif sys.platform.startswith('openbsd'):
