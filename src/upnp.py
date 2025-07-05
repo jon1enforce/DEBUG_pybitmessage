@@ -1,4 +1,4 @@
-﻿# pylint: disable=too-many-statements,too-many-branches,protected-access,no-self-use
+# pylint: disable=too-many-statements,too-many-branches,protected-access,no-self-use
 """
 Complete UPnP port forwarding implementation in separate thread.
 Reference: http://mattscodecave.com/posts/using-python-and-upnp-to-forward-a-port
@@ -228,7 +228,24 @@ class uPnPThread(StoppableThread):
         self.routers = []
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind((self.localIP, 0))
-        self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
+        
+        # OpenBSD-spezifischer Workaround für IP_MULTICAST_TTL
+        if sys.platform.startswith('openbsd'):
+            print("DEBUG: OpenBSD detected - using alternative socket configuration")
+            try:
+                # Versuche IP_MULTICAST_TTL mit IPv6
+                self.sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_HOPS, 2)
+                print("DEBUG: Successfully set IPV6_MULTICAST_HOPS on OpenBSD")
+            except (AttributeError, OSError) as e:
+                print("DEBUG: OpenBSD workaround failed (IPV6_MULTICAST_HOPS not available): %s" % str(e))
+                # Falls IPv6 nicht verfügbar, einfach ohne TTL fortfahren
+        else:
+            try:
+                self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
+                print("DEBUG: Successfully set IP_MULTICAST_TTL")
+            except OSError as e:
+                print("DEBUG: Could not set IP_MULTICAST_TTL (non-critical): %s" % str(e))
+        
         self.sock.settimeout(5)
         self.sendSleep = 60
         print("DEBUG: Socket initialized - bind:%s timeout:%s" % (self.localIP, self.sock.gettimeout()))
