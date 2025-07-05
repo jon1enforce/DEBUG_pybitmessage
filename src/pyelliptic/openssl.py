@@ -815,7 +815,7 @@ def loadOpenSSL():
         libdir.append('libssl.so')
         libdir.append('libcrypto.so.1.0.0')
         libdir.append('libssl.so.1.0.0')
-    elif sys.platform.startswith('openbsd'):
+    if sys.platform.startswith('openbsd'):
         libdir.append("/home/libressl-2.5.0/build/crypto/libcrypto.so")
         libdir.append("/home/libressl-2.5.0/build/ssl/libssl.so")
     elif 'linux' in sys.platform or 'darwin' in sys.platform \
