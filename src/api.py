@@ -462,7 +462,7 @@ class BMXMLRPCRequestHandler(xmlrpc_server.SimpleXMLRPCRequestHandler):
 
                 logger.debug("DEBUG: Dispatching request")
                 response = self.server._marshaled_dispatch(
-                    data, getattr(self, '_dispatch', None)
+                    data, getattr(self, '_dispatch', None))
                 logger.debug("DEBUG: Request dispatched, response length: %d", len(response))
         except Exception as e:  # This should only happen if the module is buggy
             logger.debug("DEBUG: Internal error in POST handler: %s", str(e))
