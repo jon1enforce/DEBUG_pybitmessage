@@ -27,18 +27,18 @@ def _log_version_access():
 
 # Version constants with access logging
 @property
-def softwareName():
+def softwareName_property():
     _log_version_access()
-    logger.info("Accessing software name")
+    logger.info("Accessing software name via property")
     return 'PyBitmessage'
 
 @property
-def softwareVersion():
+def softwareVersion_property():
     _log_version_access()
-    logger.info("Accessing software version")
+    logger.info("Accessing software version via property")
     return '0.6.3.2'
 
-# Alternative approach for direct variable access
+# Keep direct variable access for compatibility
 _softwareName = 'PyBitmessage'
 _softwareVersion = '0.6.3.2'
 
@@ -56,9 +56,18 @@ def get_software_info():
 logger.info(f"{_softwareName} version {_softwareVersion} initialized")
 logger.debug("Version module fully loaded")
 
+# Compatibility exports - this is what setup.py needs
+# Export both the string version and property version
+softwareName = _softwareName  # Simple string export
+softwareVersion = _softwareVersion  # Simple string export
+softwareName_prop = softwareName_property  # Property version
+softwareVersion_prop = softwareVersion_property  # Property version
+
 if __name__ == '__main__':
     # Test the logging
     logger.debug("Running version module test")
-    print("Software:", softwareName)
-    print("Version:", softwareVersion)
+    print("Software (direct):", softwareName)
+    print("Version (direct):", softwareVersion)
+    print("Software (property):", softwareName_prop)
+    print("Version (property):", softwareVersion_prop)
     print("Full info:", get_software_info())

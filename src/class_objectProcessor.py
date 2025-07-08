@@ -130,7 +130,6 @@ class objectProcessor(threading.Thread):
                     exc_info=True)
                 print("DEBUG: Critical error in objectProcessor:")
                 traceback.print_exc()
-
             if state.shutdown:
                 print("DEBUG: Shutdown detected, saving queue to disk")
                 # Wait just a moment for most of the connections to close
@@ -139,9 +138,9 @@ class objectProcessor(threading.Thread):
                 with SqlBulkExecute() as sql:
                     while queues.objectProcessorQueue.curSize > 0:
                         objectType, data = queues.objectProcessorQueue.get()
-                        sql.execute(
-                            'INSERT INTO objectprocessorqueue VALUES (?,?)',
-                            objectType, sqlite3.Binary(data))
+                        # Korrigierte Zeile:
+                        sql.execute('INSERT INTO objectprocessorqueue VALUES (?,?)', 
+                                   (objectType, sqlite3.Binary(data.encode() if isinstance(data, str) else data)))
                         numberOfObjectsThatWereInTheObjectProcessorQueue += 1
                 logger.debug(
                     'Saved %s objects from the objectProcessorQueue to'
@@ -150,6 +149,7 @@ class objectProcessor(threading.Thread):
                 print(f"DEBUG: Saved {numberOfObjectsThatWereInTheObjectProcessorQueue} objects to disk")
                 state.shutdown = 2
                 break
+
 
     @staticmethod
     def checkackdata(data):
