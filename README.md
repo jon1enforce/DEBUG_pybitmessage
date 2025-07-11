@@ -7,5 +7,5 @@ PATH:
         ....libdir.append("/home/libressl-2.5.0/build/crypto/libcrypto.so")  
         ....libdir.append("/home/libressl-2.5.0/build/ssl/libssl.so")
 # NOTE
-now the main branch is stable by default for linux
+now the main branch is stable by default for linux  
 openbsd is test -branch! Not stable now.
