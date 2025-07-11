@@ -49,15 +49,15 @@ class UISignaler(QtCore.QThread):
                     logger.error(
                     "Invalid queue item - Expected tuple but got %s: %r",
                     type(item).__name__, item
-                )
-                continue
+                    )
+                    continue
     
                 if len(item) != 2:
                     logger.error(
                     "Invalid queue item length - Expected 2 elements but got %d: %r",
                     len(item), item
-                )
-                continue
+                    )
+                    continue
                     
                 command, data = item
                 logger.debug("Processing command: %s", command)

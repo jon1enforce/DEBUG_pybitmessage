@@ -48,7 +48,7 @@ class UDPSocket(BMProto):  # pylint: disable=too-many-instance-attributes
                     self.set_socket_reuse()
                     logger.info("UDP_BIND| Binding to %s:%i", host or '0.0.0.0', self.port)
                     
-                    bind_host = host if host is not None else ''
+                    bind_host = host if host is not None and host != '' else '0.0.0.0'                    
                     self.socket.bind((bind_host, self.port))
                     logger.debug("UDP_SOCKET| Socket bind successful to %s:%i", bind_host, self.port)
                 except socket.error as e:
@@ -192,11 +192,16 @@ class UDPSocket(BMProto):  # pylint: disable=too-many-instance-attributes
             logger.debug("UDP_WRITE| Sending %d bytes via broadcast to port %i", 
                        len(self.write_buf), self.port)
             
-            retval = self.socket.sendto(self.write_buf, ('<broadcast>', self.port))
-            logger.debug("UDP_WRITE| Sent %d/%d bytes via broadcast", retval, len(self.write_buf))
-            
-            self.slice_write_buf(retval)
-            logger.debug("UDP_WRITE| Sliced write_buf, remaining: %d bytes", len(self.write_buf))
+            try:
+                retval = self.socket.sendto(self.write_buf, ('<broadcast>', self.port))
+                if retval <= 0:  # Explizite Fehlerprüfung
+                    logger.warning("UDP_WARN| Send failed, bytes sent: %d", retval)
+                    retval = len(self.write_buf)  # Wie alte Version: Vollständigen Puffer verwerfen
+                self.slice_write_buf(retval)
+            except socket.error as e:
+                logger.error("UDP_ERROR| Broadcast send failed: %s", e)
+                self.slice_write_buf(len(self.write_buf))  # Puffer komplett leeren
+                # Optional: Socket neu initialisieren falls persistente Fehler
             
         except socket.error as e:
             logger.error("UDP_ERROR| Socket sendto error: %s", e, exc_info=True)

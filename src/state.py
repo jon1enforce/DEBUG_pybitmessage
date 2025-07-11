@@ -32,11 +32,7 @@ logger.debug("Initialized shutdown flag to 0 (1 = shutdown requested)")
 
 # Component control flags
 logger.debug("Initializing component control flags:")
-enableNetwork = False
-def set_enableNetwork(value):
-    global enableNetwork
-    print(f"DEBUG: enableNetwork changed from {enableNetwork} to {value}")
-    enableNetwork = value
+enableNetwork = True
 logger.debug("  enableNetwork = True (enable network threads)")
 enableObjProc = True
 logger.debug("  enableObjProc = True (enable object processing thread)")

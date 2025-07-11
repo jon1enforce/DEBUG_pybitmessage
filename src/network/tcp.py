@@ -232,7 +232,7 @@ class TCPConnection(BMProto, TLSDispatcher):
                         ]
                         elemCount = min(
                             len(filtered),
-                            maxAddrCount / 2 if n else maxAddrCount)
+                            maxAddrCount // 2 if n else maxAddrCount)  # FIXED: Integer-Division
                         addrs[s] = random.sample(filtered, elemCount)
                         logger.debug("TCP_KNOWNNODES| Selected %d nodes for stream %s", 
                                    elemCount, s)
@@ -240,8 +240,8 @@ class TCPConnection(BMProto, TLSDispatcher):
             for substream in addrs:
                 for peer, params in addrs[substream]:
                     templist.append((substream, peer, params["lastseen"]))
-                    logger.debug("TCP_KNOWNNODES| Adding peer %s:%i (stream: %s, lastseen: %s)", 
-                               peer.host, peer.port, substream, params["lastseen"])
+                    # Optional: Nur bei sehr detailliertem Debugging loggen
+                    # logger.debug("TCP_KNOWNNODES| Adding peer %s:%i ...", peer.host, peer.port)
                     
             if templist:
                 logger.info("TCP_PROTOCOL| Sending %d addr entries to %s:%i", 
@@ -252,7 +252,8 @@ class TCPConnection(BMProto, TLSDispatcher):
                 
         except Exception as e:
             logger.error("TCP_ERROR| Error sending addr message: %s", e, exc_info=True)
-            raise
+            # Optional: Kein `raise`, falls Verbindung stabil bleiben soll
+            # raise
     def sendBigInv(self):
         """
         Send hashes of all inventory objects, chunked as the protocol has
@@ -474,39 +475,10 @@ def bootstrap(connection_class):
             logger.debug("DEBUG: Set state to close for bootstrapper %s:%i", 
                         self.destination.host, self.destination.port)
 
-    def set_connection_fully_established(self) -> None:
-        """Mark connection as fully established with detailed logging"""
-        logger.info("TCP_STATE| Connection fully established with %s:%i", 
-                  self.destination.host, self.destination.port)
-        
-        try:
-            if not self.isOutbound and not self.local:
-                state.clientHasReceivedIncomingConnections = True
-                UISignalQueue.put(('setStatusIcon', 'green'))
-                logger.debug("TCP_UI| Updated status icon to green")
-                
-            UISignalQueue.put((
-                'updateNetworkStatusTab', (self.isOutbound, True, self.destination)
-            ))
-            logger.debug("TCP_UI| Updated network status tab")
-            
-            self.antiIntersectionDelay(True)
+        def set_connection_fully_established(self) -> None:
+            """Minimal version focused on core functionality"""
             self.fullyEstablished = True
-            
-            if self.isOutbound or (not self.local and not state.socksIP):
-                logger.debug("TCP_KNOWNNODES| Updating known nodes for %s:%i (streams: %s)", 
-                           self.destination.host, self.destination.port, self.streams)
-                knownnodes.increaseRating(self.destination)
-                knownnodes.addKnownNode(self.streams, self.destination, time.time())
-                dandelion_ins.maybeAddStem(self, invQueue)
-                
-            self.sendAddr()
-            self.sendBigInv()
-            logger.debug("TCP_PROTOCOL| Sent addr and bigInv messages")
-            
-        except Exception as e:
-            logger.error("TCP_ERROR| Error establishing connection: %s", e, exc_info=True)
-            raise
+            self.sendAddr()  # Only essential action
 
 
         def handle_close(self):
