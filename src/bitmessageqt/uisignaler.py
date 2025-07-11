@@ -45,9 +45,19 @@ class UISignaler(QtCore.QThread):
                 item = queues.UISignalQueue.get()
                 
                 # Behalte die originale strikte 2-Wert Erwartung bei
-                if not isinstance(item, tuple) or len(item) != 2:
-                    logger.error("Invalid queue item format - expected (command, data) tuple")
-                    continue
+                if not isinstance(item, tuple):
+                    logger.error(
+                    "Invalid queue item - Expected tuple but got %s: %r",
+                    type(item).__name__, item
+                )
+                continue
+    
+                if len(item) != 2:
+                    logger.error(
+                    "Invalid queue item length - Expected 2 elements but got %d: %r",
+                    len(item), item
+                )
+                continue
                     
                 command, data = item
                 logger.debug("Processing command: %s", command)

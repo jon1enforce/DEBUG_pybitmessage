@@ -55,7 +55,7 @@ class Dandelion:  # pylint: disable=old-style-class
 
     def init_pool(self, pool):
         """pass pool instance"""
-        logger.debug("DEBUG: Initializing pool with %s connections", len(pool.outboundConnections))
+        logger.debug("DEBUG: Initializing pool with %d outbound connections", len(pool.outboundConnections))
         self.pool = pool
 
     def init_dandelion_enabled(self, config):
@@ -105,10 +105,9 @@ class Dandelion:  # pylint: disable=old-style-class
 
     def removeHash(self, hashId, reason="no reason specified"):
         """Switch inventory vector from stem to fluff mode"""
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(
-                'DEBUG: %s entering fluff mode due to %s.',
-                hexlify(hashId), reason)
+        logger.debug(
+            'DEBUG: %s entering fluff mode due to %s.',
+            hexlify(hashId), reason)
         with self.lock:
             try:
                 del self.hashMap[bytes(hashId)]
@@ -119,15 +118,37 @@ class Dandelion:  # pylint: disable=old-style-class
 
     def hasHash(self, hashId):
         """Is inventory vector in stem mode?"""
-        result = bytes(hashId) in self.hashMap
-        logger.debug("DEBUG: Checking if hash %s exists in stem mode: %s", hexlify(hashId), result)
-        return result
+        try:
+            if isinstance(hashId, tuple) and len(hashId) == 2:
+                hash_bytes = hashId[1]
+            else:
+                hash_bytes = hashId if isinstance(hashId, bytes) else bytes(hashId)
+            result = hash_bytes in self.hashMap
+            logger.debug("DEBUG: Checking if hash %s exists in stem mode: %s", hexlify(hash_bytes), result)
+            return result
+        except Exception as e:
+            logger.error("DEBUG: Error in hasHash for hash %r: %s", hashId, str(e))
+            raise
 
     def objectChildStem(self, hashId):
         """Child (i.e. next) node for an inventory vector during stem mode"""
-        result = self.hashMap[bytes(hashId)].child
-        logger.debug("DEBUG: Getting child stem for hash %s: %s", hexlify(hashId), result)
-        return result
+        try:
+            # Handle case where hashId comes as tuple (stream, hash)
+            if isinstance(hashId, tuple) and len(hashId) == 2:
+                hash_bytes = hashId[1]  # Get the hash part of the tuple
+            else:
+                # Handle standalone hash (either already bytes or needs conversion)
+                hash_bytes = hashId if isinstance(hashId, bytes) else bytes(hashId)
+            
+            result = self.hashMap[hash_bytes].child
+            logger.debug("DEBUG: Getting child stem for hash %s: %s", hexlify(hash_bytes), result)
+            return result
+        except KeyError:
+            logger.debug("DEBUG: Hash %s not found in hashMap", hexlify(hash_bytes) if isinstance(hashId, bytes) else hexlify(bytes(hashId)))
+            return None
+        except Exception as e:
+            logger.error("DEBUG: Error in objectChildStem for hash %r: %s", hashId, str(e))
+            raise
 
     def maybeAddStem(self, connection, invQueue):
         """
@@ -137,14 +158,17 @@ class Dandelion:  # pylint: disable=old-style-class
         """
         # fewer than MAX_STEMS outbound connections at last reshuffle?
         with self.lock:
+            logger.debug("DEBUG: maybeAddStem called with connection %s (current stems: %d)", 
+                        connection.destination, len(self.stem))
             if len(self.stem) < MAX_STEMS:
-                logger.debug("DEBUG: Adding new stem connection (current stems: %s)", len(self.stem))
+                logger.debug("DEBUG: Adding new stem connection %s (current stems: %d)", 
+                           connection.destination, len(self.stem))
                 self.stem.append(connection)
                 
                 # Update nodeMap for nodes with None value
                 none_nodes = [k for k, v in six.iteritems(self.nodeMap) if v is None]
                 if none_nodes:
-                    logger.debug("DEBUG: Updating %s nodes in nodeMap with new stem", len(none_nodes))
+                    logger.debug("DEBUG: Updating %d nodes in nodeMap with new stem", len(none_nodes))
                     for k in none_nodes:
                         self.nodeMap[k] = connection
                 
@@ -154,12 +178,12 @@ class Dandelion:  # pylint: disable=old-style-class
                     if v.child is None
                 }
                 if none_hashes:
-                    logger.debug("DEBUG: Updating %s hashes in hashMap with new stem", len(none_hashes))
+                    logger.debug("DEBUG: Updating %d hashes in hashMap with new stem", len(none_hashes))
                     for k, v in six.iteritems(none_hashes):
                         new_stem = Stem(connection, v.stream, self.poissonTimeout())
                         self.hashMap[k] = new_stem
                         invQueue.put((v.stream, k, v.child))
-                        logger.debug("DEBUG: Updated hash %s with new stem %s", hexlify(k), connection)
+                        logger.debug("DEBUG: Updated hash %s with new stem %s", hexlify(k), connection.destination)
 
     def maybeRemoveStem(self, connection):
         """
@@ -168,8 +192,9 @@ class Dandelion:  # pylint: disable=old-style-class
         """
         # is the stem active?
         with self.lock:
+            logger.debug("DEBUG: maybeRemoveStem called with connection %s", connection.destination)
             if connection in self.stem:
-                logger.debug("DEBUG: Removing stem connection %s", connection)
+                logger.debug("DEBUG: Removing stem connection %s", connection.destination)
                 self.stem.remove(connection)
                 
                 # Update nodeMap for nodes pointing to removed connection
@@ -178,7 +203,7 @@ class Dandelion:  # pylint: disable=old-style-class
                     if v == connection
                 ]
                 if affected_nodes:
-                    logger.debug("DEBUG: Setting %s nodes in nodeMap to None", len(affected_nodes))
+                    logger.debug("DEBUG: Setting %d nodes in nodeMap to None", len(affected_nodes))
                     for k in affected_nodes:
                         self.nodeMap[k] = None
                 
@@ -188,7 +213,7 @@ class Dandelion:  # pylint: disable=old-style-class
                     if v.child == connection
                 }
                 if affected_hashes:
-                    logger.debug("DEBUG: Setting %s hashes in hashMap to None child", len(affected_hashes))
+                    logger.debug("DEBUG: Setting %d hashes in hashMap to None child", len(affected_hashes))
                     for k, v in six.iteritems(affected_hashes):
                         new_stem = Stem(None, v.stream, self.poissonTimeout())
                         self.hashMap[k] = new_stem
@@ -210,7 +235,7 @@ class Dandelion:  # pylint: disable=old-style-class
                 logger.debug("DEBUG: Picking alternative stem to avoid parent")
                 return self.stem[1 - stem]
             # all ok
-            logger.debug("DEBUG: Randomly selected stem %s", stem)
+            logger.debug("DEBUG: Randomly selected stem %d", stem)
             return self.stem[stem]
         except IndexError:
             # no stems available
@@ -225,12 +250,12 @@ class Dandelion:  # pylint: disable=old-style-class
         with self.lock:
             try:
                 result = self.nodeMap[node]
-                logger.debug("DEBUG: Found existing stem mapping for node %s: %s", node, result)
+                logger.debug("DEBUG: Found existing stem mapping for node %s: %s", node, result.destination if result else None)
                 return result
             except KeyError:
                 new_stem = self.pickStem(node)
                 self.nodeMap[node] = new_stem
-                logger.debug("DEBUG: Created new stem mapping for node %s: %s", node, new_stem)
+                logger.debug("DEBUG: Created new stem mapping for node %s: %s", node, new_stem.destination if new_stem else None)
                 return new_stem
 
     def expire(self, invQueue):
@@ -241,7 +266,7 @@ class Dandelion:  # pylint: disable=old-style-class
                 [v.stream, k, v.child] for k, v in six.iteritems(self.hashMap)
                 if v.timeout < deadline
             ]
-            logger.debug("DEBUG: Found %s expired hashes (deadline: %s)", len(toDelete), deadline)
+            logger.debug("DEBUG: Found %d expired hashes (deadline: %s)", len(toDelete), deadline)
 
             for row in toDelete:
                 self.removeHash(row[1], 'expiration')
@@ -253,7 +278,8 @@ class Dandelion:  # pylint: disable=old-style-class
         """Re-shuffle stem mapping (parent <-> child pairs)"""
         assert self.pool is not None
         if self.refresh > time():
-            logger.debug("DEBUG: Not time to re-randomise stems yet (refresh at %s)", self.refresh)
+            logger.debug("DEBUG: Not time to re-randomise stems yet (refresh at %s, current time: %s)", 
+                       self.refresh, time())
             return
 
         with self.lock:
@@ -261,15 +287,15 @@ class Dandelion:  # pylint: disable=old-style-class
                 # random two connections
                 self.stem = sample(
                     sorted(self.pool.outboundConnections.values()), MAX_STEMS)
-                logger.debug("DEBUG: Re-randomised stems: selected %s new stems", len(self.stem))
+                logger.debug("DEBUG: Re-randomised stems: selected %d new stems", len(self.stem))
             # not enough stems available
             except ValueError:
                 self.stem = list(self.pool.outboundConnections.values())
-                logger.debug("DEBUG: Using all %s available stems (not enough for sample)", len(self.stem))
+                logger.debug("DEBUG: Using all %d available stems (not enough for sample)", len(self.stem))
             
             self.nodeMap = {}
             # hashMap stays to cater for pending stems
-            logger.debug("DEBUG: Reset nodeMap, kept %s hashes in hashMap", len(self.hashMap))
+            logger.debug("DEBUG: Reset nodeMap, kept %d hashes in hashMap", len(self.hashMap))
         
         self.refresh = time() + REASSIGN_INTERVAL
         logger.debug("DEBUG: Set next refresh time to %s", self.refresh)

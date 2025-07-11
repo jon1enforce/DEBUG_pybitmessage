@@ -10,7 +10,7 @@ import sys
 import tempfile
 import time
 from struct import pack, unpack
-
+from binascii import hexlify
 import highlevelcrypto
 import openclpow
 import paths

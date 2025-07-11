@@ -8,9 +8,8 @@ from __future__ import division
 import sys
 import hashlib
 import time
-from binascii import unhexlify
+from binascii import unhexlify, hexlify
 import binascii
-sys.modules['hexlify'] = binascii.hexlify  # Globaler Hexlify-Alias
 from struct import pack
 from subprocess import call  # nosec
 import sqlite3
@@ -179,12 +178,6 @@ class singleWorker(StoppableThread):
                 if len(item) != 2:
                     logger.error("MALFORMED TUPLE: %s (Length: %d)", item, len(item))
                     logger.error("ORIGIN TRACE:\n%s", "".join(traceback.extract_stack()))
-                    continue
-                # Validierung des Queue-Items
-                if not isinstance(item, tuple) or len(item) != 2:
-                    logger.error("INVALID QUEUE ITEM RECEIVED: %s (Type: %s)", item, type(item))
-                    logger.error("TRACE: %s", ''.join(traceback.format_stack()))
-                    queues.workerQueue.task_done()  # Wichtig für Queue-Handling
                     continue
                 
                 command, data = item

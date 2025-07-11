@@ -390,10 +390,10 @@ class addressGenerator(StoppableThread):
                             config.save()
                             print("DEBUG: Saved address details to config")
 
-                            queues.UISignalQueue.put(
+                            queues.UISignalQueue.put((
                                 'writeNewAddressToTable',
-                                (label, address, str(streamNumber))
-                            )
+                                (label, address, streamNumber)
+                            ))
                             listOfNewAddressesToSendOutThroughTheAPI.append(
                                 address)
                             shared.myECCryptorObjects[ripe] = \

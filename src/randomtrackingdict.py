@@ -5,7 +5,8 @@ import sys
 import logging
 from threading import RLock
 from time import time
-
+from binascii import hexlify
+import traceback
 # Setup debug logging
 logging.basicConfig(
     level=logging.DEBUG,
@@ -85,14 +86,21 @@ class RandomTrackingDict(object):
 
     def __delitem__(self, key):
         key_bytes = bytes(key)
-        logger.debug("Deleting item with key: %s", key_bytes)
-        if key_bytes not in self.dictionary:
-            logger.error("Key not found for deletion: %s", key_bytes)
-            raise KeyError
-        with self.lock:
+        with self.lock:  # Alles innerhalb des Locks für Thread-Sicherheit
+            if key_bytes not in self.dictionary:
+                logger.debug(
+                    "Key %r not found during deletion (safe to ignore). Current keys: %r, Stack:\n%s",
+                    key_bytes,
+                    list(self.dictionary.keys()),
+                    ''.join(traceback.format_stack())
+                )
+                return  # Statt KeyError zu werfen, einfach zurückkehren
+
+            logger.debug("Deleting item with key: %s", key_bytes)
             index = self.dictionary[key_bytes][0]
             logger.debug("Item index: %d, pendingLen: %d", index, self.pendingLen)
             
+            # Swap-Logik bleibt gleich, aber jetzt thread-sicher
             if index < self.len - self.pendingLen:
                 logger.debug("Item not pending, swapping with pending boundary")
                 index = self._swap(index, self.len - self.pendingLen - 1)

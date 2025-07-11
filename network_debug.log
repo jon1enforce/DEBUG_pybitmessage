@@ -1,0 +1,446 @@
+DEBUG: Successfully imported pathmagic
+DEBUG: Application directory set to: /home/DEBUG_pybitmessage/src
+DEBUG: Basic imports completed successfully
+DEBUG: RIPEMD160Hash imported successfully
+DEBUG: Attempting to import module: sqlite3
+DEBUG: Successfully imported module: sqlite3
+DEBUG: SQLite module imported successfully
+DEBUG: SQLite compile options: ATOMIC_INTRINSICS=1, COMPILER=gcc-12.2.0, DEFAULT_AUTOVACUUM, DEFAULT_CACHE_SIZE=-2000, DEFAULT_FILE_FORMAT=4, DEFAULT_JOURNAL_SIZE_LIMIT=-1, DEFAULT_MMAP_SIZE=0, DEFAULT_PAGE_SIZE=4096, DEFAULT_PCACHE_INITSZ=20, DEFAULT_RECURSIVE_TRIGGERS, DEFAULT_SECTOR_SIZE=4096, DEFAULT_SYNCHRONOUS=2, DEFAULT_WAL_AUTOCHECKPOINT=1000, DEFAULT_WAL_SYNCHRONOUS=2, DEFAULT_WORKER_THREADS=0, ENABLE_COLUMN_METADATA, ENABLE_DBSTAT_VTAB, ENABLE_FTS3, ENABLE_FTS3_PARENTHESIS, ENABLE_FTS3_TOKENIZER, ENABLE_FTS4, ENABLE_FTS5, ENABLE_LOAD_EXTENSION, ENABLE_MATH_FUNCTIONS, ENABLE_PREUPDATE_HOOK, ENABLE_RTREE, ENABLE_SESSION, ENABLE_STMTVTAB, ENABLE_UNLOCK_NOTIFY, ENABLE_UPDATE_DELETE_LIMIT, HAVE_ISNAN, LIKE_DOESNT_MATCH_BLOBS, MALLOC_SOFT_LIMIT=1024, MAX_ATTACHED=10, MAX_COLUMN=2000, MAX_COMPOUND_SELECT=500, MAX_DEFAULT_PAGE_SIZE=32768, MAX_EXPR_DEPTH=1000, MAX_FUNCTION_ARG=127, MAX_LENGTH=1000000000, MAX_LIKE_PATTERN_LENGTH=50000, MAX_MMAP_SIZE=0x7fff0000, MAX_PAGE_COUNT=1073741823, MAX_PAGE_SIZE=65536, MAX_SCHEMA_RETRY=25, MAX_SQL_LENGTH=1000000000, MAX_TRIGGER_DEPTH=1000, MAX_VARIABLE_NUMBER=250000, MAX_VDBE_OP=250000000, MAX_WORKER_THREADS=8, MUTEX_PTHREADS, OMIT_LOOKASIDE, SECURE_DELETE, SOUNDEX, SYSTEM_MALLOC, TEMP_STORE=1, THREADSAFE=1, USE_URI
+DEBUG: Closed SQLite connection
+DEBUG: Attempting to import module: ctypes
+DEBUG: Successfully imported module: ctypes
+DEBUG: OpenSSL compile options: b'compiler: gcc -fPIC -pthread -m64 -Wa,--noexecstack -Wall -fzero-call-used-regs=used-gpr -DOPENSSL_TLS_SECURITY_LEVEL=2 -Wa,--noexecstack -g -O2 -ffile-prefix-map=/build/reproducible-path/openssl-3.0.16=. -fstack-protector-strong -Wformat -Werror=format-security -DOPENSSL_USE_NODELETE -DL_ENDIAN -DOPENSSL_PIC -DOPENSSL_BUILDING_OPENSSL -DNDEBUG -Wdate-time -D_FORTIFY_SOURCE=2'
+DEBUG: 2025-07-11 14:29:44,846 - DEBUG - Initialized extPort (for UPnP) as None
+DEBUG: 2025-07-11 14:29:44,846 - DEBUG - Initialized socksIP (for Tor hidden service) as None
+DEBUG: 2025-07-11 14:29:44,846 - DEBUG - Initialized appdata (application data storage directory) as empty string
+DEBUG: 2025-07-11 14:29:44,846 - DEBUG -   enableNetwork = True (enable network threads)
+DEBUG: 2025-07-11 14:29:44,846 - DEBUG - Initialized maximumNumberOfHalfOpenConnections to 0
+DEBUG: 2025-07-11 14:29:44,846 - DEBUG - Initialized discoveredPeers dictionary
+DEBUG: 2025-07-11 14:29:44,846 - DEBUG - Initialized clientHasReceivedIncomingConnections to False (used by API command clientStatus)
+DEBUG: 2025-07-11 14:29:44,847 - DEBUG - Creating Inventory placeholder
+DEBUG: 2025-07-11 14:29:44,847 - DEBUG - Creating Placeholder instance for class: Inventory
+DEBUG: 2025-07-11 14:29:44,853 - DEBUG - Failed to get value for [bitmessagesettings] settingsversion: No option 'settingsversion' in section: 'bitmessagesettings' (using default None)
+DEBUG: 2025-07-11 14:29:44,853 - DEBUG - DEBUG: lookupAppdataFolder - old directory does not exist or move failed
+DEBUG: 2025-07-11 14:29:44,876 - DEBUG - Getting config value: [bitmessagesettings] maxoutboundconnections = 8
+DEBUG: 2025-07-11 14:29:44,876 - DEBUG - Getting config value: [bitmessagesettings] maxoutboundconnections = 8
+DEBUG: 2025-07-11 14:29:44,876 - DEBUG - Getting int config: [bitmessagesettings] maxoutboundconnections = 8
+DEBUG: 2025-07-11 14:29:44,876 - DEBUG - No custom validator for [bitmessagesettings] settingsversion
+DEBUG: Successfully imported pathmagic
+DEBUG: Application directory set to: /home/DEBUG_pybitmessage/src
+DEBUG: RIPEMD160Hash imported successfully
+DEBUG: Attempting to import module: sqlite3
+DEBUG: Successfully imported module: sqlite3
+DEBUG: SQLite module imported successfully
+DEBUG: SQLite compile options: ATOMIC_INTRINSICS=1, COMPILER=gcc-12.2.0, DEFAULT_AUTOVACUUM, DEFAULT_CACHE_SIZE=-2000, DEFAULT_FILE_FORMAT=4, DEFAULT_JOURNAL_SIZE_LIMIT=-1, DEFAULT_MMAP_SIZE=0, DEFAULT_PAGE_SIZE=4096, DEFAULT_PCACHE_INITSZ=20, DEFAULT_RECURSIVE_TRIGGERS, DEFAULT_SECTOR_SIZE=4096, DEFAULT_SYNCHRONOUS=2, DEFAULT_WAL_AUTOCHECKPOINT=1000, DEFAULT_WAL_SYNCHRONOUS=2, DEFAULT_WORKER_THREADS=0, ENABLE_COLUMN_METADATA, ENABLE_DBSTAT_VTAB, ENABLE_FTS3, ENABLE_FTS3_PARENTHESIS, ENABLE_FTS3_TOKENIZER, ENABLE_FTS4, ENABLE_FTS5, ENABLE_LOAD_EXTENSION, ENABLE_MATH_FUNCTIONS, ENABLE_PREUPDATE_HOOK, ENABLE_RTREE, ENABLE_SESSION, ENABLE_STMTVTAB, ENABLE_UNLOCK_NOTIFY, ENABLE_UPDATE_DELETE_LIMIT, HAVE_ISNAN, LIKE_DOESNT_MATCH_BLOBS, MALLOC_SOFT_LIMIT=1024, MAX_ATTACHED=10, MAX_COLUMN=2000, MAX_COMPOUND_SELECT=500, MAX_DEFAULT_PAGE_SIZE=32768, MAX_EXPR_DEPTH=1000, MAX_FUNCTION_ARG=127, MAX_LENGTH=1000000000, MAX_LIKE_PATTERN_LENGTH=50000, MAX_MMAP_SIZE=0x7fff0000, MAX_PAGE_COUNT=1073741823, MAX_PAGE_SIZE=65536, MAX_SCHEMA_RETRY=25, MAX_SQL_LENGTH=1000000000, MAX_TRIGGER_DEPTH=1000, MAX_VARIABLE_NUMBER=250000, MAX_VDBE_OP=250000000, MAX_WORKER_THREADS=8, MUTEX_PTHREADS, OMIT_LOOKASIDE, SECURE_DELETE, SOUNDEX, SYSTEM_MALLOC, TEMP_STORE=1, THREADSAFE=1, USE_URI
+DEBUG: Closed SQLite connection
+DEBUG: Attempting to import module: ctypes
+DEBUG: Successfully imported module: ctypes
+DEBUG: OpenSSL compile options: b'compiler: gcc -fPIC -pthread -m64 -Wa,--noexecstack -Wall -fzero-call-used-regs=used-gpr -DOPENSSL_TLS_SECURITY_LEVEL=2 -Wa,--noexecstack -g -O2 -ffile-prefix-map=/build/reproducible-path/openssl-3.0.16=. -fstack-protector-strong -Wformat -Werror=format-security -DOPENSSL_USE_NODELETE -DL_ENDIAN -DOPENSSL_PIC -DOPENSSL_BUILDING_OPENSSL -DNDEBUG -Wdate-time -D_FORTIFY_SOURCE=2'
+DEBUG: Imported modules using absolute imports
+DEBUG: Imported thread classes: addressGenerator, objectProcessor, singleCleaner, singleWorker, sqlThread
+DEBUG: Exported symbols: ['addressGenerator', 'objectProcessor', 'singleCleaner', 'singleWorker', 'sqlThread', 'printLock']
+DEBUG: Fixing socket settings
+DEBUG: Adjusting half-open connections limit
+DEBUG: qtpy imported successfully
+DEBUG: sip imported and configured successfully
+DEBUG: Attempting to import module: qtpy.QtCore
+DEBUG: Successfully imported module: qtpy.QtCore
+DEBUG: SQL thread started and inventory initialized
+DEBUG: Database connection established
+DEBUG: addressGenerator thread started
+DEBUG: Address generator thread started
+DEBUG: Checking database version for inventory table update
+DEBUG: Processing SQL operation: SELECT objecttype, streamnumber, payload, expirestime, tag FROM inventory WHERE objecttype=?
+DEBUG: Executing SQL query: SELECT objecttype, streamnumber, payload, expirestime, tag FROM inventory WHERE objecttype=? with parameters: (7630706,)
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'5q5jbkverg7ocjif.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'potlkbsztxby6hzesecdi2oarf7mz6xibci3ttcarc63aapgg56lppyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'3udxfukzcv6gjvr3a5hf366jtzpwicav64slkmwoyqdgdhitzxk3o5id.onion':2967 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'5q5jbkverg7ocjif.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'3udxfukzcv6gjvr3a5hf366jtzpwicav64slkmwoyqdgdhitzxk3o5id.onion':2967 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'r7rcxukuujhpe6rv.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'znp7g4ws4cx5fhwtlyctfvpwb7kbfod2yttl47pb7kpnbnru5nclsvad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'jtgn7hdunsits7pldjj5lgmla54lwznr5wd3z2yctkvnwfyiue5ddkid.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'yj5hresiseclmf5tm2gj6nmyfw7mr26gqwwjmwg6ah2ulqlsiur7jaad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'r7rcxukuujhpe6rv.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'yalbpgxjcforgqrifudfkieeduygyhuw6vkie2nlkhnd22z2tqhyfaid.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'cv5qihf5cbcp7ojie2oegr7m2dhmyply7ljdgmo65nfiowkrzcnhz6yd.onion':2967 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'deadbeefgrqt53bn.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'cv5qihf5cbcp7ojie2oegr7m2dhmyply7ljdgmo65nfiowkrzcnhz6yd.onion':2967 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b't7dlfn4sr7oyhrd747xbumleznwowx6vaei4jipdqdmal7f6ejcszfyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'cv5qihf5cbcp7ojie2oegr7m2dhmyply7ljdgmo65nfiowkrzcnhz6yd.onion':2967 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'nbceey5xyfzqgr6ostkvdwqwkrdbgcdjmfhem4gbpk7uriyuajoltjqd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'cv5qihf5cbcp7ojie2oegr7m2dhmyply7ljdgmo65nfiowkrzcnhz6yd.onion':2967 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'r54e3ocm2olhueqebxc6cgnbdkog6th3cxa5xo6ikwgpkawtc6vjmlqd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'deadbeefgrqt53bn.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'pwhc4a25ybfefihf.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'fizfttrn7pvatixhlire6odl2ujda6xflhdqg7otq4k4lt5f6jxx6kad.onion':8444 for stream 1
+DEBUG: Processing ONIONPEER object
+DEBUG: Processing onion peer object
+DEBUG: Adding onion peer: b'7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion':8444 for stream 1
+DEBUG: Networking disabled, connecting to stream 1 directly
+DEBUG: [NetworkStatus.__init__] Initializing NetworkStatus
+DEBUG: [NetworkStatus.__init__] Loading UI file
+DEBUG: [NetworkStatus.__init__] Configuring table header
+DEBUG: [NetworkStatus.__init__] Resetting sort indicator
+DEBUG: [NetworkStatus.__init__] Startup time set to time.struct_time(tm_year=2025, tm_mon=7, tm_mday=11, tm_hour=14, tm_min=29, tm_sec=46, tm_wday=4, tm_yday=192, tm_isdst=1)
+DEBUG: [NetworkStatus.__init__] Setting up signal connections
+DEBUG: [NetworkStatus.__init__] Setting up timer
+DEBUG: [NetworkStatus.retranslateUi] Retranslating UI
+DEBUG: [RetranslateMixin.retranslateUi] Loading UI file: networkstatus.ui
+DEBUG: [RetranslateMixin.retranslateUi] Processing widget: labelTotalConnections
+DEBUG: [RetranslateMixin.retranslateUi] Setting text for labelTotalConnections: Total connections:
+DEBUG: [RetranslateMixin.retranslateUi] Processing widget: tableWidgetConnectionCount
+DEBUG: [RetranslateMixin.retranslateUi] Processing table widget: tableWidgetConnectionCount
+DEBUG: [RetranslateMixin.retranslateUi] Setting column 0 header: Peer
+DEBUG: [RetranslateMixin.retranslateUi] Setting text for labelLookupsPerSecond: Inventory lookups per second: 0
+DEBUG: [NetworkStatus.retranslateUi] Total connections: 0
+DEBUG: [NetworkStatus.retranslateUi] Startup time: Fr 11 Jul 2025 14:29:46 CEST
+DEBUG: [NetworkStatus.updateNumberOfMessagesProcessed] Messages: 0
+DEBUG: [NetworkStatus.updateNumberOfObjectsToBeSynced] Pending objects: 0
+DEBUG: [NetworkStatus.updateNumberOfBroadcastsProcessed] Broadcasts: 0
+DEBUG: [NetworkStatus.updateNumberOfObjectsToBeSynced] Pending objects: 0
+DEBUG: [NetworkStatus.updateNumberOfPubkeysProcessed] Pubkeys: 0
+DEBUG: [NetworkStatus.updateNumberOfObjectsToBeSynced] Pending objects: 0
+DEBUG: Successfully imported pathmagic
+DEBUG: Application directory set to: /home/DEBUG_pybitmessage/src
+DEBUG: RIPEMD160Hash imported successfully
+DEBUG: Attempting to import module: sqlite3
+DEBUG: Successfully imported module: sqlite3
+DEBUG: SQLite module imported successfully
+DEBUG: SQLite compile options: ATOMIC_INTRINSICS=1, COMPILER=gcc-12.2.0, DEFAULT_AUTOVACUUM, DEFAULT_CACHE_SIZE=-2000, DEFAULT_FILE_FORMAT=4, DEFAULT_JOURNAL_SIZE_LIMIT=-1, DEFAULT_MMAP_SIZE=0, DEFAULT_PAGE_SIZE=4096, DEFAULT_PCACHE_INITSZ=20, DEFAULT_RECURSIVE_TRIGGERS, DEFAULT_SECTOR_SIZE=4096, DEFAULT_SYNCHRONOUS=2, DEFAULT_WAL_AUTOCHECKPOINT=1000, DEFAULT_WAL_SYNCHRONOUS=2, DEFAULT_WORKER_THREADS=0, ENABLE_COLUMN_METADATA, ENABLE_DBSTAT_VTAB, ENABLE_FTS3, ENABLE_FTS3_PARENTHESIS, ENABLE_FTS3_TOKENIZER, ENABLE_FTS4, ENABLE_FTS5, ENABLE_LOAD_EXTENSION, ENABLE_MATH_FUNCTIONS, ENABLE_PREUPDATE_HOOK, ENABLE_RTREE, ENABLE_SESSION, ENABLE_STMTVTAB, ENABLE_UNLOCK_NOTIFY, ENABLE_UPDATE_DELETE_LIMIT, HAVE_ISNAN, LIKE_DOESNT_MATCH_BLOBS, MALLOC_SOFT_LIMIT=1024, MAX_ATTACHED=10, MAX_COLUMN=2000, MAX_COMPOUND_SELECT=500, MAX_DEFAULT_PAGE_SIZE=32768, MAX_EXPR_DEPTH=1000, MAX_FUNCTION_ARG=127, MAX_LENGTH=1000000000, MAX_LIKE_PATTERN_LENGTH=50000, MAX_MMAP_SIZE=0x7fff0000, MAX_PAGE_COUNT=1073741823, MAX_PAGE_SIZE=65536, MAX_SCHEMA_RETRY=25, MAX_SQL_LENGTH=1000000000, MAX_TRIGGER_DEPTH=1000, MAX_VARIABLE_NUMBER=250000, MAX_VDBE_OP=250000000, MAX_WORKER_THREADS=8, MUTEX_PTHREADS, OMIT_LOOKASIDE, SECURE_DELETE, SOUNDEX, SYSTEM_MALLOC, TEMP_STORE=1, THREADSAFE=1, USE_URI
+DEBUG: Closed SQLite connection
+DEBUG: Attempting to import module: ctypes
+DEBUG: Successfully imported module: ctypes
+DEBUG: OpenSSL compile options: b'compiler: gcc -fPIC -pthread -m64 -Wa,--noexecstack -Wall -fzero-call-used-regs=used-gpr -DOPENSSL_TLS_SECURITY_LEVEL=2 -Wa,--noexecstack -g -O2 -ffile-prefix-map=/build/reproducible-path/openssl-3.0.16=. -fstack-protector-strong -Wformat -Werror=format-security -DOPENSSL_USE_NODELETE -DL_ENDIAN -DOPENSSL_PIC -DOPENSSL_BUILDING_OPENSSL -DNDEBUG -Wdate-time -D_FORTIFY_SOURCE=2'
