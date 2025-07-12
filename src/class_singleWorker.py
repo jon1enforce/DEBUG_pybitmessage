@@ -8,9 +8,8 @@ from __future__ import division
 import sys
 import hashlib
 import time
-from binascii import unhexlify
+from binascii import hexlify, unhexlify
 import binascii
-sys.modules['hexlify'] = binascii.hexlify  # Globaler Hexlify-Alias
 from struct import pack
 from subprocess import call  # nosec
 import sqlite3
@@ -266,7 +265,6 @@ class singleWorker(StoppableThread):
         logger.info("DEBUG: singleWorker quitting...")
 
     def _getKeysForAddress(self, address):
-        from binascii import hexlify, unhexlify
         logger.debug("DEBUG: Getting keys for address %s", address)
         try:
             privSigningKeyBase58 = config.get(address, 'privsigningkey')
