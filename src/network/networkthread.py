@@ -6,6 +6,7 @@ import network.asyncore_pollchoose as asyncore
 from network import connectionpool
 from queues import excQueue
 from .threads import StoppableThread
+import time
 
 logger = logging.getLogger('default')
 
@@ -32,34 +33,48 @@ class BMNetworkThread(StoppableThread):
         logger.debug("DEBUG: BMNetworkThread stopThread called")
         super(BMNetworkThread, self).stopThread()
         
-        # Close listening sockets
-        logger.debug("DEBUG: Closing listening sockets")
-        for addr, sock in connectionpool.pool.listeningSockets.items():
-            try:
-                logger.debug("DEBUG: Closing listening socket %s", addr)
-                sock.close()
-            except Exception as e:
-                logger.debug("DEBUG: Error closing listening socket %s: %s", addr, str(e))
+        # Safe shutdown procedure
+        def safe_close_connections(connection_dict, connection_type):
+            """Thread-safe connection closing"""
+            max_attempts = 3
+            for attempt in range(max_attempts):
+                try:
+                    # Create a snapshot of current connections
+                    connections = list(connection_dict.items())
+                    if not connections:
+                        break
+                        
+                    logger.debug("DEBUG: Closing %s connections (attempt %d)", connection_type, attempt+1)
+                    for addr, conn in connections:
+                        try:
+                            logger.debug("DEBUG: Closing %s connection %s", connection_type, addr)
+                            conn.close()
+                            # Remove from original dict if still exists
+                            connection_dict.pop(addr, None)
+                        except Exception as e:
+                            logger.debug("DEBUG: Error closing %s connection %s: %s", 
+                                        connection_type, addr, str(e))
+                    break
+                except RuntimeError as e:
+                    if "dictionary changed size" in str(e) and attempt < max_attempts - 1:
+                        time.sleep(0.1 * (attempt + 1))
+                        continue
+                    raise
         
-        # Close outbound connections
-        logger.debug("DEBUG: Closing outbound connections")
-        for addr, conn in connectionpool.pool.outboundConnections.items():
-            try:
-                logger.debug("DEBUG: Closing outbound connection to %s", addr)
-                conn.close()
-            except Exception as e:
-                logger.debug("DEBUG: Error closing outbound connection to %s: %s", addr, str(e))
-        
-        # Close inbound connections
-        logger.debug("DEBUG: Closing inbound connections")
-        for addr, conn in connectionpool.pool.inboundConnections.items():
-            try:
-                logger.debug("DEBUG: Closing inbound connection from %s", addr)
-                conn.close()
-            except Exception as e:
-                logger.debug("DEBUG: Error closing inbound connection from %s: %s", addr, str(e))
+        # Close connections in stages
+        safe_close_connections(connectionpool.pool.listeningSockets, "listening socket")
+        safe_close_connections(connectionpool.pool.outboundConnections, "outbound")
+        safe_close_connections(connectionpool.pool.inboundConnections, "inbound")
 
-        # Final cleanup
-        logger.debug("DEBUG: Performing final asyncore cleanup")
-        asyncore.close_all()
+        # Final cleanup with retry logic
+        for attempt in range(3):
+            try:
+                logger.debug("DEBUG: Performing asyncore cleanup (attempt %d)", attempt+1)
+                asyncore.close_all()
+                break
+            except Exception as e:
+                if attempt == 2:
+                    logger.error("DEBUG: Final asyncore cleanup failed: %s", str(e))
+                time.sleep(0.2 * (attempt + 1))
+
         logger.debug("DEBUG: Network thread shutdown complete")

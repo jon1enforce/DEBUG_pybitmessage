@@ -2,7 +2,7 @@
 TCP protocol handler
 """
 # pylint: disable=too-many-ancestors
-
+import sys
 import logging
 import math
 import random
@@ -49,9 +49,9 @@ def _ends_with(s, tail):
 class TCPConnection(BMProto, TLSDispatcher):
     # pylint: disable=too-many-instance-attributes
     """
-    .. todo:: Look to understand and/or fix the non-parent-init-called
+    Enhanced TCP connection handler with OpenBSD-specific optimizations
     """
-
+    
     def __init__(self, address=None, sock=None):
         logger.debug("DEBUG: Initializing TCPConnection with address: %s, sock: %s", address, sock)
         BMProto.__init__(self, address=address, sock=sock)
@@ -60,36 +60,81 @@ class TCPConnection(BMProto, TLSDispatcher):
         self.streams = [0]
         self.fullyEstablished = False
         self.skipUntil = 0
+        self.openbsd_retry_count = 0
+        self.last_connection_attempt = 0
+        
+        # OpenBSD-specific socket configuration
+        if sys.platform.startswith('openbsd'):
+            # Connection pacing parameters
+            self.openbsd_min_retry_delay = 1.0  # Start with 1 second
+            self.openbsd_max_retry_delay = 30.0  # Max 30 seconds delay
+            self.openbsd_connection_timeout = 30  # Connection timeout in seconds
         
         if address is None and sock is not None:
+            # Inbound connection handling
             self.destination = Peer(*sock.getpeername())
             self.isOutbound = False
             TLSDispatcher.__init__(self, sock, server_side=True)
             self.connectedAt = time.time()
-            logger.debug(
-                'DEBUG: Received inbound connection from %s:%i',
-                self.destination.host, self.destination.port)
+            logger.debug('DEBUG: Received inbound connection from %s:%i', 
+                        self.destination.host, self.destination.port)
             self.nodeid = randomBytes(8)
             logger.debug("DEBUG: Generated nodeid: %s", self.nodeid)
+            
+            # OpenBSD-specific inbound settings
+            if sys.platform.startswith('openbsd'):
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+                
         elif address is not None and sock is not None:
+            # Outbound proxy connection
             TLSDispatcher.__init__(self, sock, server_side=False)
             self.isOutbound = True
-            logger.debug(
-                'DEBUG: Outbound proxy connection to %s:%i',
-                self.destination.host, self.destination.port)
+            logger.debug('DEBUG: Outbound proxy connection to %s:%i',
+                       self.destination.host, self.destination.port)
+            
+            # OpenBSD-specific proxy settings
+            if sys.platform.startswith('openbsd'):
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                sock.settimeout(self.openbsd_connection_timeout)
         else:
+            # New outbound connection
             self.destination = address
             self.isOutbound = True
+            current_time = time.time()
+            
+            # OpenBSD connection rate limiting
+            if sys.platform.startswith('openbsd'):
+                elapsed = current_time - self.last_connection_attempt
+                if elapsed < self.openbsd_min_retry_delay:
+                    delay = min(
+                        self.openbsd_min_retry_delay * (2 ** self.openbsd_retry_count),
+                        self.openbsd_max_retry_delay
+                    )
+                    logger.debug("OpenBSD: Delaying connection attempt by %.1fs", delay)
+                    time.sleep(delay)
+                self.last_connection_attempt = current_time
+            
             socket_family = socket.AF_INET6 if ":" in address.host else socket.AF_INET
             logger.debug("DEBUG: Creating new socket with family: %s", socket_family)
             self.create_socket(socket_family, socket.SOCK_STREAM)
-            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            TLSDispatcher.__init__(self, sock, server_side=False)
-            logger.debug(
-                'DEBUG: Connecting to %s:%i',
-                self.destination.host, self.destination.port)
-            self.connect(self.destination)
             
+            # OpenBSD-specific socket options
+            if sys.platform.startswith('openbsd'):
+                self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                self.socket.setsockopt(socket.IPPROTO_TCP, 0x10, 1)  # TCP_MD5SIG
+                self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 30)
+                self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 15)
+                if hasattr(socket, 'TCP_SYNCNT'):
+                    self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_SYNCNT, 3)
+                self.socket.settimeout(self.openbsd_connection_timeout)
+            
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            TLSDispatcher.__init__(self, self.socket, server_side=False)
+            logger.debug('DEBUG: Connecting to %s:%i', 
+                       self.destination.host, self.destination.port)
+            self.connect(self.destination)
+        
         try:
             self.local = (
                 protocol.checkIPAddress(
@@ -99,12 +144,11 @@ class TCPConnection(BMProto, TLSDispatcher):
             logger.debug("DEBUG: Local connection check: %s", self.local)
         except socket.error as e:
             logger.debug("DEBUG: Socket error during local check: %s", e)
-            pass
-            
+        
         self.network_group = protocol.network_group(self.destination.host)
         logger.debug("DEBUG: Network group: %s", self.network_group)
         
-        ObjectTracker.__init__(self)  # pylint: disable=non-parent-init-called
+        ObjectTracker.__init__(self)
         self.bm_proto_reset()
         self.set_state("bm_header", expectBytes=protocol.Header.size)
         logger.debug("DEBUG: TCPConnection initialization complete")
@@ -265,17 +309,27 @@ class TCPConnection(BMProto, TLSDispatcher):
         logger.debug("DEBUG: Finished sending bigInv message")
 
     def handle_connect(self):
-        """Callback for TCP connection being established."""
-        logger.debug("DEBUG: Handling TCP connection")
+        """Enhanced connection handler with OpenBSD optimizations"""
+        if sys.platform.startswith('openbsd'):
+            try:
+                # Stabilize connection
+                self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+                time.sleep(0.1)  # Small delay for BSD stack
+            except socket.error as e:
+                logger.debug("OpenBSD: Socket option error: %s", e)
+        
         try:
             AdvancedDispatcher.handle_connect(self)
+            self.openbsd_retry_count = 0  # Reset on successful connection
         except socket.error as e:
             if e.errno in asyncore._DISCONNECTED:
-                logger.debug(
-                    'DEBUG: %s:%i: Connection failed: %s',
-                    self.destination.host, self.destination.port, e)
+                logger.debug('DEBUG: %s:%i: Connection failed: %s',
+                           self.destination.host, self.destination.port, e)
+                if sys.platform.startswith('openbsd'):
+                    self.handle_openbsd_connection_failure()
                 return
-                
+        
         self.nodeid = randomBytes(8)
         logger.debug("DEBUG: Generated new nodeid: %s", self.nodeid)
         
@@ -287,6 +341,34 @@ class TCPConnection(BMProto, TLSDispatcher):
         self.connectedAt = time.time()
         receiveDataQueue.put(self.destination)
         logger.debug("DEBUG: Sent version message and queued destination")
+
+    def handle_openbsd_connection_failure(self):
+        """OpenBSD-specific connection failure handling"""
+        if not sys.platform.startswith('openbsd'):
+            return
+            
+        self.openbsd_retry_count += 1
+        delay = min(
+            self.openbsd_min_retry_delay * (2 ** self.openbsd_retry_count),
+            self.openbsd_max_retry_delay
+        )
+        logger.warning("OpenBSD: Connection failed, waiting %.1fs (attempt %d)", 
+                      delay, self.openbsd_retry_count)
+        
+        # Clean up resources
+        try:
+            self.socket.close()
+        except:
+            pass
+            
+        time.sleep(delay)
+
+    def handle_error(self):
+        """Enhanced error handler for OpenBSD"""
+        logger.debug("DEBUG: Handling TCP connection error")
+        if sys.platform.startswith('openbsd'):
+            self.handle_openbsd_connection_failure()
+        super().handle_error()
 
     def handle_read(self):
         """Callback for reading from a socket"""
