@@ -55,6 +55,8 @@ class TCPConnection(BMProto, TLSDispatcher):
     def __init__(self, address=None, sock=None):
         logger.debug("DEBUG: Initializing TCPConnection with address: %s, sock: %s", address, sock)
         BMProto.__init__(self, address=address, sock=sock)
+        if sock is None:
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4 TCP socket
         self.verackReceived = False
         self.verackSent = False
         self.streams = [0]
