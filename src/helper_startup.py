@@ -13,6 +13,12 @@ import time
 from distutils.version import StrictVersion
 from struct import pack
 from six.moves import configparser
+if sys.platform.startswith('openbsd'):
+    socket.has_ipv6 = False  # Informiert andere Module, dass IPv6 nicht verfügbar ist
+    socket.AF_INET6 = None   # Deaktiviert IPv6 komplett
+    socket.IPPROTO_IPV6 = None
+    socket.IPV6_V6ONLY = None
+
 
 try:
     import defaults
