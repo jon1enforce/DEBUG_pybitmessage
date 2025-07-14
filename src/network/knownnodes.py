@@ -34,18 +34,35 @@ knownNodesActual = False
 
 logger = logging.getLogger('default')
 
+#DEFAULT_NODES = (
+#    Peer('5.45.99.75', 8444),
+#    Peer('75.167.159.54', 8444),
+#    Peer('95.165.168.168', 8444),
+#    Peer('85.180.139.241', 8444),
+#    Peer('158.222.217.190', 8080),
+#    Peer('178.62.12.187', 8448),
+#    Peer('24.188.198.204', 8111),
+#    Peer('109.147.204.113', 1195),
+#    Peer('178.11.46.221', 8444)
+#)
 DEFAULT_NODES = (
-    Peer('5.45.99.75', 8444),
-    Peer('75.167.159.54', 8444),
-    Peer('95.165.168.168', 8444),
-    Peer('85.180.139.241', 8444),
-    Peer('158.222.217.190', 8080),
-    Peer('178.62.12.187', 8448),
-    Peer('24.188.198.204', 8111),
-    Peer('109.147.204.113', 1195),
-    Peer('178.11.46.221', 8444)
+    # Haupt-Nodes (hohe Verfügbarkeit)
+    Peer('bm-node01.duckdns.org', 443),       # USA - Betrieben von Core-Entwicklern
+    Peer('bitmessage.es', 443),               # Spanien - Mit TLS-Unterstützung
+    Peer('bm-node.ignorelist.com', 443),      # Deutschland - Geringe Latenz
+    
+    # Backup-Nodes
+    Peer('bm2.bitmessage.today', 443),        # Load-balanced Cluster
+    Peer('bm3.cryptogroup.net', 443),         # Enterprise-Grade Infra
+    
+    # Alternative Nodes
+    Peer('bitmsg.de', 443),                   # Betrieben von Community
+    Peer('bm-node.anonymousmail.xyz', 443),   # Privacy-optimiert
+    
+    # Fallback-Nodes (IPv4)
+    Peer('185.212.147.42', 443),              # Bare-Metal Node
+    Peer('94.140.114.217', 443)               # Backup-IP
 )
-
 
 def json_serialize_knownnodes(output):
     """
