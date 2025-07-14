@@ -54,7 +54,7 @@ class TCPConnection(BMProto, TLSDispatcher):
     
     def __init__(self, address=None, sock=None):
         # Timeout-Konfiguration
-        self.openbsd_connection_timeout = getattr(config, 'openbsd_timeout', 10.0)
+        self.openbsd_connection_timeout = getattr(config, 'openbsd_timeout', 30.0)
         self.openbsd_min_retry_delay = 1.0
         self.openbsd_max_retry_delay = 30.0
         logger.debug("DEBUG: Initializing TCPConnection with address: %s, sock: %s", address, sock)
@@ -367,10 +367,19 @@ class TCPConnection(BMProto, TLSDispatcher):
         time.sleep(delay)
 
     def handle_error(self):
-        """Enhanced error handler for OpenBSD"""
-        logger.debug("DEBUG: Handling TCP connection error")
+        """Behandelt Verbindungsfehler mit Retry-Logik"""
         if sys.platform.startswith('openbsd'):
-            self.handle_openbsd_connection_failure()
+            if hasattr(self, 'connect_retries'):
+                self.connect_retries += 1
+            else:
+                self.connect_retries = 1
+                
+            if self.connect_retries < 3:  # Max 3 Versuche
+                delay = min(2 ** self.connect_retries, 30)  # Exponentieller Backoff
+                logger.warning("OpenBSD: Connection failed, retrying in %ds...", delay)
+                time.sleep(delay)
+                self.connect(self.addr)
+                return
         super().handle_error()
 
     def handle_read(self):
