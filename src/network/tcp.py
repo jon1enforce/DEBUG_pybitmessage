@@ -53,6 +53,10 @@ class TCPConnection(BMProto, TLSDispatcher):
     """
     
     def __init__(self, address=None, sock=None):
+        # Timeout-Konfiguration
+        self.openbsd_connection_timeout = getattr(config, 'openbsd_timeout', 10.0)
+        self.openbsd_min_retry_delay = 1.0
+        self.openbsd_max_retry_delay = 30.0
         logger.debug("DEBUG: Initializing TCPConnection with address: %s, sock: %s", address, sock)
         BMProto.__init__(self, address=address, sock=sock)
         if sock is None:
@@ -68,9 +72,6 @@ class TCPConnection(BMProto, TLSDispatcher):
         # OpenBSD-specific socket configuration
         if sys.platform.startswith('openbsd'):
             self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-            self.socket.setsockopt(socket.IPPROTO_TCP, 0x10, 1)  # TCP_MD5SIG
-            self.socket.setsockopt(socket.IPPROTO_TCP, 0x100, 30)  # TCP_KEEPIDLE (0x100)
-            self.socket.setsockopt(socket.IPPROTO_TCP, 0x101, 15)  # TCP_KEEPINTVL (0x101)
             if hasattr(socket, 'TCP_SYNCNT'):
                 self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_SYNCNT, 3)
             self.socket.settimeout(self.openbsd_connection_timeout)
