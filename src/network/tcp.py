@@ -128,9 +128,6 @@ class TCPConnection(BMProto, TLSDispatcher):
             # OpenBSD-specific socket options
             if sys.platform.startswith('openbsd'):
                 self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                self.socket.setsockopt(socket.IPPROTO_TCP, 0x10, 1)  # TCP_MD5SIG
-                self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 30)
-                self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 15)
                 if hasattr(socket, 'TCP_SYNCNT'):
                     self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_SYNCNT, 3)
                 self.socket.settimeout(self.openbsd_connection_timeout)
