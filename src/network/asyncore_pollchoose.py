@@ -686,7 +686,6 @@ class dispatcher(object):
         logger.debug("DEBUG: bind(%s) for %s", addr, self)
         self.addr = addr
         return self.socket.bind(addr)
-
     def connect(self, address):
         """Connect to an address"""
         logger.debug("DEBUG: connect(%s) for %s", address, self)
@@ -694,10 +693,18 @@ class dispatcher(object):
         self.connecting = True
         err = self.socket.connect_ex(address)
         logger.debug("DEBUG: connect_ex returned %d", err)
-        if err in (EINPROGRESS, EALREADY, EWOULDBLOCK, WSAEWOULDBLOCK) \
+        
+        # Liste der behandelten Fehlercodes erweitern
+        if err in (EINPROGRESS, EALREADY, EWOULDBLOCK, WSAEWOULDBLOCK, ECONNREFUSED) \
                 or err == EINVAL and os.name in ('nt', 'ce'):
             self.addr = address
+            if err == ECONNREFUSED:
+                logger.warning("Connection refused to %s, will retry", address)
+                self.del_channel()
+                self.socket.close()
+                self.create_socket(self.socket.family, self.socket.type)
             return
+            
         if err in (0, EISCONN):
             self.addr = address
             self.handle_connect_event()
