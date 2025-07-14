@@ -60,7 +60,11 @@ class TCPConnection(BMProto, TLSDispatcher):
         logger.debug("DEBUG: Initializing TCPConnection with address: %s, sock: %s", address, sock)
         BMProto.__init__(self, address=address, sock=sock)
         if sock is None:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4 TCP socket
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # IPv4 TCP socket            
+            self.socket.setblocking(False)
+            logger.debug("Socket non-blocking mode set")
+            
+        else:
             self.socket.setblocking(False)
             logger.debug("Socket non-blocking mode set")
         self.verackReceived = False
