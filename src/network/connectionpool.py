@@ -25,11 +25,20 @@ from .udp import UDPSocket
 logger = logging.getLogger('default')
 
 
+# Statt direkter socket Aufrufe, verwende helpers
+from .helpers import resolve_hostname, get_socket_family, is_openbsd, openbsd_socket_compat
+# Beispiel-Ersetzung in connectionchooser.py
 def _ends_with(s, tail):
     try:
-        return s.endswith(tail)
+        result = s.endswith(tail)
     except:
-        return s.decode("utf-8", "replace").endswith(tail)
+        # OpenBSD-kompatible Lösung
+        try:
+            result = s.decode("utf-8", "replace").endswith(tail)
+        except (UnicodeDecodeError, AttributeError):
+            result = str(s).endswith(tail)
+    logger.debug("DEBUG: _ends_with check - string: %s, tail: %s, result: %s", s, tail, result)
+    return result
 
 class BMConnectionPool(object):
     """Pool of all existing connections"""

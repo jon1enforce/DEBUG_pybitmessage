@@ -14,8 +14,8 @@ from network import receiveDataQueue
 from .bmproto import BMProto
 from .node import Peer
 from .objectracker import ObjectTracker
-
-
+from network.helpers import get_socket_family
+from .helpers import is_openbsd, openbsd_socket_compat, get_socket_family
 logger = logging.getLogger('default')
 
 
@@ -36,7 +36,7 @@ class UDPSocket(BMProto):  # pylint: disable=too-many-instance-attributes
         if sock is None:
             if host is None:
                 host = ''
-            socket_family = socket.AF_INET6 if ":" in host else socket.AF_INET
+            socket_family = get_socket_family(host)
             logger.debug(f"DEBUG: Creating new UDP socket with family {socket_family}")
             self.create_socket(socket_family, socket.SOCK_DGRAM)
             self.set_socket_reuse()
@@ -61,18 +61,26 @@ class UDPSocket(BMProto):  # pylint: disable=too-many-instance-attributes
         self.set_state("bm_header", expectBytes=protocol.Header.size)
 
     def set_socket_reuse(self):
-        """Set socket reuse option"""
+        """Set socket reuse options"""
         logger.debug("DEBUG: Setting socket reuse options")
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        try:
-            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-            logger.debug("DEBUG: SO_REUSEPORT set successfully")
-        except AttributeError:
-            logger.debug("DEBUG: SO_REUSEPORT not available on this platform")
-
-    # disable most commands before doing research / testing
-    # only addr (peer discovery), error and object are implemented
+        
+        # ✅ NUR auf OpenBSD anwenden
+        if is_openbsd():
+            try:
+                # OpenBSD-spezifische Einstellungen
+                self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+            except (AttributeError, socket.error, OSError):
+                pass
+        else:
+            # Normale Einstellungen für andere Plattformen
+            try:
+                # SO_REUSEPORT ist nicht auf allen Plattformen verfügbar
+                self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+            except (AttributeError, socket.error, OSError):
+                logger.debug("DEBUG: SO_REUSEPORT not available on this platform")
+                pass
 
     def bm_command_getdata(self):
         logger.debug("DEBUG: bm_command_getdata called (currently disabled)")
@@ -164,7 +172,7 @@ class UDPSocket(BMProto):  # pylint: disable=too-many-instance-attributes
         try:
             recdata, addr = self.socket.recvfrom(self._buf_len)
             logger.debug(f"DEBUG: Received {len(recdata)} bytes from {addr}")
-        except socket.error as e:
+        except (socket.error, OSError) as e:
             logger.error("socket error on recvfrom:", exc_info=True)
             logger.debug(f"DEBUG: Socket error in handle_read: {str(e)}")
             return
@@ -189,7 +197,7 @@ class UDPSocket(BMProto):  # pylint: disable=too-many-instance-attributes
             retval = self.socket.sendto(
                 self.write_buf, ('<broadcast>', self.port))
             logger.debug(f"DEBUG: Sent {retval} bytes via broadcast")
-        except socket.error as e:
+        except (socket.error, OSError) as e:
             logger.error("socket error on sendto:", exc_info=True)
             logger.debug(f"DEBUG: Socket error in handle_write: {str(e)}")
             retval = len(self.write_buf)

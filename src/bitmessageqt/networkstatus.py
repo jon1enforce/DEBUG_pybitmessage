@@ -217,6 +217,7 @@ class NetworkStatus(QtWidgets.QWidget, RetranslateMixin):
                 self.tableWidgetConnectionCount.setItem(
                     0, 1, QtWidgets.QTableWidgetItem("%s" % rating))
                 
+                # KORREKTUR: Setze Farbe basierend auf Verbindungstyp
                 color = "yellow" if outbound else "green"
                 print(f"DEBUG: [NetworkStatus.updateNetworkStatusTab] Setting color: {color}")
                 brush = QtGui.QBrush(QtGui.QColor(color), QtCore.Qt.SolidPattern)
@@ -225,21 +226,27 @@ class NetworkStatus(QtWidgets.QWidget, RetranslateMixin):
                 
                 print("DEBUG: [NetworkStatus.updateNetworkStatusTab] Setting item data")
                 self.tableWidgetConnectionCount.item(0, 0).setData(
-                    QtCore.Qt.UserRole, destination)
+                    QtCore.Qt.UserRole, {
+                        'destination': destination,
+                        'outbound': outbound,
+                        'fully_established': getattr(c, 'fullyEstablished', False)
+                    })
                 self.tableWidgetConnectionCount.item(0, 1).setData(
                     QtCore.Qt.UserRole, outbound)
             else:
                 print("DEBUG: [NetworkStatus.updateNetworkStatusTab] Removing connection row")
-                if not connectionpool.pool.inboundConnections:
-                    print("DEBUG: [NetworkStatus.updateNetworkStatusTab] No inbound connections, setting yellow status")
-                    self.window().setStatusIcon('yellow')
-                    
                 for i in range(self.tableWidgetConnectionCount.rowCount()):
-                    if self.tableWidgetConnectionCount.item(i, 0).data(
-                            QtCore.Qt.UserRole) != destination:
+                    item_data = self.tableWidgetConnectionCount.item(i, 0).data(QtCore.Qt.UserRole)
+                    if isinstance(item_data, dict):
+                        item_dest = item_data.get('destination')
+                    else:
+                        item_dest = item_data
+                    
+                    if item_dest != destination:
                         continue
-                    if self.tableWidgetConnectionCount.item(i, 1).data(
-                            QtCore.Qt.UserRole) == outbound:
+                    
+                    item_outbound = self.tableWidgetConnectionCount.item(i, 1).data(QtCore.Qt.UserRole)
+                    if item_outbound == outbound:
                         print(f"DEBUG: [NetworkStatus.updateNetworkStatusTab] Removing row {i}")
                         self.tableWidgetConnectionCount.removeRow(i)
                         break
@@ -253,17 +260,42 @@ class NetworkStatus(QtWidgets.QWidget, RetranslateMixin):
             self.labelTotalConnections.setText(_translate(
                 "networkstatus", "Total Connections: {0}").format(row_count))
             
-            if row_count:
-                if state.statusIconColor == 'red':
-                    print("DEBUG: [NetworkStatus.updateNetworkStatusTab] Setting yellow status icon")
-                    self.window().setStatusIcon('yellow')
-            elif state.statusIconColor != 'red':
-                print("DEBUG: [NetworkStatus.updateNetworkStatusTab] Setting red status icon")
+            # KORREKTUR: Verbesserte Status-Logik
+            successful_connections = 0
+            has_inbound = False
+            
+            # Zähle erfolgreiche Verbindungen
+            for i in range(row_count):
+                item_data = self.tableWidgetConnectionCount.item(i, 0).data(QtCore.Qt.UserRole)
+                if isinstance(item_data, dict):
+                    if item_data.get('fully_established', False):
+                        successful_connections += 1
+                    if not item_data.get('outbound', True):  # inbound connection
+                        has_inbound = True
+            
+            print(f"DEBUG: [NetworkStatus.updateNetworkStatusTab] Successful connections: {successful_connections}, Has inbound: {has_inbound}")
+            
+            # Setze Status basierend auf erfolgreichen Verbindungen
+            if successful_connections > 0:
+                # Wenn wir erfolgreiche Verbindungen haben, setze Status auf grün
+                print("DEBUG: [NetworkStatus.updateNetworkStatusTab] Successful connections found, setting GREEN status")
+                self.window().setStatusIcon('green')
+                state.statusIconColor = 'green'
+            elif row_count > 0:
+                # Wenn wir Verbindungen haben, aber keine erfolgreichen, setze gelb
+                print("DEBUG: [NetworkStatus.updateNetworkStatusTab] Connections but none successful, setting YELLOW status")
+                self.window().setStatusIcon('yellow')
+                state.statusIconColor = 'yellow'
+            else:
+                # Keine Verbindungen, setze rot
+                print("DEBUG: [NetworkStatus.updateNetworkStatusTab] No connections, setting RED status")
                 self.window().setStatusIcon('red')
+                state.statusIconColor = 'red'
                 
         except Exception as e:
             print(f"DEBUG: [NetworkStatus.updateNetworkStatusTab] Error updating network status: {e}")
-            raise
+            import traceback
+            traceback.print_exc()
         finally:
             self.tableWidgetConnectionCount.setUpdatesEnabled(True)
             self.tableWidgetConnectionCount.setSortingEnabled(True)

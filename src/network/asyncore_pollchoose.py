@@ -635,10 +635,16 @@ class dispatcher(object):
         self.poller_registered = False
 
     def create_socket(self, family=socket.AF_INET, socket_type=socket.SOCK_STREAM):
-        """Create a socket"""
+        from .helpers import openbsd_socket_compat, is_openbsd
+        
         logger.debug("DEBUG: create_socket(family=%s, type=%s)", family, socket_type)
         self.family_and_type = family, socket_type
         sock = socket.socket(family, socket_type)
+        
+        # OpenBSD-Kompatibilität
+        if is_openbsd():
+            sock = openbsd_socket_compat(sock)
+        
         sock.setblocking(0)
         self.set_socket(sock)
 
@@ -650,13 +656,9 @@ class dispatcher(object):
         self.add_channel(map)
 
     def set_reuse_addr(self):
-        """try to re-use a server port if possible"""
-        logger.debug("DEBUG: set_reuse_addr() for %s", self)
         try:
-            self.socket.setsockopt(
-                socket.SOL_SOCKET, socket.SO_REUSEADDR, self.socket.getsockopt(
-                    socket.SOL_SOCKET, socket.SO_REUSEADDR) | 1
-            )
+            # OpenBSD-kompatible Lösung
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         except socket.error:
             logger.debug("DEBUG: Failed to set SO_REUSEADDR")
             pass

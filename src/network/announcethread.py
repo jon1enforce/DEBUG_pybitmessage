@@ -7,8 +7,7 @@ import logging
 # magic imports!
 from network import connectionpool
 from bmconfigparser import config
-from protocol import assembleAddrMessage
-
+from protocol import assembleAddrMessage  # Zwei Ebenen nach oben
 from .node import Peer
 from .threads import StoppableThread
 

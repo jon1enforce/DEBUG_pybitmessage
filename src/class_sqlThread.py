@@ -568,15 +568,10 @@ class sqlThread(threading.Thread):
         debug_print("Database initialization complete, entering main loop")
 
         while True:
-            debug_print("Waiting for next SQL operation from queue")
             item = helper_sql.sqlSubmitQueue.get()
-            debug_print(f"Processing SQL operation: {item}")
-
             if item == 'commit':
                 try:
-                    debug_print("Performing commit")
                     self.conn.commit()
-                    debug_print("Commit completed")
                 except Exception as err:
                     if str(err) == 'database or disk is full':
                         logger.fatal(
@@ -593,14 +588,11 @@ class sqlThread(threading.Thread):
                                 True)))
                         os._exit(0)
             elif item == 'exit':
-                debug_print("Received exit command")
                 self.conn.close()
                 logger.info('sqlThread exiting gracefully.')
-                debug_print("sqlThread exiting")
                 return
             elif item == 'movemessagstoprog':
                 logger.debug('the sqlThread is moving the messages.dat file to the local program directory.')
-                debug_print("Moving messages.dat to program directory")
 
                 try:
                     self.conn.commit()
@@ -625,10 +617,8 @@ class sqlThread(threading.Thread):
                 self.conn = sqlite3.connect(paths.lookupExeFolder() + 'messages.dat')
                 self.conn.text_factory = bytes
                 self.cur = self.conn.cursor()
-                debug_print("Successfully moved messages.dat to program directory")
             elif item == 'movemessagstoappdata':
                 logger.debug('the sqlThread is moving the messages.dat file to the Appdata folder.')
-                debug_print("Moving messages.dat to Appdata folder")
 
                 try:
                     self.conn.commit()
@@ -653,9 +643,7 @@ class sqlThread(threading.Thread):
                 self.conn = sqlite3.connect(paths.lookupAppdataFolder() + 'messages.dat')
                 self.conn.text_factory = bytes
                 self.cur = self.conn.cursor()
-                debug_print("Successfully moved messages.dat to Appdata folder")
             elif item == 'deleteandvacuume':
-                debug_print("Deleting trash and vacuuming database")
                 self.cur.execute('''delete from inbox where folder='trash' ''')
                 self.cur.execute('''delete from sent where folder='trash' ''')
                 self.conn.commit()
@@ -676,15 +664,12 @@ class sqlThread(threading.Thread):
                                     'Alert: Your disk or data storage volume is full. Bitmessage will now exit.'),
                                 True)))
                         os._exit(0)
-                debug_print("Completed trash deletion and vacuum")
             else:
                 parameters = helper_sql.sqlSubmitQueue.get()
                 rowcount = 0
-                debug_print(f"Executing SQL query: {item} with parameters: {parameters}")
                 try:
                     self.cur.execute(item, parameters)
                     rowcount = self.cur.rowcount
-                    debug_print(f"Query executed, affected {rowcount} rows")
                 except Exception as err:
                     if str(err) == 'database or disk is full':
                         logger.fatal(
@@ -712,12 +697,10 @@ class sqlThread(threading.Thread):
                             str(repr(parameters)),
                             str(err))
                         logger.fatal('This program shall now abruptly exit!')
-                        debug_print(f"SQL error: {err}")
 
                     os._exit(0)
 
                 helper_sql.sqlReturnQueue.put((self.cur.fetchall(), rowcount))
-                debug_print("Results placed in sqlReturnQueue")
                 # helper_sql.sqlSubmitQueue.task_done()
 
     def create_function(self):

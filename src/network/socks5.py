@@ -10,7 +10,9 @@ import six
 
 from .node import Peer
 from .proxy import GeneralProxyError, Proxy, ProxyError
-
+# Am Anfang der Datei hinzufügen:
+import sys
+from .helpers import resolve_hostname, get_socket_family, safe_inet_pton, is_openbsd
 logger = logging.getLogger('default')
 
 
@@ -195,22 +197,81 @@ class Socks5Connection(Socks5):
         logger.debug("DEBUG: Socks5Connection state_auth_done")
         self.append_write_buf(struct.pack('BBB', 0x05, 0x01, 0x00))
         
+        # Importiere die Hilfsfunktion
+        from .helpers import resolve_hostname, get_socket_family
+        
         try:
-            self.ipaddr = socket.inet_aton(self.destination[0])
-            logger.debug("DEBUG: Using IPv4 address type for: %s", self.destination[0])
-            self.append_write_buf(six.int2byte(0x01) + self.ipaddr)
-        except socket.error:
+            # Versuche zuerst IPv4
+            try:
+                self.ipaddr = socket.inet_pton(socket.AF_INET, self.destination[0])
+                addr_type = 0x01  # IPv4
+            except (socket.error, OSError, ValueError):
+                # Fallback: Versuche IPv6
+                try:
+                    self.ipaddr = socket.inet_pton(socket.AF_INET6, self.destination[0])
+                    addr_type = 0x04  # IPv6
+                except (socket.error, OSError, ValueError):
+                    # Hostname - verwende DNS
+                    self.ipaddr = None
+                    addr_type = 0x03  # Hostname
+                    
+                    # OpenBSD-kompatible Hostname-Auflösung
+                    resolved_host = resolve_hostname(self.destination[0])
+                    if resolved_host != self.destination[0]:
+                        # Hostname wurde aufgelöst, versuche erneut mit IP
+                        try:
+                            family = get_socket_family(resolved_host)
+                            self.ipaddr = socket.inet_pton(family, resolved_host)
+                            addr_type = 0x01 if family == socket.AF_INET else 0x04
+                        except (socket.error, OSError, ValueError):
+                            # Bleibe bei Hostname
+                            pass
+        
+        except Exception as e:
+            logger.debug("DEBUG: Error in address resolution: %s", str(e))
+            self.ipaddr = None
+            addr_type = 0x03  # Hostname als Fallback
+        
+        # Je nach Adresstyp den entsprechenden SOCKS5 Befehl konstruieren
+        if addr_type == 0x01:  # IPv4
+            self.append_write_buf(six.int2byte(addr_type) + self.ipaddr)
+        elif addr_type == 0x04:  # IPv6
+            self.append_write_buf(six.int2byte(addr_type) + self.ipaddr)
+        else:  # Hostname (0x03)
             if self._remote_dns:
                 logger.debug("DEBUG: Using remote DNS for: %s", self.destination[0])
-                self.ipaddr = None
-                self.append_write_buf(six.int2byte(0x03) + six.int2byte(
-                    len(self.destination[0])) + self.destination[0].encode("utf-8", "replace"))
+                hostname_encoded = self.destination[0].encode("utf-8", "replace")
+                self.append_write_buf(six.int2byte(addr_type) + 
+                                    six.int2byte(len(hostname_encoded)) + 
+                                    hostname_encoded)
             else:
                 logger.debug("DEBUG: Resolving locally: %s", self.destination[0])
-                self.ipaddr = socket.inet_aton(
-                    socket.gethostbyname(self.destination[0]))
-                self.append_write_buf(six.int2byte(0x01) + self.ipaddr)
-                
+                try:
+                    # OpenBSD-kompatible Auflösung
+                    resolved_ip = resolve_hostname(self.destination[0])
+                    family = get_socket_family(resolved_ip)
+                    
+                    if family == socket.AF_INET:
+                        self.ipaddr = socket.inet_aton(resolved_ip)
+                        self.append_write_buf(six.int2byte(0x01) + self.ipaddr)
+                    elif family == socket.AF_INET6:
+                        self.ipaddr = socket.inet_pton(socket.AF_INET6, resolved_ip)
+                        self.append_write_buf(six.int2byte(0x04) + self.ipaddr)
+                    else:
+                        # Fallback zu Remote DNS
+                        hostname_encoded = self.destination[0].encode("utf-8", "replace")
+                        self.append_write_buf(six.int2byte(0x03) + 
+                                            six.int2byte(len(hostname_encoded)) + 
+                                            hostname_encoded)
+                except Exception as e:
+                    logger.debug("DEBUG: Local resolution failed: %s", str(e))
+                    # Fallback zu Remote DNS
+                    hostname_encoded = self.destination[0].encode("utf-8", "replace")
+                    self.append_write_buf(six.int2byte(0x03) + 
+                                        six.int2byte(len(hostname_encoded)) + 
+                                        hostname_encoded)
+        
+        # Port immer anhängen
         self.append_write_buf(struct.pack(">H", self.destination[1]))
         self.set_state("pre_connect", length=0, expectBytes=4)
         return True

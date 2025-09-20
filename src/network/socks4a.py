@@ -7,6 +7,8 @@ import socket
 import struct
 import six
 
+import sys
+from .helpers import resolve_hostname, get_socket_family, safe_inet_pton, is_openbsd
 from .proxy import GeneralProxyError, Proxy, ProxyError
 
 logger = logging.getLogger('default')
@@ -103,38 +105,81 @@ class Socks4aConnection(Socks4a):
         logger.debug("DEBUG: Socks4aConnection state_auth_done")
         rmtrslv = False
         
+        # Importiere die Hilfsfunktionen
+        from .helpers import resolve_hostname, get_socket_family, safe_inet_pton
+        
         # Build initial connection request
         self.append_write_buf(struct.pack('>BBH', 0x04, 0x01, self.destination[1]))
         logger.debug("DEBUG: Sent SOCKS4a header (version 4, command 1, port %d)", 
                     self.destination[1])
         
-        # Handle destination address
+        # Handle destination address - OpenBSD-kompatible Auflösung
         try:
-            self.ipaddr = socket.inet_aton(self.destination[0])
-            logger.debug("DEBUG: Using IPv4 address: %s", self.destination[0])
-            self.append_write_buf(self.ipaddr)
-        except socket.error:
-            if self._remote_dns:
-                logger.debug("DEBUG: Using remote DNS resolution for: %s", self.destination[0])
-                rmtrslv = True
-                self.ipaddr = None
-                self.append_write_buf(struct.pack("BBBB", 0x00, 0x00, 0x00, 0x01))
-            else:
-                logger.debug("DEBUG: Resolving locally: %s", self.destination[0])
-                self.ipaddr = socket.inet_aton(
-                    socket.gethostbyname(self.destination[0]))
+            # Versuche direkte IP-Adressen-Erkennung
+            ipaddr_result, addr_family = safe_inet_pton(self.destination[0])
+            
+            if ipaddr_result is not None:
+                # Direkte IP-Adresse erkannt
+                self.ipaddr = ipaddr_result
+                logger.debug("DEBUG: Direct IP address detected: %s", self.destination[0])
                 self.append_write_buf(self.ipaddr)
+            else:
+                # Hostname - muss aufgelöst werden
+                logger.debug("DEBUG: Hostname detected, resolving: %s", self.destination[0])
+                
+                if self._remote_dns:
+                    # Remote DNS Auflösung verwenden
+                    logger.debug("DEBUG: Using remote DNS resolution for: %s", self.destination[0])
+                    rmtrslv = True
+                    self.ipaddr = None
+                    self.append_write_buf(struct.pack("BBBB", 0x00, 0x00, 0x00, 0x01))
+                else:
+                    # Lokale Auflösung versuchen
+                    try:
+                        resolved_ip = resolve_hostname(self.destination[0])
+                        logger.debug("DEBUG: Resolved %s to %s", self.destination[0], resolved_ip)
+                        
+                        # Überprüfe ob die aufgelöste Adresse eine IP ist
+                        ipaddr_result, addr_family = safe_inet_pton(resolved_ip)
+                        if ipaddr_result is not None:
+                            self.ipaddr = ipaddr_result
+                            self.append_write_buf(self.ipaddr)
+                            logger.debug("DEBUG: Successfully resolved and using IP: %s", resolved_ip)
+                        else:
+                            # Aufgelöster Wert ist kein gültige IP, verwende Remote DNS
+                            logger.debug("DEBUG: Resolved value is not a valid IP, using remote DNS")
+                            rmtrslv = True
+                            self.ipaddr = None
+                            self.append_write_buf(struct.pack("BBBB", 0x00, 0x00, 0x00, 0x01))
+                            
+                    except (socket.error, OSError, Exception) as e:
+                        logger.debug("DEBUG: Local resolution failed: %s, using remote DNS", str(e))
+                        rmtrslv = True
+                        self.ipaddr = None
+                        self.append_write_buf(struct.pack("BBBB", 0x00, 0x00, 0x00, 0x01))
+                        
+        except (socket.error, OSError, Exception) as e:
+            logger.debug("DEBUG: Address resolution error: %s, using remote DNS as fallback", str(e))
+            rmtrslv = True
+            self.ipaddr = None
+            self.append_write_buf(struct.pack("BBBB", 0x00, 0x00, 0x00, 0x01))
         
         # Handle authentication if needed
         if self._auth:
-            logger.debug("DEBUG: Adding authentication username")
+            logger.debug("DEBUG: Adding authentication username: %s", self._auth[0])
             self.append_write_buf(self._auth[0])
         
         self.append_write_buf(six.int2byte(0x00))  # Null terminator
         
         if rmtrslv:
-            logger.debug("DEBUG: Adding hostname for remote resolution")
-            self.append_write_buf(self.destination[0].encode("utf-8", "replace") + six.int2byte(0x00))
+            logger.debug("DEBUG: Adding hostname for remote resolution: %s", self.destination[0])
+            try:
+                hostname_encoded = self.destination[0].encode("utf-8", "replace")
+                self.append_write_buf(hostname_encoded + six.int2byte(0x00))
+            except UnicodeError:
+                # Fallback für nicht-UTF-8 Hostnames
+                logger.debug("DEBUG: UTF-8 encoding failed, using raw bytes")
+                self.append_write_buf(self.destination[0].encode("latin-1", "replace") + six.int2byte(0x00))
         
         self.set_state("pre_connect", length=0, expectBytes=8)
         return True

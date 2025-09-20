@@ -1,3 +1,3 @@
 #!/bin/sh
 
-python3 pybitmessage/bitmessagemain.py "$@"
+python3 pybitmessage/bitmessagemain.py

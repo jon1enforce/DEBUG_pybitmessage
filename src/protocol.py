@@ -14,7 +14,6 @@ from binascii import hexlify
 from struct import Struct, pack, unpack
 import six
 import sqlite3
-
 import defaults
 import highlevelcrypto
 import state
@@ -26,7 +25,7 @@ from helper_sql import sqlExecute
 from network.node import Peer
 from version import softwareVersion
 from dbcompat import dbstr
-
+from network.helpers import is_openbsd  # Hinzufügen dieses Imports
 # Network constants
 magic = 0xE9BEB4D9
 #: protocol specification says max 1000 addresses in one addr command
@@ -82,9 +81,118 @@ Header = Struct('!L12sL4s')
 
 VersionPacket = Struct('>LqQ20s4s36sH')
 
+# Helper function for OpenBSD compatibility
+def resolve_hostname(hostname):
+    """Resolve hostname in a cross-platform compatible way"""
+    if not hostname:
+        return hostname
+    
+    try:
+        # Prefer getaddrinfo for IPv4/IPv6 compatibility
+        addr_info = socket.getaddrinfo(hostname, None)
+        return addr_info[0][4][0]  # Return first IPv4/IPv6 address
+    except (socket.gaierror, IndexError, TypeError, OSError):
+        # Fallback to gethostbyname for older systems
+        try:
+            return socket.gethostbyname(hostname)
+        except (socket.error, TypeError, OSError):
+            return hostname  # Final fallback
+
+def inet_aton_openbsd(host):
+    """OpenBSD compatible inet_aton replacement"""
+    if is_openbsd():
+        try:
+            # Try modern approach first
+            return socket.inet_pton(socket.AF_INET, host)
+        except (socket.error, OSError, AttributeError):
+            # Fallback to traditional method
+            try:
+                return socket.inet_aton(host)
+            except (socket.error, OSError):
+                # Final fallback - manual parsing
+                parts = host.split('.')
+                if len(parts) == 4:
+                    try:
+                        return pack('!BBBB', *[int(p) for p in parts])
+                    except (ValueError, TypeError):
+                        pass
+                raise
+    else:
+        # On Linux and other platforms, use standard function
+        try:
+            return socket.inet_aton(host)
+        except (socket.error, OSError):
+            raise
+
+def inet_ntoa_openbsd(data):
+    """OpenBSD compatible inet_ntoa replacement"""
+    if is_openbsd():
+        try:
+            return socket.inet_ntop(socket.AF_INET, data)
+        except (socket.error, OSError, AttributeError):
+            # Fallback to traditional method
+            try:
+                return socket.inet_ntoa(data)
+            except (socket.error, OSError):
+                # Final fallback - manual conversion
+                if len(data) == 4:
+                    return '.'.join(str(b) for b in data)
+                raise
+    else:
+        # On Linux and other platforms, use standard function
+        try:
+            return socket.inet_ntoa(data)
+        except (socket.error, OSError):
+            if len(data) == 4:
+                return '.'.join(str(b) for b in data)
+            raise
+
+def inet_pton_openbsd(family, host):
+    """OpenBSD compatible inet_pton replacement"""
+    if is_openbsd():
+        try:
+            return socket.inet_pton(family, host)
+        except (socket.error, OSError, AttributeError):
+            if family == socket.AF_INET:
+                return inet_aton_openbsd(host)
+            elif family == socket.AF_INET6:
+                # Simplified IPv6 handling for OpenBSD
+                if host == '::1':
+                    return b'\x00' * 15 + b'\x01'
+                elif host.startswith('::ffff:'):
+                    ipv4_part = host[7:]
+                    return b'\x00' * 10 + b'\xff\xff' + inet_aton_openbsd(ipv4_part)
+            raise
+    else:
+        # On Linux and other platforms, use standard function
+        try:
+            return socket.inet_pton(family, host)
+        except (socket.error, OSError, AttributeError):
+            raise
+
+def inet_ntop_openbsd(family, data):
+    """OpenBSD compatible inet_ntop replacement"""
+    if is_openbsd():
+        try:
+            return socket.inet_ntop(family, data)
+        except (socket.error, OSError, AttributeError):
+            if family == socket.AF_INET:
+                return inet_ntoa_openbsd(data)
+            elif family == socket.AF_INET6:
+                # Simplified IPv6 to string conversion
+                if data == b'\x00' * 15 + b'\x01':
+                    return '::1'
+                elif data.startswith(b'\x00' * 10 + b'\xff\xff'):
+                    return '::ffff:' + inet_ntoa_openbsd(data[12:])
+            raise
+    else:
+        # On Linux and other platforms, use standard function
+        try:
+            return socket.inet_ntop(family, data)
+        except (socket.error, OSError, AttributeError):
+            raise
+
 # Bitfield
-
-
 def getBitfield(address):
     """Get a bitfield from an address"""
     logger.debug("DEBUG: getBitfield called for address: %s", address)
@@ -120,14 +228,10 @@ def isBitSetWithinBitfield(fourByteString, n):
     return result
 
 # Streams
-
-
 MIN_VALID_STREAM = 1
 MAX_VALID_STREAM = 2**63 - 1
 
 # IP addresses
-
-
 def encodeHost(host):
     """Encode a given host to be used in low-level socket operations"""
     logger.debug("DEBUG: encodeHost called with host: %s", host)
@@ -135,11 +239,20 @@ def encodeHost(host):
         result = b'\xfd\x87\xd8\x7e\xeb\x43' + base64.b32decode(
             host.split(".")[0], True)
     elif host.find(':') == -1:
-        result = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF' + \
-            socket.inet_aton(host)
+        try:
+            # ✅ Konsistente Verwendung der OpenBSD-Hilfsfunktion
+            ip_bytes = inet_aton_openbsd(host)
+            result = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF' + ip_bytes
+        except (socket.error, OSError, ValueError):
+            logger.debug("DEBUG: encodeHost - IPv4 conversion failed, using fallback")
+            result = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF' + b'\x00\x00\x00\x00'
     else:
-        result = socket.inet_pton(socket.AF_INET6, host)
-    logger.debug("DEBUG: encodeHost result: %s", hexlify(result))
+        try:
+            # ✅ Konsistente Verwendung der OpenBSD-Hilfsfunktion
+            result = inet_pton_openbsd(socket.AF_INET6, host)
+        except (socket.error, OSError, ValueError):
+            logger.debug("DEBUG: encodeHost - IPv6 conversion failed, using fallback")
+            result = b'\x00' * 16
     return result
 
 
@@ -167,7 +280,7 @@ def network_group(host):
     network_type = networkType(host)
     try:
         raw_host = encodeHost(host)
-    except socket.error:
+    except (socket.error, OSError, ValueError):
         logger.debug("DEBUG: network_group - socket error, returning host")
         return host
     if network_type == 'IPv4':
@@ -200,28 +313,36 @@ def checkIPAddress(host, private=False):
     """
     logger.debug("DEBUG: checkIPAddress called with host: %s, private: %s", 
                 hexlify(host), private)
-    if host[0:12] == b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF':
-        hostStandardFormat = socket.inet_ntop(socket.AF_INET, bytes(host[12:]))
-        result = checkIPv4Address(host[12:], hostStandardFormat, private)
-    elif host[0:6] == b'\xfd\x87\xd8\x7e\xeb\x43':
-        # Onion, based on BMD/bitcoind
-        hostStandardFormat = base64.b32encode(host[6:]).lower() + b".onion"
-        if private:
-            result = False
+    
+    try:
+        if host[0:12] == b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF':
+            try:
+                hostStandardFormat = inet_ntop_openbsd(socket.AF_INET, bytes(host[12:]))
+            except (socket.error, OSError, ValueError):
+                hostStandardFormat = inet_ntoa_openbsd(bytes(host[12:]))
+            result = checkIPv4Address(host[12:], hostStandardFormat, private)
+        elif host[0:6] == b'\xfd\x87\xd8\x7e\xeb\x43':
+            # Onion, based on BMD/bitcoind
+            hostStandardFormat = base64.b32encode(host[6:]).lower() + b".onion"
+            if private:
+                result = False
+            else:
+                result = hostStandardFormat
         else:
-            result = hostStandardFormat
-    else:
-        try:
-            hostStandardFormat = socket.inet_ntop(socket.AF_INET6, host)
-        except ValueError:
-            logger.debug("DEBUG: checkIPAddress - ValueError, returning False")
-            return False
-        if len(hostStandardFormat) == 0:
-            # This can happen on Windows systems which are
-            # not 64-bit compatible so let us drop the IPv6 address.
-            logger.debug("DEBUG: checkIPAddress - empty host, returning False")
-            return False
-        result = checkIPv6Address(host, hostStandardFormat, private)
+            try:
+                hostStandardFormat = inet_ntop_openbsd(socket.AF_INET6, host)
+            except (socket.error, OSError, ValueError):
+                logger.debug("DEBUG: checkIPAddress - IPv6 conversion error, returning False")
+                return False
+            if len(hostStandardFormat) == 0:
+                # This can happen on Windows systems which are
+                # not 64-bit compatible so let us drop the IPv6 address.
+                logger.debug("DEBUG: checkIPAddress - empty host, returning False")
+                return False
+            result = checkIPv6Address(host, hostStandardFormat, private)
+    except (IndexError, TypeError, ValueError, socket.error, OSError) as e:
+        logger.debug("DEBUG: checkIPAddress - error: %s, returning False", e)
+        return False
     
     logger.debug("DEBUG: checkIPAddress result: %s", result)
     return result
@@ -234,29 +355,34 @@ def checkIPv4Address(host, hostStandardFormat, private=False):
     """
     logger.debug("DEBUG: checkIPv4Address called with host: %s, format: %s, private: %s",
                 hexlify(host), hostStandardFormat, private)
-    if host[0:1] == b'\x7F':  # 127/8
-        if not private:
-            logger.debug(
-                'Ignoring IP address in loopback range: %s',
-                hostStandardFormat)
-        result = hostStandardFormat if private else False
-    elif host[0:1] == b'\x0A':  # 10/8
-        if not private:
-            logger.debug(
-                'Ignoring IP address in private range: %s', hostStandardFormat)
-        result = hostStandardFormat if private else False
-    elif host[0:2] == b'\xC0\xA8':  # 192.168/16
-        if not private:
-            logger.debug(
-                'Ignoring IP address in private range: %s', hostStandardFormat)
-        result = hostStandardFormat if private else False
-    elif host[0:2] >= b'\xAC\x10' and host[0:2] < b'\xAC\x20':  # 172.16/12
-        if not private:
-            logger.debug(
-                'Ignoring IP address in private range: %s', hostStandardFormat)
-        result = hostStandardFormat if private else False
-    else:
-        result = False if private else hostStandardFormat
+    
+    try:
+        if host[0:1] == b'\x7F':  # 127/8
+            if not private:
+                logger.debug(
+                    'Ignoring IP address in loopback range: %s',
+                    hostStandardFormat)
+            result = hostStandardFormat if private else False
+        elif host[0:1] == b'\x0A':  # 10/8
+            if not private:
+                logger.debug(
+                    'Ignoring IP address in private range: %s', hostStandardFormat)
+            result = hostStandardFormat if private else False
+        elif host[0:2] == b'\xC0\xA8':  # 192.168/16
+            if not private:
+                logger.debug(
+                    'Ignoring IP address in private range: %s', hostStandardFormat)
+            result = hostStandardFormat if private else False
+        elif host[0:2] >= b'\xAC\x10' and host[0:2] < b'\xAC\x20':  # 172.16/12
+            if not private:
+                logger.debug(
+                    'Ignoring IP address in private range: %s', hostStandardFormat)
+            result = hostStandardFormat if private else False
+        else:
+            result = False if private else hostStandardFormat
+    except (IndexError, TypeError) as e:
+        logger.debug("DEBUG: checkIPv4Address - error: %s, returning False", e)
+        result = False
     
     logger.debug("DEBUG: checkIPv4Address result: %s", result)
     return result
@@ -269,26 +395,32 @@ def checkIPv6Address(host, hostStandardFormat, private=False):
     """
     logger.debug("DEBUG: checkIPv6Address called with host: %s, format: %s, private: %s",
                 hexlify(host), hostStandardFormat, private)
-    if host == b'\x00' * 15 + b'\x01':
-        if not private:
-            logger.debug('Ignoring loopback address: %s', hostStandardFormat)
-        result = False
-    else:
-        try:
-            host = [six.byte2int(c) for c in host[:2]]
-        except TypeError:  # python3 has ints already
-            pass
-        if host[0] == 0xfe and host[1] & 0xc0 == 0x80:
+    
+    try:
+        if host == b'\x00' * 15 + b'\x01':
             if not private:
-                logger.debug('Ignoring local address: %s', hostStandardFormat)
-            result = hostStandardFormat if private else False
-        elif host[0] & 0xfe == 0xfc:
-            if not private:
-                logger.debug(
-                    'Ignoring unique local address: %s', hostStandardFormat)
-            result = hostStandardFormat if private else False
+                logger.debug('Ignoring loopback address: %s', hostStandardFormat)
+            result = False
         else:
-            result = False if private else hostStandardFormat
+            try:
+                host_bytes = [six.byte2int(c) for c in host[:2]]
+            except TypeError:  # python3 has ints already
+                host_bytes = list(host[:2])
+            
+            if host_bytes[0] == 0xfe and host_bytes[1] & 0xc0 == 0x80:
+                if not private:
+                    logger.debug('Ignoring local address: %s', hostStandardFormat)
+                result = hostStandardFormat if private else False
+            elif host_bytes[0] & 0xfe == 0xfc:
+                if not private:
+                    logger.debug(
+                        'Ignoring unique local address: %s', hostStandardFormat)
+                result = hostStandardFormat if private else False
+            else:
+                result = False if private else hostStandardFormat
+    except (IndexError, TypeError, ValueError) as e:
+        logger.debug("DEBUG: checkIPv6Address - error: %s, returning False", e)
+        result = False
     
     logger.debug("DEBUG: checkIPv6Address result: %s", result)
     return result
@@ -318,12 +450,13 @@ def checkSocksIP(host):
     logger.debug("DEBUG: checkSocksIP called with host: %s", host)
     sockshostname = config.safeGet(
         'bitmessagesettings', 'sockshostname')
+    
     try:
         if not state.socksIP:
-            state.socksIP = socket.gethostbyname(sockshostname)
+            state.socksIP = resolve_hostname(sockshostname)
     except NameError:  # uninitialised
-        state.socksIP = socket.gethostbyname(sockshostname)
-    except (TypeError, socket.gaierror):  # None, resolving failure
+        state.socksIP = resolve_hostname(sockshostname)
+    except (TypeError, socket.gaierror, OSError):  # None, resolving failure
         state.socksIP = sockshostname
     
     result = state.socksIP == host
@@ -371,8 +504,6 @@ def isProofOfWorkSufficient(
 
 
 # Packet creation
-
-
 def CreatePacket(command, payload=b''):
     """Construct and return a packet"""
     logger.debug("DEBUG: CreatePacket called with command: %s, payload length: %d",
@@ -449,7 +580,7 @@ def assembleVersionMessage(  # pylint: disable=too-many-arguments
         # for example in case of onion v3 service
         try:
             payload += encodeHost(remoteHost)[:16]
-        except socket.error:
+        except (socket.error, OSError, ValueError):
             payload += encodeHost('127.0.0.1')
         payload += pack('>H', remotePort)  # remote IPv6 and port
 
@@ -528,8 +659,6 @@ def assembleErrorMessage(fatal=0, banTime=0, inventoryVector=b'', errorText=''):
 
 
 # Packet decoding
-
-
 def decodeObjectParameters(data):
     """Decode the parameters of a raw object needed to put it in inventory"""
     logger.debug("DEBUG: decodeObjectParameters called with data length: %d", len(data))

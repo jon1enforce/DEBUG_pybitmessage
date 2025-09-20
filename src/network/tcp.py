@@ -9,6 +9,8 @@ import random
 import socket
 import time
 import six
+import errno
+import sys
 
 # magic imports!
 import addresses
@@ -31,6 +33,7 @@ from network.socks4a import Socks4aConnection
 from network.socks5 import Socks5Connection
 from network.tls import TLSDispatcher
 from .node import Peer
+from .helpers import is_openbsd, openbsd_socket_compat, get_socket_family
 
 
 logger = logging.getLogger('default')
@@ -80,11 +83,45 @@ class TCPConnection(BMProto, TLSDispatcher):
         else:
             self.destination = address
             self.isOutbound = True
-            socket_family = socket.AF_INET6 if ":" in address.host else socket.AF_INET
+            
+            # OpenBSD-kompatible Socket-Erstellung mit Fallback
+            socket_family = get_socket_family(address.host)
             logger.debug("DEBUG: Creating new socket with family: %s", socket_family)
-            self.create_socket(socket_family, socket.SOCK_STREAM)
+            
+            # Socket erstellen mit Fallback-Mechanismus
+            socket_created = False
+            families_to_try = [socket_family]
+            
+            # Fallback auf IPv4 wenn die gewünschte Family nicht unterstützt wird
+            if socket_family != socket.AF_INET:
+                families_to_try.append(socket.AF_INET)
+            
+            for family in families_to_try:
+                try:
+                    self.create_socket(family, socket.SOCK_STREAM)
+                    socket_created = True
+                    logger.debug("DEBUG: Successfully created socket with family: %s", family)
+                    break
+                except (socket.error, OSError) as e:
+                    if e.errno == errno.EAFNOSUPPORT and family != families_to_try[-1]:
+                        logger.debug("DEBUG: Address family %s not supported, trying next", family)
+                        continue
+                    else:
+                        raise
+            
+            if not socket_created:
+                raise socket.error("Failed to create socket with any supported family")
+            
+            # OpenBSD-spezifische Socket-Kompatibilität
+            if is_openbsd():
+                logger.debug("DEBUG: Applying OpenBSD socket compatibility fix")
+                original_socket = self.socket
+                self.socket = openbsd_socket_compat(original_socket)
+                # Stelle sicher, dass der modifizierte Socket in der Parent-Klasse registriert wird
+                self._set_socket(self.socket)
+            
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            TLSDispatcher.__init__(self, sock, server_side=False)
+            TLSDispatcher.__init__(self, self.socket, server_side=False)
             logger.debug(
                 'DEBUG: Connecting to %s:%i',
                 self.destination.host, self.destination.port)
@@ -97,7 +134,7 @@ class TCPConnection(BMProto, TLSDispatcher):
                 and not protocol.checkSocksIP(self.destination.host)
             )
             logger.debug("DEBUG: Local connection check: %s", self.local)
-        except socket.error as e:
+        except (socket.error, OSError) as e:
             logger.debug("DEBUG: Socket error during local check: %s", e)
             pass
             
@@ -269,7 +306,7 @@ class TCPConnection(BMProto, TLSDispatcher):
         logger.debug("DEBUG: Handling TCP connection")
         try:
             AdvancedDispatcher.handle_connect(self)
-        except socket.error as e:
+        except (socket.error, OSError) as e:
             if e.errno in asyncore._DISCONNECTED:
                 logger.debug(
                     'DEBUG: %s:%i: Connection failed: %s',
@@ -443,7 +480,40 @@ class TCPServer(AdvancedDispatcher):
         if not hasattr(self, '_map'):
             AdvancedDispatcher.__init__(self)
             
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        # Socket-Familie basierend auf Host ermitteln
+        socket_family = get_socket_family(host)
+        logger.debug("DEBUG: Creating server socket with family: %s", socket_family)
+        
+        # Socket mit Fallback-Mechanismus erstellen
+        socket_created = False
+        families_to_try = [socket_family]
+        
+        if socket_family != socket.AF_INET:
+            families_to_try.append(socket.AF_INET)
+        
+        for family in families_to_try:
+            try:
+                self.create_socket(family, socket.SOCK_STREAM)
+                socket_created = True
+                logger.debug("DEBUG: Successfully created server socket with family: %s", family)
+                break
+            except (socket.error, OSError) as e:
+                if e.errno == errno.EAFNOSUPPORT and family != families_to_try[-1]:
+                    logger.debug("DEBUG: Address family %s not supported for server, trying next", family)
+                    continue
+                else:
+                    raise
+        
+        if not socket_created:
+            raise socket.error("Failed to create server socket with any supported family")
+        
+        # OpenBSD-spezifische Socket-Kompatibilität
+        if is_openbsd():
+            logger.debug("DEBUG: Applying OpenBSD socket compatibility fix to server")
+            original_socket = self.socket
+            self.socket = openbsd_socket_compat(original_socket)
+            self._set_socket(self.socket)
+        
         self.set_reuse_addr()
         
         for attempt in range(50):
@@ -451,19 +521,31 @@ class TCPServer(AdvancedDispatcher):
                 if attempt > 0:
                     logger.warning('DEBUG: Failed to bind on port %s, trying random port', port)
                     port = random.randint(32767, 65535)  # nosec B311
+                
+                # Versuche zu binden
                 self.bind((host, port))
                 logger.debug("DEBUG: Successfully bound to %s:%i", host, port)
-            except socket.error as e:
-                if e.errno in (asyncore.EADDRINUSE, asyncore.WSAEADDRINUSE):
-                    logger.debug("DEBUG: Port %i in use, retrying", port)
-                    continue
-            else:
-                if attempt > 0:
-                    logger.warning('DEBUG: Setting port to %s', port)
-                    config.set(
-                        'bitmessagesettings', 'port', str(port))
-                    config.save()
                 break
+                
+            except (socket.error, OSError) as e:
+                if e.errno in (errno.EADDRINUSE, errno.EACCES):
+                    logger.debug("DEBUG: Port %i in use or access denied, retrying", port)
+                    continue
+                elif e.errno == errno.EAFNOSUPPORT:
+                    # OpenBSD-spezifisch: Address family not supported
+                    logger.debug("DEBUG: Address family not supported, trying IPv4 fallback")
+                    self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+                    if is_openbsd():
+                        original_socket = self.socket
+                        self.socket = openbsd_socket_compat(original_socket)
+                        self._set_socket(self.socket)
+                    continue
+                else:
+                    logger.error("DEBUG: Unexpected socket error: %s", e)
+                    raise
+        else:
+            # Wenn alle 50 Versuche fehlschlagen
+            raise Exception("Failed to bind to any port after 50 attempts")
                 
         self.destination = Peer(host, port)
         self.bound = True
@@ -504,6 +586,6 @@ class TCPServer(AdvancedDispatcher):
         try:
             network.connectionpool.pool.addConnection(TCPConnection(sock=sock))
             logger.debug("DEBUG: Successfully added new connection to pool")
-        except socket.error as e:
+        except (socket.error, OSError) as e:
             logger.debug("DEBUG: Error adding connection to pool: %s", e)
             pass
