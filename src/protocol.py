@@ -92,11 +92,20 @@ def resolve_hostname(hostname):
         addr_info = socket.getaddrinfo(hostname, None)
         return addr_info[0][4][0]  # Return first IPv4/IPv6 address
     except (socket.gaierror, IndexError, TypeError, OSError):
-        # Fallback to gethostbyname for older systems
+        # Fallback für OpenBSD und andere Systeme
         try:
-            return socket.gethostbyname(hostname)
-        except (socket.error, TypeError, OSError):
-            return hostname  # Final fallback
+            # Versuche verschiedene Methoden für OpenBSD-Kompatibilität
+            if is_openbsd():
+                # Spezielle Behandlung für OpenBSD
+                if hostname == socket.gethostname():
+                    return "127.0.0.1"  # Localhost für Hostname
+                # Für externe Hostnames weiterhin versuchen
+                return socket.gethostbyname(hostname)
+            else:
+                return socket.gethostbyname(hostname)
+        except (socket.error, TypeError, OSError, socket.gaierror):
+            # Final fallback - return hostname as is
+            return hostname
 
 def inet_aton_openbsd(host):
     """OpenBSD compatible inet_aton replacement"""

@@ -11,11 +11,19 @@ def resolve_hostname(hostname):
         addr_info = socket.getaddrinfo(hostname, None)
         return addr_info[0][4][0]  # Return first IPv4/IPv6 address
     except (socket.gaierror, OSError, IndexError, TypeError):
-        # Fallback to gethostbyname for older systems
+        # Fallback für OpenBSD und andere Systeme
         try:
-            return socket.gethostbyname(hostname)
-        except (socket.error, OSError, TypeError):
-            return hostname  # Final fallback
+            # Spezielle Behandlung für OpenBSD
+            if is_openbsd():
+                if hostname == socket.gethostname():
+                    return "127.0.0.1"  # Localhost für Hostname
+                # Für externe Hostnames weiterhin versuchen
+                return socket.gethostbyname(hostname)
+            else:
+                return socket.gethostbyname(hostname)
+        except (socket.error, OSError, TypeError, socket.gaierror):
+            # Final fallback - return hostname as is
+            return hostname
 
 def get_socket_family(host):
     """Robust socket family detection for OpenBSD compatibility"""
