@@ -755,91 +755,324 @@ class _OpenSSL(object):
 
 
 def loadOpenSSL():
-    """This function finds and load the OpenSSL library"""
+    """This function finds and load the OpenSSL library on any platform"""
     # pylint: disable=global-statement
     global OpenSSL
     from os import path, environ
     from ctypes.util import find_library
+    import subprocess
+    import sys
+    import os
 
     libdir = []
-    if sys.platform.startswith('openbsd'):
-        # Check LibreSSL paths first on OpenBSD
-        libdir.extend([
-            "/home/libressl-2.5.0/build/crypto/libcrypto.so",
-            "/home/libressl-2.5.0/ssl/libssl.so",
-            "/home/libressl-2.5.0/build/ssl/libssl.so",  # Fallback path
-            "libcrypto.so",
-            "libssl.so",
-        ])
-    elif getattr(sys, 'frozen', None):
-        if 'darwin' in sys.platform:
-            libdir.extend([
-                path.join(
-                    environ['RESOURCEPATH'], '..',
-                    'Frameworks', 'libcrypto.dylib'),
-                path.join(
-                    environ['RESOURCEPATH'], '..',
-                    'Frameworks', 'libcrypto.1.1.0.dylib'),
-                path.join(
-                    environ['RESOURCEPATH'], '..',
-                    'Frameworks', 'libcrypto.1.0.2.dylib'),
-                path.join(
-                    environ['RESOURCEPATH'], '..',
-                    'Frameworks', 'libcrypto.1.0.1.dylib'),
-                path.join(
-                    environ['RESOURCEPATH'], '..',
-                    'Frameworks', 'libcrypto.1.0.0.dylib'),
-                path.join(
-                    environ['RESOURCEPATH'], '..',
-                    'Frameworks', 'libcrypto.0.9.8.dylib'),
-            ])
-        elif 'win32' in sys.platform or 'win64' in sys.platform:
-            libdir.append(path.join(sys._MEIPASS, 'libeay32.dll'))
-        else:
-            libdir.extend([
-                path.join(sys._MEIPASS, 'libcrypto.so'),
-                path.join(sys._MEIPASS, 'libssl.so'),
-                path.join(sys._MEIPASS, 'libcrypto.so.1.1.0'),
-                path.join(sys._MEIPASS, 'libssl.so.1.1.0'),
-                path.join(sys._MEIPASS, 'libcrypto.so.1.0.2'),
-                path.join(sys._MEIPASS, 'libssl.so.1.0.2'),
-                path.join(sys._MEIPASS, 'libcrypto.so.1.0.1'),
-                path.join(sys._MEIPASS, 'libssl.so.1.0.1'),
-                path.join(sys._MEIPASS, 'libcrypto.so.1.0.0'),
-                path.join(sys._MEIPASS, 'libssl.so.1.0.0'),
-                path.join(sys._MEIPASS, 'libcrypto.so.0.9.8'),
-                path.join(sys._MEIPASS, 'libssl.so.0.9.8'),
-            ])
-    if 'darwin' in sys.platform:
-        libdir.extend([
-            'libcrypto.dylib', '/usr/local/opt/openssl/lib/libcrypto.dylib'])
-    elif 'win32' in sys.platform or 'win64' in sys.platform:
-        libdir.append('libeay32.dll')
-    # kivy
-    elif 'ANDROID_ARGUMENT' in environ:
-        libdir.append('libcrypto1.1.so')
-        libdir.append('libssl1.1.so')
-    else:
-        libdir.append('libcrypto.so')
-        libdir.append('libssl.so')
-        libdir.append('libcrypto.so.1.0.0')
-        libdir.append('libssl.so.1.0.0')
     
-    if 'linux' in sys.platform or 'darwin' in sys.platform \
-            or ('bsd' in sys.platform and not sys.platform.startswith('openbsd')):
-        libdir.append(find_library('ssl'))
-    elif 'win32' in sys.platform or 'win64' in sys.platform:
-        libdir.append(find_library('libeay32'))
+    # Platform detection
+    is_openbsd = sys.platform.startswith('openbsd')
+    is_linux = sys.platform.startswith('linux')
+    is_darwin = sys.platform.startswith('darwin')
+    is_windows = sys.platform.startswith('win')
+    is_freebsd = sys.platform.startswith('freebsd')
+    is_netbsd = sys.platform.startswith('netbsd')
+    
+    # PRIORITY 1: USER-COMPILED LIBRESSL IN /HOME - HIGHEST PRIORITY
+    custom_libressl_paths = [
+        # Your compiled LibreSSL 2.5.0 - HIGHEST PRIORITY
+        "/home/libressl-2.5.0/build/ssl/libssl.so",
+        "/home/libressl-2.5.0/build/crypto/libcrypto.so",
+        "/home/libressl-2.5.0/ssl/libssl.so",
+        "/home/libressl-2.5.0/crypto/libcrypto.so",
+        "/home/libressl-2.5.0/build/ssl/libssl.dylib",  # macOS variant
+        "/home/libressl-2.5.0/build/crypto/libcrypto.dylib",
+        
+        # Alternative build paths
+        "/home/libressl-2.5.0/ssl/.libs/libssl.so",
+        "/home/libressl-2.5.0/crypto/.libs/libcrypto.so",
+        
+        # Other possible LibreSSL versions in home
+        "/home/libressl/build/ssl/libssl.so",
+        "/home/libressl/build/crypto/libcrypto.so",
+        "/home/libressl-2.4.5/build/ssl/libssl.so",
+        "/home/libressl-2.4.5/build/crypto/libcrypto.so",
+    ]
+    
+    # Add custom paths first (highest priority)
+    for custom_path in custom_libressl_paths:
+        if path.exists(custom_path):
+            libdir.append(custom_path)
+            print(f"PRIORITY: Found custom LibreSSL at {custom_path}")
+    
+    # PRIORITY 2: PLATFORM-SPECIFIC PATHS
+    # LINUX PATHS
+    if is_linux:
+        libdir.extend([
+            '/usr/lib/x86_64-linux-gnu/libssl.so',
+            '/usr/lib/x86_64-linux-gnu/libcrypto.so',
+            '/usr/lib/aarch64-linux-gnu/libssl.so',
+            '/usr/lib/aarch64-linux-gnu/libcrypto.so',
+            '/usr/lib/arm-linux-gnueabihf/libssl.so',
+            '/usr/lib/arm-linux-gnueabihf/libcrypto.so',
+            '/usr/lib/libssl.so',
+            '/usr/lib/libcrypto.so',
+            '/usr/local/lib/libssl.so',
+            '/usr/local/lib/libcrypto.so',
+            '/lib/libssl.so',
+            '/lib/libcrypto.so',
+            # Versioned paths
+            '/usr/lib/x86_64-linux-gnu/libssl.so.1.1',
+            '/usr/lib/x86_64-linux-gnu/libcrypto.so.1.1',
+            '/usr/lib/x86_64-linux-gnu/libssl.so.1.0.0',
+            '/usr/lib/x86_64-linux-gnu/libcrypto.so.1.0.0',
+            '/usr/lib/x86_64-linux-gnu/libssl.so.3',
+            '/usr/lib/x86_64-linux-gnu/libcrypto.so.3',
+        ])
+    
+    # OPENBSD PATHS
+    elif is_openbsd:
+        libdir.extend([
+            # System LibreSSL
+            '/usr/lib/libssl.so',
+            '/usr/lib/libcrypto.so',
+            '/usr/local/lib/libssl.so',
+            '/usr/local/lib/libcrypto.so',
+            # Versioned LibreSSL
+            '/usr/lib/libssl.so.26.0',
+            '/usr/lib/libcrypto.so.26.0',
+            '/usr/lib/libssl.so.25.0',
+            '/usr/lib/libcrypto.so.25.0',
+            '/usr/lib/libssl.so.24.0',
+            '/usr/lib/libcrypto.so.24.0',
+        ])
+    
+    # macOS PATHS
+    elif is_darwin:
+        libdir.extend([
+            '/usr/local/opt/openssl/lib/libssl.dylib',
+            '/usr/local/opt/openssl/lib/libcrypto.dylib',
+            '/usr/local/lib/libssl.dylib',
+            '/usr/local/lib/libcrypto.dylib',
+            '/opt/homebrew/opt/openssl/lib/libssl.dylib',
+            '/opt/homebrew/opt/openssl/lib/libcrypto.dylib',
+            '/usr/lib/libssl.dylib',
+            '/usr/lib/libcrypto.dylib',
+        ])
+    
+    # WINDOWS PATHS
+    elif is_windows:
+        libdir.extend([
+            'C:\\OpenSSL-Win64\\bin\\libssl.dll',
+            'C:\\OpenSSL-Win64\\bin\\libcrypto.dll',
+            'C:\\OpenSSL-Win32\\bin\\libssl.dll',
+            'C:\\OpenSSL-Win32\\bin\\libcrypto.dll',
+            'libeay32.dll',
+            'ssleay32.dll',
+        ])
+    
+    # OTHER BSD PATHS
+    elif is_freebsd or is_netbsd:
+        libdir.extend([
+            '/usr/local/lib/libssl.so',
+            '/usr/local/lib/libcrypto.so',
+            '/usr/lib/libssl.so',
+            '/usr/lib/libcrypto.so',
+            '/usr/pkg/lib/libssl.so',  # NetBSD pkgsrc
+            '/usr/pkg/lib/libcrypto.so',
+        ])
+    
+    # PRIORITY 3: GENERIC LIBRARY NAMES (system resolver)
+    generic_names = [
+        'libssl.so',      # Linux/BSD
+        'libcrypto.so',   # Linux/BSD
+        'libssl.dylib',   # macOS
+        'libcrypto.dylib', # macOS
+        'libeay32.dll',   # Windows
+        'ssleay32.dll',   # Windows
+    ]
+    
+    # Use ctypes.util.find_library for system-wide search
+    ssl_lib = find_library('ssl')
+    crypto_lib = find_library('crypto')
+    
+    if ssl_lib:
+        libdir.append(ssl_lib)
+    if crypto_lib:
+        libdir.append(crypto_lib)
+    
+    # Also try to find Windows libraries
+    if is_windows:
+        libeay_lib = find_library('libeay32')
+        if libeay_lib:
+            libdir.append(libeay_lib)
+    
+    # Add generic names last (lowest priority)
+    libdir.extend(generic_names)
+    
+    # Remove duplicates while preserving order
+    seen = set()
+    libdir = [lib for lib in libdir if lib not in seen and not seen.add(lib)]
+    
+    # Debug: Show search paths
+    print("DEBUG: OpenSSL library search order:")
+    for i, lib_path in enumerate(libdir):
+        priority = "HIGH" if lib_path in custom_libressl_paths else "LOW"
+        exists = "EXISTS" if path.exists(lib_path) else "MISSING" if lib_path.startswith(('/', '\\', 'C:', 'D:')) else "SYSTEM"
+        print(f"  {i+1}. [{priority}] {lib_path} ({exists})")
 
-    # Try to load the library
+    # Try to load the library with detailed debugging
+    successful_loads = []
     for library in libdir:
         try:
+            # Skip non-absolute paths that don't exist (let ctypes handle them)
+            if not library.startswith(('/', '\\', 'C:', 'D:')) and not path.exists(library):
+                # This might be a library name like "libssl.so" that ctypes can find
+                pass
+            
+            print(f"DEBUG: Trying to load from: {library}")
             OpenSSL = _OpenSSL(library)
+            print(f"SUCCESS: Loaded OpenSSL from: {library}")
+            
+            # Test basic functionality
+            try:
+                # Try different version functions
+                version = None
+                if hasattr(OpenSSL, 'OpenSSL_version'):
+                    version = OpenSSL.OpenSSL_version(0)
+                elif hasattr(OpenSSL, 'SSLeay_version'):
+                    version = OpenSSL.SSLeay_version(0)
+                
+                if version:
+                    version_str = version.decode() if hasattr(version, 'decode') else str(version)
+                    print(f"✓ OpenSSL version: {version_str}")
+                    
+                    # Check if it's LibreSSL
+                    if 'LibreSSL' in version_str:
+                        print("✓ LibreSSL detected")
+                    else:
+                        print("✓ OpenSSL detected")
+                else:
+                    print("✓ OpenSSL loaded but version unknown")
+                
+                successful_loads.append((library, version))
+                
+                # Test basic BN functionality
+                test_bn = OpenSSL.BN_new()
+                if test_bn:
+                    OpenSSL.BN_free(test_bn)
+                    print("✓ Basic functionality test passed")
+                
+            except Exception as test_error:
+                print(f"WARNING: Library loaded but test failed: {test_error}")
+                continue
+                
             return
-        except Exception:  # nosec B110
-            pass
+            
+        except Exception as e:
+            print(f"FAILED: {library} - {str(e)}")
+            continue
+    
+    # Enhanced system-wide search as fallback
+    print("Performing enhanced system-wide library search...")
+    
+    # Platform-specific search commands
+    search_commands = {
+        'linux': [
+            ['find', '/usr', '-name', 'libssl.so*', '-type', 'f', '2>/dev/null'],
+            ['find', '/lib', '-name', 'libssl.so*', '-type', 'f', '2>/dev/null'],
+            ['find', '/usr/local', '-name', 'libssl.so*', '-type', 'f', '2>/dev/null'],
+            ['find', '/opt', '-name', 'libssl.so*', '-type', 'f', '2>/dev/null'],
+        ],
+        'openbsd': [
+            ['find', '/usr', '-name', 'libssl.so*', '-type', 'f', '2>/dev/null'],
+            ['find', '/usr/local', '-name', 'libssl.so*', '-type', 'f', '2>/dev/null'],
+        ],
+        'darwin': [
+            ['find', '/usr', '-name', 'libssl.dylib', '-type', 'f', '2>/dev/null'],
+            ['find', '/usr/local', '-name', 'libssl.dylib', '-type', 'f', '2>/dev/null'],
+            ['find', '/opt', '-name', 'libssl.dylib', '-type', 'f', '2>/dev/null'],
+            ['find', '/Applications', '-name', 'libssl.dylib', '-type', 'f', '2>/dev/null'],
+        ]
+    }
+    
+    current_platform = None
+    if is_linux:
+        current_platform = 'linux'
+    elif is_openbsd:
+        current_platform = 'openbsd'
+    elif is_darwin:
+        current_platform = 'darwin'
+    
+    if current_platform and current_platform in search_commands:
+        for cmd in search_commands[current_platform]:
+            try:
+                result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
+                                      timeout=15, shell=False)
+                found_libs = result.stdout.decode().splitlines()
+                
+                for library in found_libs:
+                    try:
+                        if path.exists(library) and library not in libdir:
+                            print(f"Trying discovered library: {library}")
+                            OpenSSL = _OpenSSL(library)
+                            print(f"SUCCESS with discovered library: {library}")
+                            return
+                    except Exception as fallback_error:
+                        print(f"Discovered library failed: {library} - {fallback_error}")
+                        continue
+                        
+            except (subprocess.TimeoutExpired, subprocess.SubprocessError, FileNotFoundError):
+                continue
+    
+    # Final diagnostic with helpful instructions
+    print("\n=== OPENSSL LOADING FAILED ===")
+    print(f"Platform: {sys.platform}")
+    print(f"Python version: {sys.version}")
+    
+    # Check if custom LibreSSL exists but failed to load
+    custom_exists = any(path.exists(p) for p in custom_libressl_paths)
+    if custom_exists:
+        print("\n⚠️  Custom LibreSSL found but failed to load!")
+        print("This could indicate:")
+        print("  - Library version incompatibility")
+        print("  - Missing dependencies")
+        print("  - Architecture mismatch")
+        print("  - Corrupted build")
+    
+    # Test if openssl command is available
+    try:
+        result = subprocess.run(['openssl', 'version'], 
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5)
+        if result.returncode == 0:
+            print(f"✓ OpenSSL command available: {result.stdout.decode().strip()}")
+        else:
+            print("✗ OpenSSL command not working")
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        print("✗ OpenSSL command not found")
+    
+    # Platform-specific installation instructions
+    print("\n💡 INSTALLATION INSTRUCTIONS:")
+    if is_linux:
+        print("  Debian/Ubuntu: sudo apt-get install libssl-dev")
+        print("  RedHat/CentOS: sudo yum install openssl-devel")
+        print("  Arch: sudo pacman -S openssl")
+        print("  Or use your compiled LibreSSL in /home/libressl-2.5.0/")
+    elif is_openbsd:
+        print("  OpenBSD: sudo pkg_add libressl")
+        print("  Or use your compiled LibreSSL in /home/libressl-2.5.0/")
+    elif is_darwin:
+        print("  macOS: brew install openssl")
+    elif is_windows:
+        print("  Windows: Install OpenSSL from https://slproweb.com/products/Win32OpenSSL.html")
+    else:
+        print("  Please install OpenSSL or LibreSSL development packages")
+    
+    # Show what was found but failed
+    if successful_loads:
+        print("\n📋 Libraries that loaded but failed tests:")
+        for lib, ver in successful_loads:
+            print(f"  - {lib} (version: {ver})")
+    
     raise Exception(
-        "Couldn't find and load the OpenSSL library. You must install it.")
+        "Couldn't find and load a compatible OpenSSL/LibreSSL library.\n"
+        "Please install development packages or compile a compatible version.")
 
 
 loadOpenSSL()
