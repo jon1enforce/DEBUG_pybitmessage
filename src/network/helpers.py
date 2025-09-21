@@ -26,22 +26,18 @@ def resolve_hostname(hostname):
             return hostname
 
 def get_socket_family(host):
-    """Robust socket family detection for OpenBSD compatibility"""
-    if not host:
-        return socket.AF_INET
+    if host is None:
+        return socket.AF_INET  # Default to IPv4 instead of failing
     
     try:
-        # Try IPv6 first
         socket.inet_pton(socket.AF_INET6, host)
         return socket.AF_INET6
-    except (socket.error, OSError, ValueError, AttributeError):
+    except socket.error:
         try:
-            # Try IPv4
             socket.inet_pton(socket.AF_INET, host)
             return socket.AF_INET
-        except (socket.error, OSError, ValueError, AttributeError):
-            # Fallback to simple detection
-            return socket.AF_INET6 if ":" in host else socket.AF_INET
+        except socket.error:
+            return socket.AF_INET  # Default fallback
 def is_openbsd():
     """Check if running on OpenBSD"""
     return sys.platform.startswith('openbsd') or 'openbsd' in sys.platform.lower()
