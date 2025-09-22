@@ -14,7 +14,6 @@ from network import receiveDataQueue
 from .bmproto import BMProto
 from .node import Peer
 from .objectracker import ObjectTracker
-from network.helpers import get_socket_family
 from .helpers import is_openbsd, openbsd_socket_compat, get_socket_family
 logger = logging.getLogger('default')
 
