@@ -84,9 +84,13 @@ class TCPConnection(BMProto, TLSDispatcher):
             self.destination = address
             self.isOutbound = True
             
-            # OpenBSD-kompatible Socket-Erstellung mit Fallback
-            socket_family = get_socket_family(address.host)
-            logger.debug("DEBUG: Creating new socket with family: %s", socket_family)
+            # ✅ KORREKT: Verwende address.host statt undefiniertem 'host'
+            bind_host = address.host if address and address.host else "0.0.0.0"
+            if bind_host is None:
+                bind_host = "0.0.0.0"  # OpenBSD Fix
+            
+            socket_family = get_socket_family(bind_host)
+            logger.debug("DEBUG: Creating new socket with family: %s for host: %s", socket_family, bind_host)
             
             # Socket erstellen mit Fallback-Mechanismus
             socket_created = False
@@ -126,25 +130,6 @@ class TCPConnection(BMProto, TLSDispatcher):
                 'DEBUG: Connecting to %s:%i',
                 self.destination.host, self.destination.port)
             self.connect(self.destination)
-            
-        try:
-            self.local = (
-                protocol.checkIPAddress(
-                    protocol.encodeHost(self.destination.host), True)
-                and not protocol.checkSocksIP(self.destination.host)
-            )
-            logger.debug("DEBUG: Local connection check: %s", self.local)
-        except (socket.error, OSError) as e:
-            logger.debug("DEBUG: Socket error during local check: %s", e)
-            pass
-            
-        self.network_group = protocol.network_group(self.destination.host)
-        logger.debug("DEBUG: Network group: %s", self.network_group)
-        
-        ObjectTracker.__init__(self)  # pylint: disable=non-parent-init-called
-        self.bm_proto_reset()
-        self.set_state("bm_header", expectBytes=protocol.Header.size)
-        logger.debug("DEBUG: TCPConnection initialization complete")
 
     def antiIntersectionDelay(self, initial=False):
         """
@@ -477,12 +462,17 @@ class TCPServer(AdvancedDispatcher):
 
     def __init__(self, host='127.0.0.1', port=8444):
         logger.debug("DEBUG: Initializing TCPServer on %s:%i", host, port)
+
         if not hasattr(self, '_map'):
             AdvancedDispatcher.__init__(self)
             
-        # Socket-Familie basierend auf Host ermitteln
+        # ✅ KORREKT: Host-Parameter verwenden, nicht undefinierte Variable
+        if host is None:
+            host = "0.0.0.0"  # OpenBSD Fix
+        
         socket_family = get_socket_family(host)
         logger.debug("DEBUG: Creating server socket with family: %s", socket_family)
+        
         
         # Socket mit Fallback-Mechanismus erstellen
         socket_created = False
