@@ -1,0 +1,84 @@
+[bitmessagesettings]
+# Netzwerk-Einstellungen
+maxaddrperstreamsend = 200
+maxbootstrapconnections = 5
+maxoutboundconnections = 4
+maxtotalconnections = 50
+udp = True
+port = 8444
+dontconnect = false
+sendoutgoingconnections = True
+
+# OpenBSD-spezifische Netzwerkoptimierungen
+bind = 0.0.0.0
+onionbindip = 0.0.0.0
+sockslisten = false
+
+# DNS und Peer Discovery optimieren
+dns = 1.1.1.1
+dnsport = 53
+dnsserver = 1.1.1.1
+maxnodes = 1000
+
+# Performance für OpenBSD anpassen
+maxdownloadrate = 20000
+maxuploadrate = 10000
+ttl = 259200  # 3 Tage (reduziert von 4.25 Tagen)
+
+# Sicherheitseinstellungen
+blackwhitelist = black
+socksproxytype = none
+keysencrypted = True
+messagesencrypted = True
+
+# API Einstellungen
+apiinterface = 127.0.0.1
+apiport = 8442
+
+# UI Einstellungen
+timeformat = %%c
+startonlogon = False
+showtraynotifications = True
+startintray = False
+minimizeonclose = False
+minimizetotray = false
+useidenticons = True
+identiconsuffix = tptSRsmnXXdV
+hidetrayconnectionnotifications = true
+userlocale = system
+
+# Proof of Work Einstellungen (reduziert für OpenBSD Performance)
+defaultnoncetrialsperbyte = 500
+defaultpayloadlengthextrabytes = 500
+maxacceptablenoncetrialsperbyte = 1000000000
+maxacceptablepayloadlengthextrabytes = 1000000000
+
+# Versionskontrolle
+settingsversion = 10
+
+[threads]
+receive = 1  # Reduziert für OpenBSD
+
+[network]
+bind = 0.0.0.0
+dandelion = 60  # Reduziert für bessere Stabilität
+
+[inventory]
+storage = sqlite
+acceptmismatch = False
+
+[knownnodes]
+maxnodes = 2000  # Reduziert für OpenBSD
+
+[zlib]
+maxsize = 524288  # Halbiert für OpenBSD Performance
+
+# OpenBSD-spezifische Optimierungen
+[openbsd]
+# Vermeidet bestimmte System calls die Probleme verursachen
+usegetifaddrs = false
+# Alternative DNS Resolution
+usednspython = true
+# Socket Timeouts anpassen
+sockettimeout = 30
+connectiontimeout = 45
