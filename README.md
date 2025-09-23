@@ -1,7 +1,7 @@
 # DEBUG version of pybitmessage
 source: https://github.com/kashikoibumi/PyBitmessage
 # LIBRESSL instructions (PATCHED!)
-look https://github.com/jon1enforce/libressl-2.5.0  
+look https://github.com/jon1enforce/libressl
 PATH:  
     
     ....libdir.append("/home/libressl-4.1.0/build/crypto/libcrypto.so")  
