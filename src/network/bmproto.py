@@ -760,7 +760,7 @@ class BMProto(AdvancedDispatcher, ObjectTracker):
         if network.connectionpool.pool.inboundConnections.get(
                 self.destination):
             try:
-                if not protocol.checkSocksIP(self.destination.host):
+                if (not protocol.checkSocksIP(self.destination.host) and platform.system().lower() != 'openbsd'):
                     self.append_write_buf(protocol.assembleErrorMessage(
                         errorText="Too many connections from your IP."
                         " Closing connection.", fatal=2))
