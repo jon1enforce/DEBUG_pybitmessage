@@ -8,7 +8,6 @@ from __future__ import division
 import sys
 import hashlib
 import time
-from binascii import hexlify, unhexlify
 import binascii
 from struct import pack
 from subprocess import call  # nosec
@@ -39,7 +38,15 @@ from dbcompat import dbstr
 from tr import _translate
 
 logger = logging.getLogger('default')
+def hexlify(data):
+    if isinstance(data, (bytes, bytearray)):
+        return data.hex().encode()
+    return data
 
+def unhexlify(data):
+    if isinstance(data, (bytes, bytearray)):
+        data = data.decode()
+    return bytes.fromhex(data)
 def sizeof_fmt(num, suffix='h/s'):
     """Format hashes per seconds nicely (SI prefix)"""
     logger.debug("DEBUG: Formatting hash rate for display")
