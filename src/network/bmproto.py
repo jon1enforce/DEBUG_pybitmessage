@@ -10,7 +10,7 @@ import socket
 import struct
 import time
 import six
-
+import platform
 # magic imports!
 import addresses
 from network import knownnodes
