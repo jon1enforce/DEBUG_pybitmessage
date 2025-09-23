@@ -155,7 +155,9 @@ class TCPConnection(BMProto, TLSDispatcher):
         self.bm_proto_reset()
         self.set_state("init", expectBytes=0)  # Starte mit init state
         logger.debug("DEBUG: TCPConnection initialization complete")
-
+    def _set_socket(self, sock):
+        """Compatibility method for OpenBSD/asyncore"""
+        self.set_socket(sock)
     # Füge die fehlenden State-Methoden hinzu
     def state_init(self):
         """Handle initial connection state"""
