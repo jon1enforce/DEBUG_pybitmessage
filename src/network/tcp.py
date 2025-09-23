@@ -128,7 +128,7 @@ class TCPConnection(BMProto, TLSDispatcher):
                 original_socket = self.socket
                 self.socket = openbsd_socket_compat(original_socket)
                 # Stelle sicher, dass der modifizierte Socket in der Parent-Klasse registriert wird
-                self._set_socket(self.socket)
+                self.set_socket(self.socket)
             
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             TLSDispatcher.__init__(self, self.socket, server_side=False)
@@ -155,9 +155,7 @@ class TCPConnection(BMProto, TLSDispatcher):
         self.bm_proto_reset()
         self.set_state("init", expectBytes=0)  # Starte mit init state
         logger.debug("DEBUG: TCPConnection initialization complete")
-    def _set_socket(self, sock):
-        """Compatibility method for OpenBSD/asyncore"""
-        self.set_socket(sock)
+
     # Füge die fehlenden State-Methoden hinzu
     def state_init(self):
         """Handle initial connection state"""
@@ -553,7 +551,7 @@ class TCPServer(AdvancedDispatcher):
             logger.debug("DEBUG: Applying OpenBSD socket compatibility fix to server")
             original_socket = self.socket
             self.socket = openbsd_socket_compat(original_socket)
-            self._set_socket(self.socket)
+            self.set_socket(self.socket)
         
         self.set_reuse_addr()
         
@@ -579,7 +577,7 @@ class TCPServer(AdvancedDispatcher):
                     if is_openbsd():
                         original_socket = self.socket
                         self.socket = openbsd_socket_compat(original_socket)
-                        self._set_socket(self.socket)
+                        self.set_socket(self.socket)
                     continue
                 else:
                     logger.error("DEBUG: Unexpected socket error: %s", e)
