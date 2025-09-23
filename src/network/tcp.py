@@ -55,6 +55,12 @@ class TCPConnection(BMProto, TLSDispatcher):
     .. todo:: Look to understand and/or fix the non-parent-init-called
     """
 
+class TCPConnection(BMProto, TLSDispatcher):
+    # pylint: disable=too-many-instance-attributes
+    """
+    .. todo:: Look to understand and/or fix the non-parent-init-called
+    """
+
     def __init__(self, address=None, sock=None):
         logger.debug("DEBUG: Initializing TCPConnection with address: %s, sock: %s", address, sock)
         BMProto.__init__(self, address=address, sock=sock)
@@ -130,6 +136,49 @@ class TCPConnection(BMProto, TLSDispatcher):
                 'DEBUG: Connecting to %s:%i',
                 self.destination.host, self.destination.port)
             self.connect(self.destination)
+            
+        try:
+            self.local = (
+                protocol.checkIPAddress(
+                    protocol.encodeHost(self.destination.host), True)
+                and not protocol.checkSocksIP(self.destination.host)
+            )
+            logger.debug("DEBUG: Local connection check: %s", self.local)
+        except (socket.error, OSError) as e:
+            logger.debug("DEBUG: Socket error during local check: %s", e)
+            pass
+            
+        self.network_group = protocol.network_group(self.destination.host)
+        logger.debug("DEBUG: Network group: %s", self.network_group)
+        
+        ObjectTracker.__init__(self)  # pylint: disable=non-parent-init-called
+        self.bm_proto_reset()
+        self.set_state("init", expectBytes=0)  # Starte mit init state
+        logger.debug("DEBUG: TCPConnection initialization complete")
+
+    # Füge die fehlenden State-Methoden hinzu
+    def state_init(self):
+        """Handle initial connection state"""
+        logger.debug("DEBUG: In state_init, transitioning to bm_header")
+        self.set_state("bm_header", expectBytes=24)
+        return True
+
+    def state_established(self):
+        """Handle established connection state - fallback"""
+        logger.debug("DEBUG: In state_established, transitioning to bm_header")
+        self.set_state("bm_header", expectBytes=24)
+        return True
+
+    def state_idle(self):
+        """Idle state handler"""
+        logger.debug("DEBUG: In idle state, waiting for data")
+        return len(self.read_buf) > 0
+
+    def state_close(self):
+        """Close state handler"""
+        logger.debug("DEBUG: In close state, shutting down")
+        self.handle_close()
+        return False
 
     def antiIntersectionDelay(self, initial=False):
         """

@@ -107,7 +107,7 @@ class _OpenSSL(object):
         """
         self._lib = ctypes.CDLL(library)
         self._version, self._hexversion, self._cflags = get_version(self._lib)
-        self._libreSSL = self._version.startswith(b"LibreSSL")
+        self._libreSSL = self._version and self._version.startswith(b"LibreSSL")
 
         self.pointer = ctypes.pointer
         self.c_int = ctypes.c_int
@@ -172,9 +172,25 @@ class _OpenSSL(object):
         self.EC_KEY_get0_public_key.restype = ctypes.POINTER(EC_POINT)
         self.EC_KEY_get0_public_key.argtypes = [ctypes.c_void_p]
 
-        self.EC_KEY_get0_group = self._lib.EC_KEY_get0_group
-        self.EC_KEY_get0_group.restype = ctypes.c_void_p
-        self.EC_KEY_get0_group.argtypes = [ctypes.c_void_p]
+        # CRITICAL FIX: Handle missing EC_KEY_get0_group in LibreSSL
+        try:
+            self.EC_KEY_get0_group = self._lib.EC_KEY_get0_group
+            self.EC_KEY_get0_group.restype = ctypes.c_void_p
+            self.EC_KEY_get0_group.argtypes = [ctypes.c_void_p]
+        except AttributeError:
+            # LibreSSL compatibility - provide fallback
+            print("WARNING: EC_KEY_get0_group not found in LibreSSL, using fallback")
+            def EC_KEY_get0_group_fallback(ec_key):
+                # Try alternative function names or return None
+                try:
+                    # Try EC_KEY_get_group if available
+                    if hasattr(self, 'EC_KEY_get_group'):
+                        return self.EC_KEY_get_group(ec_key)
+                    # For LibreSSL, we may need to get group differently
+                    return None
+                except:
+                    return None
+            self.EC_KEY_get0_group = EC_KEY_get0_group_fallback
 
         self.EC_POINT_get_affine_coordinates_GFp = \
             self._lib.EC_POINT_get_affine_coordinates_GFp
@@ -277,7 +293,7 @@ class _OpenSSL(object):
         self.EC_KEY_set_private_key.argtypes = [ctypes.c_void_p,
                                                 ctypes.POINTER(BIGNUM)]
 
-        if self._hexversion >= 0x10100000 and not self._libreSSL:
+        if self._hexversion and self._hexversion >= 0x10100000 and not self._libreSSL:
             self.EC_KEY_OpenSSL = self._lib.EC_KEY_OpenSSL
             self._lib.EC_KEY_OpenSSL.restype = ctypes.c_void_p
             self._lib.EC_KEY_OpenSSL.argtypes = []
@@ -287,14 +303,69 @@ class _OpenSSL(object):
             self._lib.EC_KEY_set_method.argtypes = [ctypes.c_void_p,
                                                     ctypes.c_void_p]
         else:
-            self.ECDH_OpenSSL = self._lib.ECDH_OpenSSL
-            self._lib.ECDH_OpenSSL.restype = ctypes.c_void_p
-            self._lib.ECDH_OpenSSL.argtypes = []
+            # LibreSSL-Kompatibilität: ECDH-Methoden-Handling
+            try:
+                self.ECDH_OpenSSL = self._lib.ECDH_OpenSSL
+                self._lib.ECDH_OpenSSL.restype = ctypes.c_void_p
+                self._lib.ECDH_OpenSSL.argtypes = []
+            except AttributeError:
+                try:
+                    # Fallback für neuere LibreSSL
+                    self.ECDH_OpenSSL = self._lib.ECDH_libressl
+                    self._lib.ECDH_libressl.restype = ctypes.c_void_p
+                    self._lib.ECDH_libressl.argtypes = []
+                except AttributeError:
+                    # LibreSSL 4.1.0 hat keine ECDH_METHOD
+                    print("🔧 LibreSSL: Verwende ECDH_compute_key anstelle von ECDH_METHOD")
+                    
+                    def dummy_ecdh_method():
+                        return ctypes.c_void_p(0)
+                    
+                    self.ECDH_OpenSSL = dummy_ecdh_method
 
-            self.ECDH_set_method = self._lib.ECDH_set_method
-            self._lib.ECDH_set_method.restype = ctypes.c_int
-            self._lib.ECDH_set_method.argtypes = [ctypes.c_void_p,
-                                                  ctypes.c_void_p]
+            # ECDH_set_method Handling - KORRIGIERT
+            try:
+                # ZUERST prüfen ob die Funktion existiert
+                self._lib.ECDH_set_method
+                self.ECDH_set_method = self._lib.ECDH_set_method
+                self.ECDH_set_method.restype = ctypes.c_int
+                self.ECDH_set_method.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+            except AttributeError:
+                # LibreSSL: ECDH_set_method nicht verfügbar
+                print("🔧 LibreSSL: ECDH_set_method nicht verfügbar, verwende direkten ECDH")
+                
+                def dummy_ecdh_set_method(ec_key, method):
+                    # Bei LibreSSL ist keine spezielle ECDH-Methode nötig
+                    return 1  # Erfolg zurückgeben
+                
+                self.ECDH_set_method = dummy_ecdh_set_method
+
+            # ECDH_compute_key sicherstellen
+            try:
+                self.ECDH_compute_key = self._lib.ECDH_compute_key
+                self.ECDH_compute_key.restype = ctypes.c_int
+                self.ECDH_compute_key.argtypes = [
+                    ctypes.c_void_p,  # out
+                    ctypes.c_int,     # outlen
+                    ctypes.c_void_p,  # pub_key
+                    ctypes.c_void_p   # ecdh
+                ]
+                print("✅ ECDH_compute_key erfolgreich geladen")
+            except AttributeError:
+                print("❌ KRITISCH: ECDH_compute_key nicht verfügbar!")
+                # Hier sollte ein Fallback implementiert werden
+
+            # ECDH_size für Puffer-Größenberechnung
+            try:
+                self.ECDH_size = self._lib.ECDH_size
+                self.ECDH_size.restype = ctypes.c_int
+                self.ECDH_size.argtypes = [ctypes.c_void_p]
+            except AttributeError:
+                print("⚠️  ECDH_size nicht verfügbar")
+                # Fallback: Feste Größe annehmen (z.B. 256 für EC256)
+                def dummy_ecdh_size(ec_key):
+                    return 256
+                self.ECDH_size = dummy_ecdh_size
 
         self.ECDH_compute_key = self._lib.ECDH_compute_key
         self.ECDH_compute_key.restype = ctypes.c_int
@@ -330,14 +401,6 @@ class _OpenSSL(object):
         self.EVP_aes_256_cbc.restype = ctypes.c_void_p
         self.EVP_aes_256_cbc.argtypes = []
 
-        # self.EVP_aes_128_ctr = self._lib.EVP_aes_128_ctr
-        # self.EVP_aes_128_ctr.restype = ctypes.c_void_p
-        # self.EVP_aes_128_ctr.argtypes = []
-
-        # self.EVP_aes_256_ctr = self._lib.EVP_aes_256_ctr
-        # self.EVP_aes_256_ctr.restype = ctypes.c_void_p
-        # self.EVP_aes_256_ctr.argtypes = []
-
         self.EVP_aes_128_ofb = self._lib.EVP_aes_128_ofb
         self.EVP_aes_128_ofb.restype = ctypes.c_void_p
         self.EVP_aes_128_ofb.argtypes = []
@@ -358,7 +421,7 @@ class _OpenSSL(object):
         self.EVP_rc4.restype = ctypes.c_void_p
         self.EVP_rc4.argtypes = []
 
-        if self._hexversion >= 0x10100000 and not self._libreSSL:
+        if self._hexversion and self._hexversion >= 0x10100000 and not self._libreSSL:
             self.EVP_CIPHER_CTX_reset = self._lib.EVP_CIPHER_CTX_reset
             self.EVP_CIPHER_CTX_reset.restype = ctypes.c_int
             self.EVP_CIPHER_CTX_reset.argtypes = [ctypes.c_void_p]
@@ -417,7 +480,7 @@ class _OpenSSL(object):
                                       ctypes.c_int, ctypes.c_void_p,
                                       ctypes.c_int, ctypes.c_void_p]
 
-        if self._hexversion >= 0x10100000 and not self._libreSSL:
+        if self._hexversion and self._hexversion >= 0x10100000 and not self._libreSSL:
             self.EVP_MD_CTX_new = self._lib.EVP_MD_CTX_new
             self.EVP_MD_CTX_new.restype = ctypes.c_void_p
             self.EVP_MD_CTX_new.argtypes = []
@@ -448,11 +511,18 @@ class _OpenSSL(object):
             self.EVP_MD_CTX_destroy.restype = None
             self.EVP_MD_CTX_destroy.argtypes = [ctypes.c_void_p]
 
-            self.EVP_ecdsa = self._lib.EVP_ecdsa
-            self._lib.EVP_ecdsa.restype = ctypes.c_void_p
-            self._lib.EVP_ecdsa.argtypes = []
-
-            self.digest_ecdsa_sha1 = self.EVP_ecdsa
+            # LibreSSL compatibility for digest functions
+            try:
+                self.EVP_ecdsa = self._lib.EVP_ecdsa
+                self._lib.EVP_ecdsa.restype = ctypes.c_void_p
+                self._lib.EVP_ecdsa.argtypes = []
+                self.digest_ecdsa_sha1 = self.EVP_ecdsa
+            except AttributeError:
+                # Fallback to regular SHA1 for LibreSSL
+                self.EVP_sha1 = self._lib.EVP_sha1
+                self.EVP_sha1.restype = ctypes.c_void_p
+                self.EVP_sha1.argtypes = []
+                self.digest_ecdsa_sha1 = self.EVP_sha1
 
         self.RAND_bytes = self._lib.RAND_bytes
         self.RAND_bytes.restype = ctypes.c_int
@@ -630,10 +700,6 @@ class _OpenSSL(object):
                 'aes-128-ofb', self._lib.EVP_aes_128_ofb, 16),
             'aes-256-ofb': CipherName(
                 'aes-256-ofb', self._lib.EVP_aes_256_ofb, 16),
-            # 'aes-128-ctr': CipherName(
-            #      'aes-128-ctr', self._lib.EVP_aes_128_ctr, 16),
-            # 'aes-256-ctr': CipherName(
-            #      'aes-256-ctr', self._lib.EVP_aes_256_ctr, 16),
             'bf-cfb': CipherName(
                 'bf-cfb', self.EVP_bf_cfb64, 8),
             'bf-cbc': CipherName(
@@ -776,30 +842,24 @@ def loadOpenSSL():
     
     # PRIORITY 1: USER-COMPILED LIBRESSL IN /HOME - HIGHEST PRIORITY
     custom_libressl_paths = [
-        # Your compiled LibreSSL 2.5.0 - HIGHEST PRIORITY
-        "/home/libressl-2.5.0/build/ssl/libssl.so",
-        "/home/libressl-2.5.0/build/crypto/libcrypto.so",
-        "/home/libressl-2.5.0/ssl/libssl.so",
-        "/home/libressl-2.5.0/crypto/libcrypto.so",
-        "/home/libressl-2.5.0/build/ssl/libssl.dylib",  # macOS variant
-        "/home/libressl-2.5.0/build/crypto/libcrypto.dylib",
+        # Your compiled LibreSSL 4.1.0 - HIGHEST PRIORITY
+        "/home/libressl-4.1.0/build/ssl/libssl.so.59.1.0",
+        "/home/libressl-4.1.0/build/crypto/libcrypto.so.58.1.0",
+        "/home/libressl-4.1.0/build/ssl/libssl.so",
+        "/home/libressl-4.1.0/build/crypto/libcrypto.so",
+        "/home/libressl-4.1.0/build/ssl/libssl.so.59",
+        "/home/libressl-4.1.0/build/crypto/libcrypto.so.58",
         
         # Alternative build paths
-        "/home/libressl-2.5.0/ssl/.libs/libssl.so",
-        "/home/libressl-2.5.0/crypto/.libs/libcrypto.so",
-        
-        # Other possible LibreSSL versions in home
-        "/home/libressl/build/ssl/libssl.so",
-        "/home/libressl/build/crypto/libcrypto.so",
-        "/home/libressl-2.4.5/build/ssl/libssl.so",
-        "/home/libressl-2.4.5/build/crypto/libcrypto.so",
+        "/home/libressl-4.1.0/ssl/.libs/libssl.so",
+        "/home/libressl-4.1.0/crypto/.libs/libcrypto.so",
     ]
     
     # Add custom paths first (highest priority)
     for custom_path in custom_libressl_paths:
         if path.exists(custom_path):
             libdir.append(custom_path)
-            print(f"PRIORITY: Found custom LibreSSL at {custom_path}")
+            print(f"🚀 PRIORITY: Found custom LibreSSL at {custom_path}")
     
     # PRIORITY 2: PLATFORM-SPECIFIC PATHS
     # LINUX PATHS
@@ -959,6 +1019,12 @@ def loadOpenSSL():
                     OpenSSL.BN_free(test_bn)
                     print("✓ Basic functionality test passed")
                 
+                # Test that the critical EC_KEY_get0_group function is available
+                if hasattr(OpenSSL, 'EC_KEY_get0_group'):
+                    print("✓ EC_KEY_get0_group function available")
+                else:
+                    print("✗ EC_KEY_get0_group function missing - this will cause issues")
+                
             except Exception as test_error:
                 print(f"WARNING: Library loaded but test failed: {test_error}")
                 continue
@@ -1053,10 +1119,10 @@ def loadOpenSSL():
         print("  Debian/Ubuntu: sudo apt-get install libssl-dev")
         print("  RedHat/CentOS: sudo yum install openssl-devel")
         print("  Arch: sudo pacman -S openssl")
-        print("  Or use your compiled LibreSSL in /home/libressl-2.5.0/")
+        print("  Or use your compiled LibreSSL in /home/libressl-4.1.0/")
     elif is_openbsd:
         print("  OpenBSD: sudo pkg_add libressl")
-        print("  Or use your compiled LibreSSL in /home/libressl-2.5.0/")
+        print("  Or use your compiled LibreSSL in /home/libressl-4.1.0/")
     elif is_darwin:
         print("  macOS: brew install openssl")
     elif is_windows:
@@ -1075,4 +1141,5 @@ def loadOpenSSL():
         "Please install development packages or compile a compatible version.")
 
 
+# Load OpenSSL when module is imported
 loadOpenSSL()

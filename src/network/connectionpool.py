@@ -242,6 +242,14 @@ class BMConnectionPool(object):
             logger.error("DEBUG: Invalid proxy type: %s", proxy_type)
             return
 
+        # 🔥 CRITICAL FIX: .onion Bootstrapper blockieren wenn Tor nicht verfügbar
+        if hostname and '.onion' in hostname and not Proxy.onion_proxy:
+            logger.debug("DEBUG: SKIPPING .onion bootstrapper - Tor not available: %s", hostname)
+            # Fallback zu normalem Bootstrapper
+            hostname = None
+            connection_base = TCPConnection
+            logger.debug("DEBUG: Using fallback TCP connection instead")
+
         bootstrapper = bootstrap(connection_base)
         logger.debug("DEBUG: Bootstrapper class created: %s", bootstrapper)
         

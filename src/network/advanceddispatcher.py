@@ -47,7 +47,12 @@ class AdvancedDispatcher(asyncore.dispatcher):
         self.processingLock = threading.RLock()
         self.uploadChunk = self.downloadChunk = 0
         logger.debug("DEBUG: AdvancedDispatcher initialized")
-
+    def state_init(self):
+        """Default initial state handler."""
+        logger.debug("DEBUG: In state_init, transitioning to next state")
+        # Hier könntest du direkt zum nächsten State wechseln
+        self.set_state("established", expectBytes=0)
+        return True
     def append_write_buf(self, data):
         """Append binary data to the end of stream write buffer."""
         if data:
