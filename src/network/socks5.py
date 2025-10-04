@@ -79,7 +79,7 @@ class Socks5(Proxy):
     def state_auth_1(self):
         """Perform authentication if peer is requesting it."""
         logger.debug("DEBUG: Entering state_auth_1 with read_buf: %s", self.read_buf[:2])
-        ret = struct.unpack('BB', self.read_buf[:2])
+        ret = safe_struct_unpack('BB', self.read_buf[:2])
         if ret[0] != 5:
             logger.error("DEBUG: Invalid SOCKS version: %d", ret[0])
             raise GeneralProxyError(1)
@@ -104,7 +104,7 @@ class Socks5(Proxy):
     def state_auth_needed(self):
         """Handle response to authentication attempt"""
         logger.debug("DEBUG: Entering state_auth_needed with read_buf: %s", self.read_buf[:2])
-        ret = struct.unpack('BB', self.read_buf[0:2])
+        ret = safe_struct_unpack('BB', self.safe_bytearray_slice(read_buf, 0, 2))
         if ret[0] != 1:
             logger.error("DEBUG: Invalid authentication version: %d", ret[0])
             raise GeneralProxyError(1)
@@ -119,12 +119,12 @@ class Socks5(Proxy):
     def state_pre_connect(self):
         """Handle feedback from socks5 while it is connecting on our behalf."""
         logger.debug("DEBUG: Entering state_pre_connect")
-        if self.read_buf[0:1] != six.int2byte(0x05):
+        if self.safe_bytearray_slice(read_buf, 0, 1) != six.int2byte(0x05):
             logger.error("DEBUG: Invalid SOCKS version in response")
             self.close()
             raise GeneralProxyError(1)
-        elif self.read_buf[1:2] != six.int2byte(0x00):
-            error_code = six.byte2int(self.read_buf[1:2])
+        elif self.safe_bytearray_slice(read_buf, 1, 2) != six.int2byte(0x00):
+            error_code = six.byte2int(self.safe_bytearray_slice(read_buf, 1, 2))
             logger.error("DEBUG: Connection failed with code: %d", error_code)
             self.close()
             if error_code <= 8:
@@ -132,7 +132,7 @@ class Socks5(Proxy):
             else:
                 raise Socks5Error(9)
                 
-        addr_type = self.read_buf[3:4]
+        addr_type = self.safe_bytearray_slice(read_buf, 3, 4)
         if addr_type == six.int2byte(0x01):
             logger.debug("DEBUG: IPv4 address type received")
             self.set_state("proxy_addr_1", length=4, expectBytes=4)
@@ -147,14 +147,14 @@ class Socks5(Proxy):
 
     def state_proxy_addr_1(self):
         """Handle IPv4 address returned for peer"""
-        self.boundaddr = self.read_buf[0:4]
+        self.boundaddr = self.safe_bytearray_slice(read_buf, 0, 4)
         logger.debug("DEBUG: Received IPv4 bound address: %s", self.boundaddr)
         self.set_state("proxy_port", length=4, expectBytes=2)
         return True
 
     def state_proxy_addr_2_1(self):
         """Handle domain name length"""
-        self.address_length = six.byte2int(self.read_buf[0:1])
+        self.address_length = six.byte2int(self.safe_bytearray_slice(read_buf, 0, 1))
         logger.debug("DEBUG: Received domain name length: %d", self.address_length)
         self.set_state("proxy_addr_2_2", length=1, expectBytes=self.address_length)
         return True
@@ -168,7 +168,7 @@ class Socks5(Proxy):
 
     def state_proxy_port(self):
         """Handle peer's port being returned."""
-        self.boundport = struct.unpack(">H", self.read_buf[0:2])[0]
+        self.boundport = safe_struct_unpack(">H", self.safe_bytearray_slice(read_buf, 0, 2))[0]
         logger.debug("DEBUG: Received bound port: %d", self.boundport)
         
         self.__proxysockname = (self.boundaddr, self.boundport)

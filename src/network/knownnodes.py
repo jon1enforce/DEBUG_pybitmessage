@@ -7,7 +7,6 @@ Manipulations with knownNodes dictionary.
 import json
 import logging
 import os
-import pickle  # nosec B403
 import threading
 import time
 from six.moves.collections_abc import Iterable
@@ -103,21 +102,13 @@ def json_deserialize_knownnodes(source):
 
 def pickle_deserialize_old_knownnodes(source):
     """
-    Unpickle source and reorganize knownnodes dict if it has old format
-    the old format was {Peer:lastseen, ...}
-    the new format is {Peer:{"lastseen":i, "rating":f}}
+    DEAKTIVIERT - pickle wurde aus Sicherheitsgründen entfernt
     """
     global knownNodes
-    logger.debug("DEBUG: Starting pickle_deserialize_old_knownnodes")
-    knownNodes = pickle.load(source)  # nosec B301
-    logger.debug("DEBUG: Loaded old format knownNodes with %d streams", len(knownNodes))
-    for stream in knownNodes.keys():
-        logger.debug("DEBUG: Processing stream %s with %d nodes", stream, len(knownNodes[stream]))
-        for node, params in six.iteritems(knownNodes[stream]):
-            if isinstance(params, (float, int)):
-                logger.debug("DEBUG: Converting old format node %s", node.host)
-                addKnownNode(stream, node, params)
-    logger.debug("DEBUG: Completed pickle_deserialize_old_knownnodes")
+    logger.error("🚨 SICHERHEITSMAßNAHME: pickle Deserialisierung wurde deaktiviert")
+    logger.error("Alte knownnodes.dat Formate werden nicht mehr unterstützt")
+    knownNodes = {}
+    return
 
 
 def saveKnownNodes(dirName=None):
@@ -210,14 +201,14 @@ def readKnownNodes():
                     logger.debug("DEBUG: Trying JSON deserialization")
                     json_deserialize_knownnodes(source)
                 except ValueError:
-                    logger.debug("DEBUG: JSON failed, trying pickle deserialization")
-                    source.seek(0)
-                    pickle_deserialize_old_knownnodes(source)
+                    logger.debug("DEBUG: JSON failed - pickle wurde deaktiviert")
+                    # Statt pickle: Erstelle default KnownNodes
+                    createDefaultKnownNodes()
     except (IOError, OSError, KeyError, EOFError):
         logger.debug('Failed to read nodes from knownnodes.dat', exc_info=True)
         createDefaultKnownNodes()
 
-    # your own onion address, if setup
+    # Rest des Codes bleibt gleich...
     onionhostname = config.safeGet('bitmessagesettings', 'onionhostname')
     if onionhostname and ".onion" in onionhostname:
         onionport = config.safeGetInt('bitmessagesettings', 'onionport')
@@ -227,7 +218,6 @@ def readKnownNodes():
             addKnownNode(1, self_peer, is_self=True)
             state.ownAddresses[self_peer] = True
     logger.debug("DEBUG: Completed readKnownNodes")
-
 
 def increaseRating(peer):
     """Increase rating of a peer node"""

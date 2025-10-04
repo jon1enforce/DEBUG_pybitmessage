@@ -481,3 +481,18 @@ if __name__ == "__main__":
 # So far, the creation of and management of the Bitmessage protocol and this
 # client is a one-man operation. Bitcoin tips are quite appreciated.
 # 1H5XaDA6fYENLbknwZyjiYXYPQaFjjLX2u
+
+# SECURITY PATCH: Secure password handling
+def generate_secure_api_password():
+    """Generate cryptographically secure API password"""
+    import secrets
+    import string
+    alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+    return ''.join(secrets.choice(alphabet) for _ in range(32))
+
+def secure_password_check(input_password, stored_hash):
+    """Securely verify passwords using constant-time comparison"""
+    import hashlib
+    import hmac
+    input_hash = hashlib.sha256(input_password.encode()).hexdigest()
+    return hmac.compare_digest(input_hash, stored_hash)

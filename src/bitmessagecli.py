@@ -98,7 +98,7 @@ def configInit():
     config.set('bitmessagesettings', 'port', '8444')
     config.set('bitmessagesettings', 'apienabled', 'true')  # Sets apienabled to true in keys.dat
 
-    with open(keysName, 'wb') as configfile:
+    with safe_open(keysName, 'wb') as configfile:
         config.write(configfile)
 
     print('\n     ' + str(keysName) + ' Initalized in the same directory as daemon.py')
@@ -118,7 +118,7 @@ def apiInit(apiEnabled):
 
         if uInput == "y":
             config.set('bitmessagesettings', 'apienabled', 'true')  # Sets apienabled to true in keys.dat
-            with open(keysPath, 'wb') as configfile:
+            with safe_open(keysPath, 'wb') as configfile:
                 config.write(configfile)
 
             print('Done')
@@ -180,7 +180,7 @@ def apiInit(apiEnabled):
             config.set('bitmessagesettings', 'apiusername', apiUsr)
             config.set('bitmessagesettings', 'apipassword', apiPwd)
             config.set('bitmessagesettings', 'daemon', daemon)
-            with open(keysPath, 'wb') as configfile:
+            with safe_open(keysPath, 'wb') as configfile:
                 config.write(configfile)
 
             print('\n     Finished configuring the keys.dat file with API information.\n')
@@ -445,7 +445,7 @@ def bmSettings():
 
                 if uInput != "y":
                     print('\n     Changes Made.\n')
-                    with open(keysPath, 'wb') as configfile:
+                    with safe_open(keysPath, 'wb') as configfile:
                         config.write(configfile)
                     restartBmNotify()
                     print("DEBUG: Settings changes saved to keys.dat")
@@ -768,7 +768,7 @@ def saveFile(fileName, fileData):
     print("DEBUG: Full file path:", filePath)
 
     try:
-        with open(filePath, 'wb+') as path_to_file:
+        with safe_open(filePath, 'wb+') as path_to_file:
             path_to_file.write(fileData.decode("base64"))
         print('\n     Successfully saved ' + filePath + '\n')
         print("DEBUG: File saved successfully")
@@ -792,7 +792,7 @@ def attachment():
             print("DEBUG: User entered file path:", filePath)
 
             try:
-                with open(filePath):
+                with safe_open(filePath):
                     print("DEBUG: File found at path:", filePath)
                     break
             except IOError:
@@ -842,7 +842,7 @@ def attachment():
         # Alert the user that the encoding process may take some time.
         print('\n     Encoding Attachment, Please Wait ...\n')
 
-        with open(filePath, 'rb') as f:  # Begin the actual encoding
+        with safe_open(filePath, 'rb') as f:  # Begin the actual encoding
             data = f.read(188743680)  # Reads files up to 180MB, the maximum size for Bitmessage.
             data = data.encode("base64")
         print("DEBUG: File encoded to base64")

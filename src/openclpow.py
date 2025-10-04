@@ -163,3 +163,23 @@ def do_opencl_pow(hash_, target):
     except Exception as e:
         logger.error("DEBUG: OpenCL PoW failed: %s", str(e))
         raise
+
+# SECURITY PATCH: Input validation for OpenCL config
+def validate_opencl_config():
+    """Validate OpenCL configuration to prevent injection attacks"""
+    opencl_value = config.safeGet('bitmessagesettings', 'opencl')
+    if opencl_value and not re.match(r'^[a-zA-Z0-9_\-\.]+$', opencl_value):
+        logger.error("SECURITY: Invalid OpenCL config value detected")
+        return False
+    return True
+
+# Wrap OpenCL functions with security checks
+def safe_opencl_enabled():
+    """Safely check if OpenCL is enabled"""
+    if not validate_opencl_config():
+        return False
+    return original_opencl_enabled()
+
+# Replace original functions
+original_opencl_enabled = openclEnabled
+openclEnabled = safe_opencl_enabled

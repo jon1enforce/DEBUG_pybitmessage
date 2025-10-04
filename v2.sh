@@ -1,0 +1,225 @@
+cat > advanced_exploit_scanner.py << 'EOF'
+#!/usr/bin/env python3
+"""
+Advanced Exploit Scanner for PyBitMessage
+Finds sophisticated attack vectors after basic patches
+"""
+
+import os
+import re
+import ast
+import sys
+from pathlib import Path
+
+class AdvancedExploitScanner:
+    def __init__(self, base_path="src"):
+        self.base_path = Path(base_path)
+        self.advanced_issues = []
+    
+    def scan_crypto_issues(self):
+        """Scan for cryptographic implementation flaws"""
+        print("🔍 Scanning for crypto vulnerabilities...")
+        
+        crypto_files = [
+            'pyelliptic', 'proofofwork', 'class_objectProcessor', 
+            'bitmessagemain', 'protocol'
+        ]
+        
+        for pattern in crypto_files:
+            for py_file in self.base_path.rglob(f"*{pattern}*.py"):
+                try:
+                    with open(py_file, 'r') as f:
+                        content = f.read()
+                    
+                    # Check for weak randomness
+                    if 'random.' in content and 'import random' in content:
+                        lines = content.split('\n')
+                        for i, line in enumerate(lines):
+                            if 'random.' in line and 'random.randint' not in line and 'random.choice' not in line:
+                                if 'seed' not in line and 'test' not in str(py_file):
+                                    self.advanced_issues.append({
+                                        'file': str(py_file),
+                                        'line': i+1,
+                                        'type': 'CRYPTO_WEAK_RANDOM',
+                                        'severity': 'HIGH',
+                                        'description': f'Potential weak randomness: {line.strip()}'
+                                    })
+                    
+                    # Check for hardcoded keys/secrets
+                    if any(secret in content.lower() for secret in ['password', 'secret', 'key', 'private']):
+                        lines = content.split('\n')
+                        for i, line in enumerate(lines):
+                            if any(secret in line.lower() for secret in ['password', 'secret']) and '#' not in line:
+                                if 'test' not in str(py_file) and 'example' not in line.lower():
+                                    self.advanced_issues.append({
+                                        'file': str(py_file),
+                                        'line': i+1,
+                                        'type': 'CRYPTO_HARDCODED_SECRET',
+                                        'severity': 'HIGH',
+                                        'description': f'Potential hardcoded secret: {line.strip()}'
+                                    })
+                                    
+                except Exception as e:
+                    continue
+    
+    def scan_race_conditions(self):
+        """Scan for race condition vulnerabilities"""
+        print("🔍 Scanning for race conditions...")
+        
+        race_patterns = [
+            ('os.path.exists', 'TOCTOU'),
+            ('os.stat', 'TOCTOU'),
+            ('time.sleep', 'TIMING'),
+            ('threading.', 'THREAD_SAFETY')
+        ]
+        
+        for pattern, issue_type in race_patterns:
+            for py_file in self.base_path.rglob("*.py"):
+                try:
+                    with open(py_file, 'r') as f:
+                        content = f.read()
+                    
+                    if pattern in content:
+                        lines = content.split('\n')
+                        for i, line in enumerate(lines):
+                            if pattern in line and 'test' not in str(py_file):
+                                # Check context for file operations
+                                context_start = max(0, i-3)
+                                context_end = min(len(lines), i+3)
+                                context = '\n'.join(lines[context_start:context_end])
+                                
+                                if 'open(' in context or 'remove(' in context or 'rename(' in context:
+                                    self.advanced_issues.append({
+                                        'file': str(py_file),
+                                        'line': i+1,
+                                        'type': f'RACE_{issue_type}',
+                                        'severity': 'MEDIUM',
+                                        'description': f'Potential race condition: {line.strip()}'
+                                    })
+                                    
+                except Exception as e:
+                    continue
+    
+    def scan_memory_safety(self):
+        """Scan for memory safety issues"""
+        print("🔍 Scanning for memory safety issues...")
+        
+        memory_patterns = [
+            'struct.unpack', 'struct.pack', 'ctypes.', 'memoryview', 'bytearray'
+        ]
+        
+        for pattern in memory_patterns:
+            for py_file in self.base_path.rglob("*.py"):
+                try:
+                    with open(py_file, 'r') as f:
+                        content = f.read()
+                    
+                    if pattern in content:
+                        lines = content.split('\n')
+                        for i, line in enumerate(lines):
+                            if pattern in line:
+                                # Check for potential buffer issues
+                                if 'network' in str(py_file) or 'protocol' in str(py_file):
+                                    self.advanced_issues.append({
+                                        'file': str(py_file),
+                                        'line': i+1,
+                                        'type': 'MEMORY_SAFETY',
+                                        'severity': 'MEDIUM',
+                                        'description': f'Memory operation in network code: {line.strip()}'
+                                    })
+                                    
+                except Exception as e:
+                    continue
+    
+    def scan_logical_bugs(self):
+        """Scan for logical security bugs"""
+        print("🔍 Scanning for logical security bugs...")
+        
+        logical_files = [
+            'class_objectProcessor.py', 'protocol.py', 'bitmessagemain.py',
+            'api.py', 'network/bmproto.py'
+        ]
+        
+        for file_name in logical_files:
+            file_path = self.base_path / file_name
+            if file_path.exists():
+                try:
+                    with open(file_path, 'r') as f:
+                        content = f.read()
+                    
+                    # Check for missing access controls
+                    if 'def ' in content and 'check' not in content.lower():
+                        functions = re.findall(r'def (\w+)', content)
+                        for func in functions:
+                            if any(action in func.lower() for action in ['delete', 'remove', 'update', 'modify']):
+                                if 'permission' not in content.lower() and 'access' not in content.lower():
+                                    self.advanced_issues.append({
+                                        'file': str(file_path),
+                                        'line': 'N/A',
+                                        'type': 'LOGICAL_ACCESS_CONTROL',
+                                        'severity': 'MEDIUM',
+                                        'description': f'Function {func} may lack access control checks'
+                                    })
+                                    
+                except Exception as e:
+                    continue
+    
+    def run_advanced_scan(self):
+        """Run all advanced security scans"""
+        print("🚀 Starting advanced security scan...")
+        self.scan_crypto_issues()
+        self.scan_race_conditions()
+        self.scan_memory_safety()
+        self.scan_logical_bugs()
+        
+        print(f"✅ Advanced scan complete. Found {len(self.advanced_issues)} potential issues.")
+        return self.advanced_issues
+    
+    def generate_exploit_report(self):
+        """Generate advanced exploit report"""
+        if not self.advanced_issues:
+            print("🎉 No advanced security issues found!")
+            return
+        
+        print("\n" + "="*80)
+        print("ADVANCED EXPLOIT SCAN REPORT")
+        print("="*80)
+        
+        # Filter high severity issues
+        high_issues = [i for i in self.advanced_issues if i['severity'] == 'HIGH']
+        medium_issues = [i for i in self.advanced_issues if i['severity'] == 'MEDIUM']
+        
+        if high_issues:
+            print(f"\n🔴 HIGH Severity Issues: {len(high_issues)}")
+            for issue in high_issues:
+                print(f"   📍 {issue['file']}:{issue['line']}")
+                print(f"      {issue['type']}: {issue['description']}")
+                print()
+        
+        if medium_issues:
+            print(f"🟡 MEDIUM Severity Issues: {len(medium_issues)}")
+            for issue in medium_issues[:5]:  # Show first 5
+                print(f"   📍 {issue['file']}:{issue['line']}")
+                print(f"      {issue['type']}: {issue['description']}")
+                print()
+
+if __name__ == "__main__":
+    scanner = AdvancedExploitScanner()
+    issues = scanner.run_advanced_scan()
+    scanner.generate_exploit_report()
+    
+    # Save detailed report
+    with open("advanced_exploit_scan.txt", "w") as f:
+        f.write("PyBitMessage Advanced Exploit Scan Report\n")
+        f.write("="*50 + "\n")
+        f.write(f"Total advanced issues found: {len(issues)}\n\n")
+        
+        for issue in issues:
+            f.write(f"[{issue['severity']}] {issue['file']}:{issue['line']}\n")
+            f.write(f"Type: {issue['type']}\n")
+            f.write(f"Description: {issue['description']}\n\n")
+    
+    print(f"\n📄 Full advanced report saved to: advanced_exploit_scan.txt")
+EOF
+
+python3 advanced_exploit_scanner.py

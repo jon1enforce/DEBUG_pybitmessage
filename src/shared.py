@@ -280,3 +280,75 @@ def fixSensitiveFilePermissions(filename, hasEnabledKeys):
         raise
 
 logger.debug("shared module initialization complete")
+
+# SQL Injection Protection Functions
+def validate_sql_identifier(identifier):
+    """Validate SQL table/column names to prevent injection"""
+    if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', identifier):
+        raise ValueError(f"Invalid SQL identifier: {identifier}")
+    return identifier
+
+def safe_sql_query(template, *params):
+    """Execute SQL query with safe parameter substitution"""
+    # Validate all string parameters
+    safe_params = []
+    for param in params:
+        if isinstance(param, str):
+            # Basic SQL injection prevention
+            if any(keyword in param.upper() for keyword in ['DROP', 'DELETE', 'INSERT', 'UPDATE', 'UNION', 'SELECT']):
+                raise ValueError("Potential SQL injection detected")
+        safe_params.append(param)
+    
+    return sqlQuery(template, *safe_params)
+
+# SECURITY PATCH: Safe file operations
+import os
+from pathlib import Path
+
+def safe_open(filepath, mode='r', *args, **kwargs):
+    """Safely open files with path traversal protection"""
+    # Convert to absolute path and validate
+    abs_path = os.path.abspath(filepath)
+    
+    # Security checks
+    if '..' in abs_path or abs_path != os.path.normpath(abs_path):
+        raise SecurityError(f"Path traversal attempt detected: {filepath}")
+    
+    # Check if path is within allowed directories
+    allowed_dirs = [
+        os.path.abspath('.'), 
+        os.path.expanduser('~/.config/PyBitMessage'),
+        state.appdata if 'state' in globals() else ''
+    ]
+    
+    is_allowed = any(abs_path.startswith(str(Path(d).resolve())) for d in allowed_dirs if d)
+    if not is_allowed:
+        raise SecurityError(f"File access outside allowed directories: {filepath}")
+    
+    return open(abs_path, mode, *args, **kwargs)
+
+def safe_path_join(*paths):
+    """Safely join paths with traversal protection"""
+    joined = os.path.join(*paths)
+    abs_path = os.path.abspath(joined)
+    
+    if '..' in abs_path or abs_path != os.path.normpath(abs_path):
+        raise SecurityError(f"Path traversal in join: {joined}")
+    
+    return abs_path
+
+# SECURITY PATCH: Memory safety for network operations
+def safe_struct_unpack(fmt, data):
+    """Safely unpack struct data with bounds checking"""
+    expected_size = struct.calcsize(fmt)
+    if len(data) < expected_size:
+        raise ValueError(f"Buffer underflow: expected {expected_size} bytes, got {len(data)}")
+    return struct.unpack(fmt, data[:expected_size])
+
+def safe_bytearray_slice(data, start, end=None):
+    """Safely slice bytearray with bounds checking"""
+    if start < 0 or start >= len(data):
+        raise ValueError(f"Start index out of bounds: {start}")
+    if end is not None and (end < 0 or end > len(data) or end < start):
+        raise ValueError(f"End index out of bounds: {end}")
+    return data[start:end] if end else data[start:]

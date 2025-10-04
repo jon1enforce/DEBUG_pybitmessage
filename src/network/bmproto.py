@@ -34,7 +34,37 @@ from .objectracker import ObjectTracker, missingObjects
 
 
 logger = logging.getLogger('default')
+def safe_bytearray_slice(data, start, end=None):
+    """
+    Safely slice bytearray/bytes with bounds checking
+    If end is None, returns data from start to the end
+    """
+    # Input validation
+    if not data or start < 0:
+        return b''
+    
+    data_len = len(data)
+    
+    # If start is beyond data length, return empty
+    if start >= data_len:
+        return b''
+    
+    # If end is not provided, slice to the end
+    if end is None:
+        end = data_len
+    
+    # Adjust end if it exceeds data length or is invalid
+    if end < start:
+        return b''
+    
+    end = min(end, data_len)
+    
+    # Return safe slice
+    return data[start:end]
 
+# magic imports!
+import addresses
+from network import knownnodes
 
 def _hoststr(v):
     if six.PY3:
@@ -215,12 +245,12 @@ class BMProto(AdvancedDispatcher, ObjectTracker):
         services, host, port = self.decode_payload_content("Q16sH")
         logger.debug("DEBUG: Raw node details - services: %d, host: %s, port: %d", services, host, port)
         
-        if host[0:12] == b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF':
-            host = socket.inet_ntop(socket.AF_INET, _hoststr(host[12:16]))
+        if safe_bytearray_slice(host, 0, 12) == b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF':
+            host = socket.inet_ntop(socket.AF_INET, _hoststr(safe_bytearray_slice(host, 12, 16)))
             logger.debug("DEBUG: IPv4-mapped IPv6 address detected, converted to: %s", host)
-        elif host[0:6] == b'\xfd\x87\xd8\x7e\xeb\x43':
+        elif safe_bytearray_slice(host, 0, 6) == b'\xfd\x87\xd8\x7e\xeb\x43':
             # Onion, based on BMD/bitcoind
-            host = base64.b32encode(host[6:]).lower() + b".onion"
+            host = base64.b32encode(safe_bytearray_slice(host, 6)).lower() + b".onion"
             logger.debug("DEBUG: Onion address detected, converted to: %s", host)
         else:
             host = socket.inet_ntop(socket.AF_INET6, _hoststr(host))
@@ -229,7 +259,7 @@ class BMProto(AdvancedDispatcher, ObjectTracker):
         if host == b"":
             # This can happen on Windows systems which are not 64-bit
             # compatible so let us drop the IPv6 address.
-            host = socket.inet_ntop(socket.AF_INET, _hoststr(host[12:16]))
+            host = socket.inet_ntop(socket.AF_INET, _hoststr(safe_bytearray_slice(host, 12, 16)))
             logger.debug("DEBUG: Empty host detected, converted to IPv4: %s", host)
 
         node = Node(services, host, port)
@@ -657,7 +687,7 @@ class BMProto(AdvancedDispatcher, ObjectTracker):
         (self.remoteProtocolVersion, self.services, self.timestamp,
          self.sockNode, self.peerNode, self.nonce, self.userAgent
          ) = decoded[:7]
-        self.streams = decoded[7:]
+        self.streams = safe_bytearray_slice(decoded, 7)
         self.nonce = struct.pack('>Q', self.nonce)
         self.timeOffset = self.timestamp - int(time.time())
         

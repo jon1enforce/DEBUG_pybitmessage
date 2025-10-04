@@ -152,7 +152,16 @@ class BMConfigParser(SafeConfigParser):
             sections.sort(key=lambda item: ustr(self.get(item, 'label')).lower())
         logger.debug("Found %d addresses", len(sections))
         return sections
-
+    def safe_open(self, filename, mode='r', permissions=0o600):
+        """Safe file opening with proper permissions for config files"""
+        if 'r' in mode:
+            # Read mode - just open normally
+            return open(filename, mode)
+        else:
+            # Write mode - create with secure permissions
+            import os
+            fd = os.open(filename, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, permissions)
+            return os.fdopen(fd, mode)
     def save(self):
         """Save the runtime config onto the filesystem"""
         fileName = os.path.join(state.appdata, 'keys.dat')
@@ -176,7 +185,7 @@ class BMConfigParser(SafeConfigParser):
             logger.debug("Backup failed (file may not exist): %s", str(e))
 
         try:
-            with open(fileName, 'w') as configfile:
+            with self.safe_open(fileName, 'w') as configfile:
                 self.write(configfile)
             logger.debug("Config saved successfully")
         except Exception as e:

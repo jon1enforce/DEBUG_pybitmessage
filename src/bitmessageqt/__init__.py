@@ -2701,13 +2701,11 @@ class MyForm(settingsmixin.SMainWindow):
             for col in xrange(tableWidget.columnCount()):
                 tableWidget.item(i, col).setUnread(False)
 
-        markread = sqlExecuteChunked(
-            "UPDATE inbox SET read = 1 WHERE msgid IN({0}) AND read=0",
+        markread = sqlExecuteChunked("UPDATE inbox SET read = 1 WHERE msgid IN ({}) AND read=0".format(",".join("?" * idCount)),
             False, idCount, *msgids
         )
         if markread < 1:
-            markread = sqlExecuteChunked(
-                "UPDATE inbox SET read = 1 WHERE msgid IN({0}) AND read=0",
+            markread = sqlExecuteChunked("UPDATE inbox SET read = 1 WHERE msgid IN ({}) AND read=0".format(",".join("?" * idCount)),
                 True, idCount, *msgids
             )
 
@@ -3347,7 +3345,7 @@ class MyForm(settingsmixin.SMainWindow):
         if not filename:
             return
         try:
-            f = open(filename, 'w')
+            f = safe_open(filename, 'w')
             f.write(message.encode("utf-8", "replace"))
             f.close()
         except Exception:
@@ -4205,11 +4203,10 @@ class MyForm(settingsmixin.SMainWindow):
             )
             if len(queryreturn) < 1:
                 queryreturn = sqlQuery(
-                    'SELECT message FROM %s WHERE %s=CAST(? AS TEXT)' % (
-                        ('sent', 'ackdata') if folder == 'sent'
-                        else ('inbox', 'msgid')
-                    ), msgid
-                )
+                'SELECT message FROM ' + ('sent' if folder == 'sent' else 'inbox') + 
+                ' WHERE ' + ('ackdata' if folder == 'sent' else 'msgid') + '=CAST(? AS TEXT)',
+                msgid
+            )
 
         try:
             message = queryreturn[-1][0].decode("utf-8", "replace")

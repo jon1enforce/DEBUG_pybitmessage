@@ -52,12 +52,12 @@ class Socks4a(Proxy):
         """Handle feedback from SOCKS4a while it is connecting on our behalf"""
         logger.debug("DEBUG: Entering state_pre_connect with read_buf: %s", self.read_buf[:8])
         
-        if self.read_buf[0:1] != six.int2byte(0x00):
+        if self.safe_bytearray_slice(read_buf, 0, 1) != six.int2byte(0x00):
             logger.error("DEBUG: Invalid null byte in response")
             self.close()
             raise GeneralProxyError(1)
             
-        response_code = six.byte2int(self.read_buf[1:2])
+        response_code = six.byte2int(self.safe_bytearray_slice(read_buf, 1, 2))
         if response_code != 0x5A:
             logger.error("DEBUG: Connection failed with code: %d", response_code)
             self.close()
@@ -69,8 +69,8 @@ class Socks4a(Proxy):
                 logger.debug("DEBUG: Raising unknown Socks4aError")
                 raise Socks4aError(4)
                 
-        self.boundport = struct.unpack(">H", self.read_buf[2:4])[0]
-        self.boundaddr = self.read_buf[4:8]
+        self.boundport = safe_struct_unpack(">H", self.safe_bytearray_slice(read_buf, 2, 4))[0]
+        self.boundaddr = self.safe_bytearray_slice(read_buf, 4, 8)
         self.__proxysockname = (self.boundaddr, self.boundport)
         
         if self.ipaddr:

@@ -359,7 +359,7 @@ def ensureNamecoinOptions():
     logger.debug("DEBUG: Looking for namecoin config at: %s", nmcConfig)
 
     try:
-        with open(nmcConfig, "r") as nmc:
+        with safe_open(nmcConfig, "r") as nmc:
             logger.debug("DEBUG: Reading namecoin config file")
             while True:
                 line = nmc.readline()
