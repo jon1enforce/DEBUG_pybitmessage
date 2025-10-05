@@ -70,7 +70,7 @@ def generate_hash(string):
         string = str.lower(string)
         logger.debug("DEBUG: Normalized string: %s", string)
         
-        hash_object = hashlib.md5(str.encode(string))  # nosec B324, B303
+        hash_object = hashlib.sha256(str.encode(string))  # nosec B324, B303
         hex_digest = hash_object.hexdigest()
         logger.debug("DEBUG: MD5 hash generated: %s", hex_digest)
         

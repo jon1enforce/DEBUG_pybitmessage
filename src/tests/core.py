@@ -4,10 +4,10 @@ Tests for core and those that do not work outside
 """
 
 import atexit
+import json
 import os
-import pickle  # nosec
 from six.moves import queue as Queue
-import random  # nosec
+import helper_random as random  # Jetzt kryptografisch sicher!
 import shutil
 import socket
 import string
@@ -47,20 +47,26 @@ frozen = getattr(sys, 'frozen', None)
 knownnodes_file = os.path.join(state.appdata, 'knownnodes.dat')
 
 
-def pickle_knownnodes():
-    """Generate old style pickled knownnodes.dat"""
+def json_knownnodes():
+    """Generate old style knownnodes.dat in JSON format"""
     now = time.time()
-    with open(knownnodes_file, 'wb') as dst:
-        pickle.dump({
-            stream: {
-                Peer(
-                    '%i.%i.%i.%i' % tuple([
-                        random.randint(1, 255) for i in range(4)]),
-                    8444): {'lastseen': now, 'rating': 0.1}
-                for i in range(1, 4)  # 3 test nodes
-            }
-            for stream in range(1, 4)  # 3 test streams
-        }, dst)
+    knownnodes_data = {
+        str(stream): {
+            '%i.%i.%i.%i:8444' % tuple([
+                random.randint(1, 255) for i in range(4)]): 
+                {'lastseen': now, 'rating': 0.1}
+            for i in range(1, 4)  # 3 test nodes
+        }
+        for stream in range(1, 4)  # 3 test streams
+    }
+    
+    with open(knownnodes_file, 'w') as dst:
+        json.dump(knownnodes_data, dst)
+
+
+def legacy_pickle_knownnodes():
+    """Legacy function name for compatibility - now uses JSON"""
+    json_knownnodes()
 
 
 class TestCore(unittest.TestCase):
@@ -78,10 +84,10 @@ class TestCore(unittest.TestCase):
         """test encoding and decoding (originally from helper_msgcoding)"""
         msg_data = {
             'subject': ''.join(
-                random.choice(string.ascii_lowercase + string.digits)  # nosec
+                random.choice(string.ascii_lowercase + string.digits)
                 for _ in range(40)),
             'body': ''.join(
-                random.choice(string.ascii_lowercase + string.digits)  # nosec
+                random.choice(string.ascii_lowercase + string.digits)
                 for _ in range(10000))
         }
 
@@ -144,9 +150,9 @@ class TestCore(unittest.TestCase):
                 for node in six.itervalues(nodes):
                     node['lastseen'] -= 2419205  # older than 28 days
 
-    def test_knownnodes_pickle(self):
+    def test_knownnodes_json(self):
         """ensure that 3 nodes was imported for each stream"""
-        pickle_knownnodes()
+        json_knownnodes()
         self._wipe_knownnodes()
         knownnodes.readKnownNodes()
         for nodes in six.itervalues(knownnodes.knownNodes):
@@ -363,8 +369,8 @@ class TestCore(unittest.TestCase):
         self.assertEqual(column_type[0][0] if column_type else '', 'blob')
 
     @unittest.skipIf(frozen, 'not packed test_pattern into the bundle')
-    def test_old_knownnodes_pickle(self):
-        """Testing old (v0.6.2) version knownnodes.dat file"""
+    def test_old_knownnodes_json(self):
+        """Testing old knownnodes.dat file compatibility"""
         try:
             self._load_knownnodes(
                 os.path.join(

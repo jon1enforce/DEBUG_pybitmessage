@@ -1,7 +1,7 @@
 """
 Announce addresses as they are received from other hosts
 """
-import random
+import helper_random as random
 import logging
 from six.moves import queue
 

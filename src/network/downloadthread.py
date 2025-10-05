@@ -2,7 +2,7 @@
 `DownloadThread` class definition
 """
 import time
-import random
+import helper_random as random
 import logging
 import state
 import six

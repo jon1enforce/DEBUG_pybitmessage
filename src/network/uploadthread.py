@@ -2,7 +2,7 @@
 `UploadThread` class definition
 """
 import time
-import random
+import helper_random as random
 import protocol
 import state
 from network import connectionpool

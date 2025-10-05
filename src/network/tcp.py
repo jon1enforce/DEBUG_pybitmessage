@@ -5,7 +5,7 @@ TCP protocol handler
 
 import logging
 import math
-import random
+import helper_random as random
 import socket
 import time
 import six

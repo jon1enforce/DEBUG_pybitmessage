@@ -2,7 +2,7 @@
 A queue with multiple internal subqueues.
 Elements are added into a random subqueue, and retrieval rotates
 """
-import random
+import helper_random as random
 import logging
 from collections import deque
 from six.moves import queue

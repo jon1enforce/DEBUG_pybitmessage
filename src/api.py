@@ -61,7 +61,7 @@ import base64
 import errno
 import hashlib
 import json
-import random
+import helper_random as random
 import socket
 import subprocess  # nosec B404
 import time

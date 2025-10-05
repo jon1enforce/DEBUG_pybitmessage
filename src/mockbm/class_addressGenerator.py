@@ -3,7 +3,7 @@ A thread for creating addresses
 """
 
 import logging
-import random
+import helper_random as random
 import threading
 
 from six.moves import queue

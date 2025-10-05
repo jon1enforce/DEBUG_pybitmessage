@@ -1,7 +1,7 @@
 """Threading primitives for the network package"""
 
 import logging
-import random
+import helper_random as random
 import threading
 from contextlib import contextmanager
 

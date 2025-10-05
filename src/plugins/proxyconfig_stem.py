@@ -13,7 +13,7 @@ Configure tor proxy and hidden service with
 """
 import logging
 import os
-import random
+import helper_random as random
 import sys
 import tempfile
 

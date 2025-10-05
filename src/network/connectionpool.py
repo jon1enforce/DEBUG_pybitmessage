@@ -7,7 +7,7 @@ import re
 import socket
 import sys
 import time
-import random
+import helper_random as random
 
 from network import asyncore_pollchoose as asyncore
 from network import knownnodes

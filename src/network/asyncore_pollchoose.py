@@ -9,7 +9,7 @@ Basic infrastructure for asynchronous socket service clients and servers.
 import os
 import select
 import socket
-import random
+import helper_random as random
 import sys
 import time
 import warnings

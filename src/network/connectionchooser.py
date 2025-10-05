@@ -3,7 +3,7 @@ Select which node to connect to
 """
 # pylint: disable=too-many-branches
 import logging
-import random
+import helper_random as random
 
 from six.moves import queue
 

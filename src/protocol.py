@@ -6,7 +6,7 @@ Low-level protocol-related functions.
 
 import base64
 import hashlib
-import random
+import helper_random as random
 import socket
 import sys
 import time

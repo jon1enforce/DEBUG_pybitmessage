@@ -6,7 +6,7 @@ import hashlib
 import locale
 import logging
 import os
-import random
+import helper_random as random
 import string
 import subprocess
 import sys
@@ -3840,7 +3840,7 @@ class MyForm(settingsmixin.SMainWindow):
     def setAvatar(self, addressAtCurrentRow):
         if not os.path.exists(state.appdata + 'avatars/'):
             os.makedirs(state.appdata + 'avatars/')
-        hash = hashlib.md5(addBMIfNotPresent(addressAtCurrentRow).encode("utf-8", "replace")).hexdigest()
+        hash = hashlib.sha256(addBMIfNotPresent(addressAtCurrentRow).encode("utf-8", "replace")).hexdigest()
         # http://pyqt.sourceforge.net/Docs/PyQt4/qimagereader.html#supportedImageFormats
         names = {
             'BMP': 'Windows Bitmap',

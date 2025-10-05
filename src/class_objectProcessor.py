@@ -7,7 +7,7 @@ processes the network objects
 import hashlib
 import logging
 import os
-import random
+import helper_random as random
 import subprocess  # nosec B404
 import threading
 import time

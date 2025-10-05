@@ -1,7 +1,7 @@
 """
 Tests for RandomTrackingDict Class
 """
-import random
+import helper_random as random
 import unittest
 
 from time import time

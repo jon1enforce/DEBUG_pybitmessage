@@ -44,7 +44,7 @@ def identiconize(address):
     if identicon_lib[:len('qidenticon')] == 'qidenticon':
         logger.debug("DEBUG: Using qidenticon library")
         import qidenticon
-        icon_hash = hashlib.md5(data).hexdigest()
+        icon_hash = hashlib.sha256(data).hexdigest()
         logger.debug(f"DEBUG: Generated MD5 hash: {icon_hash}")
         
         use_two_colors = (identicon_lib[:len('qidenticon_two')] == 'qidenticon_two')
@@ -109,7 +109,7 @@ def avatarize(address):
         logger.debug("DEBUG: Handling broadcast subscribers special case")
         icon_hash = address
     else:
-        icon_hash = hashlib.md5(addBMIfNotPresent(address).encode("utf-8", "replace")).hexdigest()
+        icon_hash = hashlib.sha256(addBMIfNotPresent(address).encode("utf-8", "replace")).hexdigest()
     
     logger.debug(f"DEBUG: Avatar hash: '{icon_hash}'")
     

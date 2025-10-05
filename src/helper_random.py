@@ -1,6 +1,10 @@
-"""Convenience functions for random operations. Not suitable for security / cryptography operations."""
+"""
+Cryptographically secure random operations. 
+NOW SUITABLE for security / cryptography operations.
+Uses secrets module for cryptographically secure random number generation.
+"""
 
-import random
+import secrets
 import logging
 
 logger = logging.getLogger('default')
@@ -9,16 +13,16 @@ NoneType = type(None)
 
 
 def seed():
-    """Initialize random number generator"""
-    logger.debug("DEBUG: Initializing random number generator seed")
-    random.seed()
-    logger.debug("DEBUG: Random seed initialized")
+    """Initialize random number generator - now cryptographically secure by default"""
+    logger.debug("DEBUG: Cryptographically secure RNG initialized (no seed needed)")
+    # secrets verwendet systemeigenen CSPRNG, benötigt kein manuelles Seeding
+    logger.debug("DEBUG: Secure RNG ready")
 
 
 def randomshuffle(population):
     """Method randomShuffle.
 
-    shuffle the sequence x in place.
+    shuffle the sequence x in place using cryptographically secure RNG.
     shuffles the elements in list in place,
     so they are in a random order.
     As Shuffle will alter data in-place,
@@ -40,7 +44,10 @@ def randomshuffle(population):
     original_order = str(population[:5]) + "..." if len(population) > 5 else str(population)
     logger.debug("DEBUG: Original order (first 5 elements): %s", original_order)
     
-    random.shuffle(population)
+    # Cryptographically secure shuffle
+    for i in range(len(population) - 1, 0, -1):
+        j = secrets.randbelow(i + 1)
+        population[i], population[j] = population[j], population[i]
     
     shuffled_order = str(population[:5]) + "..." if len(population) > 5 else str(population)
     logger.debug("DEBUG: Shuffled order (first 5 elements): %s", shuffled_order)
@@ -51,10 +58,8 @@ def randomsample(population, k):
     """Method randomSample.
 
     return a k length list of unique elements
-    chosen from the population sequence.
-    Used for random sampling
-    without replacement, its called
-    partial shuffle.
+    chosen from the population sequence using cryptographically secure RNG.
+    Used for random sampling without replacement.
     """
     logger.debug("DEBUG: Entering randomsample()")
     logger.debug("DEBUG: Input population type: %s, length: %d", 
@@ -69,7 +74,15 @@ def randomsample(population, k):
         logger.debug("DEBUG: Negative sample size requested, setting to 0")
         k = 0
     
-    result = random.sample(population, k)
+    # Cryptographically secure sample
+    result = []
+    population_list = list(population)
+    for _ in range(k):
+        if not population_list:
+            break
+        idx = secrets.randbelow(len(population_list))
+        result.append(population_list.pop(idx))
+    
     logger.debug("DEBUG: Sampled %d elements: %s", len(result), str(result[:5]) + "..." if len(result) > 5 else str(result))
     logger.debug("DEBUG: Exiting randomsample()")
     return result
@@ -78,22 +91,20 @@ def randomsample(population, k):
 def randomrandrange(x, y=None):
     """Method randomRandrange.
 
-    return a randomly selected element from
-    range(start, stop). This is equivalent to
-    choice(range(start, stop)),
-    but doesnt actually build a range object.
+    return a cryptographically secure randomly selected element from
+    range(start, stop).
     """
     logger.debug("DEBUG: Entering randomrandrange()")
     logger.debug("DEBUG: Parameters - x: %s, y: %s", x, y)
     
     if isinstance(y, NoneType):
         logger.debug("DEBUG: Single parameter mode, generating range(0, %d)", x)
-        result = random.randrange(x)  # nosec
+        result = secrets.randbelow(x)  # Cryptographically secure
     else:
         logger.debug("DEBUG: Two parameter mode, generating range(%d, %d)", x, y)
-        result = random.randrange(x, y)  # nosec
+        result = secrets.randbelow(y - x) + x  # Cryptographically secure
     
-    logger.debug("DEBUG: Generated random number: %d", result)
+    logger.debug("DEBUG: Generated secure random number: %d", result)
     logger.debug("DEBUG: Exiting randomrandrange()")
     return result
 
@@ -101,9 +112,8 @@ def randomrandrange(x, y=None):
 def randomchoice(population):
     """Method randomchoice.
 
-    Return a random element from the non-empty
-    sequence seq. If seq is empty, raises
-    IndexError.
+    Return a cryptographically secure random element from the non-empty
+    sequence seq. If seq is empty, raises IndexError.
     """
     logger.debug("DEBUG: Entering randomchoice()")
     logger.debug("DEBUG: Input population type: %s, length: %d", 
@@ -113,7 +123,78 @@ def randomchoice(population):
         logger.debug("DEBUG: Empty population detected, will raise IndexError")
         raise IndexError("Cannot choose from an empty sequence")
     
-    result = random.choice(population)  # nosec
-    logger.debug("DEBUG: Selected random element: %s", result)
+    # Cryptographically secure choice
+    result = population[secrets.randbelow(len(population))]
+    logger.debug("DEBUG: Selected secure random element: %s", result)
     logger.debug("DEBUG: Exiting randomchoice()")
     return result
+
+
+def randomrandom():
+    """Cryptographically secure replacement for random.random()
+    Returns a float in [0.0, 1.0) using secure RNG
+    """
+    logger.debug("DEBUG: Generating cryptographically secure random float")
+    result = secrets.randbelow(2**53) / (2**53)  # High precision float
+    logger.debug("DEBUG: Generated secure random float: %f", result)
+    return result
+def random():
+    """Cryptographically secure replacement for random.random()"""
+    return secrets.randbelow(2**53) / (2**53)
+
+def randrange(start, stop=None, step=1):
+    """Cryptographically secure replacement for random.randrange()"""
+    if stop is None:
+        return secrets.randbelow(start)
+    return secrets.randbelow(stop - start) + start
+
+def randint(a, b):
+    """Cryptographically secure replacement for random.randint()"""
+    return a + secrets.randbelow(b - a + 1)
+
+def choice(seq):
+    """Cryptographically secure replacement for random.choice()"""
+    if not seq:
+        raise IndexError("Cannot choose from an empty sequence")
+    return seq[secrets.randbelow(len(seq))]
+
+def sample(population, k):
+    """Cryptographically secure replacement for random.sample()"""
+    if k > len(population):
+        raise ValueError("Sample larger than population")
+    
+    result = []
+    population_list = list(population)
+    for _ in range(k):
+        idx = secrets.randbelow(len(population_list))
+        result.append(population_list.pop(idx))
+    return result
+
+def shuffle(population):
+    """Cryptographically secure replacement for random.shuffle()"""
+    if not isinstance(population, (list, bytearray)):
+        population = list(population)
+    
+    for i in range(len(population) - 1, 0, -1):
+        j = secrets.randbelow(i + 1)
+        population[i], population[j] = population[j], population[i]
+
+def uniform(a, b):
+    """Cryptographically secure replacement for random.uniform()"""
+    return a + (b - a) * random()
+
+# Kompatibilitäts-Funktionen (alte helper_random API)
+def randomrandom():
+    return random()
+
+def randomrandrange(x, y=None):
+    return randrange(x, y)
+
+def randomchoice(population):
+    return choice(population)
+
+def randomsample(population, k):
+    return sample(population, k)
+
+def randomshuffle(population):
+    return shuffle(population)    
