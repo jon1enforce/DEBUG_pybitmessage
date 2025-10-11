@@ -9,7 +9,7 @@ PATH:
 # Security PATCH!
 json indead of pickle  
 whitelisted commands/message-types  
-hardened protocol.py  
+hardened protocol and sql  
 +++  
 compare with the source to see the changelog.  
 +++  
