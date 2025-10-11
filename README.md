@@ -4,8 +4,8 @@ source: https://github.com/kashikoibumi/PyBitmessage
 look https://github.com/jon1enforce/libressl  
 PATH:  
     elif sys.platform.startswith('openbsd'):  
-        ....libdir.append("/home/libressl-4.*/build/crypto/libcrypto.so")  
-        ....libdir.append("/home/libressl-4.*/build/ssl/libssl.so")
+        ....libdir.append("/home/libressl-4.1.0/build/crypto/libcrypto.so")  
+        ....libdir.append("/home/libressl-4.1.0/build/ssl/libssl.so")
 # Security PATCH!
 json indead of pickle  
 whitelist  
