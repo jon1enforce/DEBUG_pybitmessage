@@ -10,5 +10,6 @@ PATH:
 json indead of pickle  
 whitelisted commands/message-types  
 hardened protocol.py  
---------------------------
-compare with the source to see the changelog.
++++  
+compare with the source to see the changelog.  
++++  
