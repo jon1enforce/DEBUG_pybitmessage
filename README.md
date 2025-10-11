@@ -8,5 +8,5 @@ PATH:
         ....libdir.append("/home/libressl-4.1.0/build/ssl/libssl.so")
 # Security PATCH!
 json indead of pickle  
-whitelist  
+whitelisted commands/message-types  
 hardened protocol.py  
