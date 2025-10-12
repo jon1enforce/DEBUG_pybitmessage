@@ -13,3 +13,6 @@ hardened protocol and sql
 +++  
 compare with the source to see the changelog.  
 +++  
+References:  
+https://www.cve.org/CVERecord?id=CVE-2018-1000070  
+https://nvd.nist.gov/vuln/detail/CVE-2018-1000070
