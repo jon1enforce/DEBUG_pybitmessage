@@ -8,4 +8,4 @@ Pillow==9.4.0
 jaraco.collections==3.8.0
 jaraco.classes==3.2.3
 pytz==2022.7.1
-pydantic==1.10.6
+pydantic==2.12.2
