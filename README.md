@@ -23,4 +23,5 @@ python3 setup.py install
 +++   start normal   +++  
 sh py3start.sh  
 +++   start Latex bridge  +++  
+apt install texmaker
 sh py3start_bridge.sh  
