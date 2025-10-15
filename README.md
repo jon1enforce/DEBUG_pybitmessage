@@ -16,3 +16,11 @@ compare with the source to see the changelog.
 References:  
 https://www.cve.org/CVERecord?id=CVE-2018-1000070  
 https://nvd.nist.gov/vuln/detail/CVE-2018-1000070
+# LaTEX Bridge and Install:  
++++   setup   +++  
+python3 setup.py build  
+python3 setup.py install  
++++   start normal   +++  
+sh py3start.sh  
++++   start Latex bridge  +++  
+sh py3start_bridge.sh  
