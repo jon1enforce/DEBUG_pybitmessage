@@ -4,7 +4,7 @@ Module for Proof of Work using OpenCL
 import logging
 import os
 from struct import pack
-
+import re
 import paths
 from bmconfigparser import config
 from state import shutdown
