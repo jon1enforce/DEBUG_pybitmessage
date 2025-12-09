@@ -1489,10 +1489,10 @@ class MyForm(settingsmixin.SMainWindow):
                 logger.warning("No notification.sound plugin found")
 
     def notifierShow(
-            self, title, subtitle, category, label=None, icon=None):
-        self.playSound(category, label)
-        self._notifier(
-            unic(ustr(title)), unic(ustr(subtitle)), category, label, icon)
+            self, title, subtitle='', category='', label='', icon=''):
+        """Show notification - redirect to safe version"""
+        # Einfach zur sicheren Version weiterleiten
+        return self.safeNotifierShow(title, subtitle, category, label, icon)
 
     # tree
     def treeWidgetKeyPressEvent(self, event):
@@ -1757,66 +1757,128 @@ class MyForm(settingsmixin.SMainWindow):
     connected = False
 
     def setStatusIcon(self, color):
-        _notifications_enabled = not config.getboolean(
-            'bitmessagesettings', 'hidetrayconnectionnotifications')
+        """Set status icon color with safe error handling"""
+        # Sicherheitscheck - nur gültige Farben erlauben
         if color not in ('red', 'yellow', 'green'):
             return
-
-        self.pushButtonStatusIcon.setIcon(
-            QtGui.QIcon(":/newPrefix/images/%sicon.png" % color))
+        
+        # 1. Icon immer zuerst setzen (funktioniert normalerweise immer)
+        try:
+            if hasattr(self, 'pushButtonStatusIcon'):
+                self.pushButtonStatusIcon.setIcon(
+                    QtGui.QIcon(":/newPrefix/images/%sicon.png" % color))
+        except Exception as e:
+            logger.debug("Could not set status button icon: %s", str(e))
+        
+        # Statusfarbe im State speichern
         state.statusIconColor = color
+        
+        # Benachrichtigungen in den Einstellungen prüfen
+        try:
+            _notifications_enabled = not config.getboolean(
+                'bitmessagesettings', 'hidetrayconnectionnotifications', False)
+        except Exception:
+            _notifications_enabled = False
+        
+        # Vorherigen Verbindungsstatus merken
+        was_connected = getattr(self, 'connected', False)
+        
         if color == 'red':
-            # if the connection is lost then show a notification
-            if self.connected and _notifications_enabled:
-                self.notifierShow(
+            # Verbindung verloren
+            if was_connected and _notifications_enabled:
+                # SICHERE Benachrichtigung
+                self.safeNotifierShow(
                     'Bitmessage',
                     _translate("MainWindow", "Connection lost"),
                     sound.SOUND_DISCONNECTED)
-            proxy = config.safeGet(
-                'bitmessagesettings', 'socksproxytype', 'none')
-            if proxy == 'none' and not config.safeGetBoolean(
-                    'bitmessagesettings', 'upnp'):
-                self.updateStatusBar(
-                    _translate(
-                        "MainWindow",
-                        "Problems connecting? Try enabling UPnP in the Network"
-                        " Settings"
+            
+            # Netzwerkhinweise
+            try:
+                proxy = config.safeGet(
+                    'bitmessagesettings', 'socksproxytype', 'none')
+                if proxy == 'none' and not config.safeGetBoolean(
+                        'bitmessagesettings', 'upnp', False):
+                    self.updateStatusBar(
+                        _translate(
+                            "MainWindow",
+                            "Problems connecting? Try enabling UPnP in the Network"
+                            " Settings"
+                        ))
+                elif proxy == 'SOCKS5' and config.safeGetBoolean(
+                        'bitmessagesettings', 'onionservicesonly', False):
+                    self.updateStatusBar((
+                        _translate(
+                            "MainWindow",
+                            "With recent tor you may never connect having"
+                            " 'onionservicesonly' set in your config."), 1
                     ))
-            elif proxy == 'SOCKS5' and config.safeGetBoolean(
-                    'bitmessagesettings', 'onionservicesonly'):
-                self.updateStatusBar((
-                    _translate(
-                        "MainWindow",
-                        "With recent tor you may never connect having"
-                        " 'onionservicesonly' set in your config."), 1
-                ))
+            except Exception:
+                pass
+            
             self.connected = False
 
-            if self.actionStatus is not None:
-                self.actionStatus.setText(_translate(
-                    "MainWindow", "Not Connected"))
-                self.setTrayIconFile("can-icon-24px-red.png")
+            # Status in Tray/UI aktualisieren
+            try:
+                if hasattr(self, 'actionStatus') and self.actionStatus is not None:
+                    self.actionStatus.setText(_translate(
+                        "MainWindow", "Not Connected"))
+                    self.setTrayIconFile("can-icon-24px-red.png")
+            except Exception:
+                pass
             return
 
-        if self.statusbar.currentMessage() == (
-            "Warning: You are currently not connected. Bitmessage will do"
-            " the work necessary to send the message but it won't send"
-            " until you connect."
-        ):
-            self.statusbar.clearMessage()
-        # if a new connection has been established then show a notification
-        if not self.connected and _notifications_enabled:
-            self.notifierShow(
+        # Statusmeldung löschen wenn nötig
+        try:
+            if self.statusbar.currentMessage() == (
+                "Warning: You are currently not connected. Bitmessage will do"
+                " the work necessary to send the message but it won't send"
+                " until you connect."
+            ):
+                self.statusbar.clearMessage()
+        except Exception:
+            pass
+        
+        # Neue Verbindung hergestellt
+        if not was_connected and _notifications_enabled:
+            self.safeNotifierShow(
                 'Bitmessage',
                 _translate("MainWindow", "Connected"),
                 sound.SOUND_CONNECTED)
+        
         self.connected = True
 
-        if self.actionStatus is not None:
-            self.actionStatus.setText(_translate(
-                "MainWindow", "Connected"))
-            self.setTrayIconFile("can-icon-24px-%s.png" % color)
-
+        # Status in Tray/UI aktualisieren
+        try:
+            if hasattr(self, 'actionStatus') and self.actionStatus is not None:
+                self.actionStatus.setText(_translate(
+                    "MainWindow", "Connected"))
+                self.setTrayIconFile("can-icon-24px-%s.png" % color)
+        except Exception:
+            pass
+    def safeNotifierShow(self, title, subtitle='', category='', label='', icon=''):
+        """Show notification with complete error safety - will never crash"""
+        # Wenn Notifier nicht verfügbar oder kaputt, einfach zurück
+        if not hasattr(self, '_notifier') or self._notifier is None:
+            logger.debug("Notifier not available or disabled")
+            return False
+        
+        # Maximal 1 Versuch - wenn fehlschlägt, Notifier für immer deaktivieren
+        try:
+            self._notifier(
+                unic(ustr(title)), unic(ustr(subtitle)), category, label, icon)
+            logger.debug("Notification shown: %s - %s", title, subtitle)
+            return True
+        except Exception as e:
+            # JEDER Fehler führt dazu, dass wir den Notifier komplett deaktivieren
+            error_msg = str(e)
+            if 'g-io-error-quark' in error_msg or 'DBus' in error_msg or 'Verbindung' in error_msg:
+                logger.warning("DBus/Notification system permanently disabled: %s", error_msg)
+            else:
+                logger.warning("Notification system permanently disabled: %s", error_msg)
+            
+            # Notifier für immer als kaputt markieren
+            self._notifier = None
+            return False
     def initTrayIcon(self, iconFileName, app):
         self.currentTrayIconFileName = iconFileName
         self.tray = QtWidgets.QSystemTrayIcon(

@@ -275,30 +275,66 @@ class NetworkStatus(QtWidgets.QWidget, RetranslateMixin):
             
             print(f"DEBUG: [NetworkStatus.updateNetworkStatusTab] Successful connections: {successful_connections}, Has inbound: {has_inbound}")
             
-            # Setze Status basierend auf erfolgreichen Verbindungen
+            # KORREKTUR: ABSOLUT SICHERE STATUS-SETZUNG
+            status_color = None
             if successful_connections > 0:
                 # Wenn wir erfolgreiche Verbindungen haben, setze Status auf grün
                 print("DEBUG: [NetworkStatus.updateNetworkStatusTab] Successful connections found, setting GREEN status")
-                self.window().setStatusIcon('green')
+                status_color = 'green'
                 state.statusIconColor = 'green'
             elif row_count > 0:
                 # Wenn wir Verbindungen haben, aber keine erfolgreichen, setze gelb
                 print("DEBUG: [NetworkStatus.updateNetworkStatusTab] Connections but none successful, setting YELLOW status")
-                self.window().setStatusIcon('yellow')
+                status_color = 'yellow'
                 state.statusIconColor = 'yellow'
             else:
                 # Keine Verbindungen, setze rot
                 print("DEBUG: [NetworkStatus.updateNetworkStatusTab] No connections, setting RED status")
-                self.window().setStatusIcon('red')
+                status_color = 'red'
                 state.statusIconColor = 'red'
+            
+            # ABSOLUT SICHERE STATUS-ÄNDERUNG OHNE CRASH
+            if status_color:
+                try:
+                    window = self.window()
+                    if window:
+                        # Versuche die reguläre Methode mit Fehlerbehandlung
+                        try:
+                            window.setStatusIcon(status_color)
+                        except Exception as e:
+                            print(f"DEBUG: [NetworkStatus.updateNetworkStatusTab] Error in setStatusIcon: {e}")
+                            # Fallback 1: Direktes Icon setzen ohne Benachrichtigung
+                            try:
+                                if hasattr(window, 'statusIcons') and status_color in window.statusIcons:
+                                    if hasattr(window, 'ui') and hasattr(window.ui, 'labelStatusIcon'):
+                                        window.ui.labelStatusIcon.setPixmap(window.statusIcons[status_color])
+                                        print(f"DEBUG: [NetworkStatus.updateNetworkStatusTab] Direct icon set to {status_color}")
+                            except Exception as e2:
+                                print(f"DEBUG: [NetworkStatus.updateNetworkStatusTab] Fallback 1 failed: {e2}")
+                                # Fallback 2: Nur State aktualisieren
+                                try:
+                                    state.statusIconColor = status_color
+                                    print(f"DEBUG: [NetworkStatus.updateNetworkStatusTab] Only state updated to {status_color}")
+                                except Exception as e3:
+                                    print(f"DEBUG: [NetworkStatus.updateNetworkStatusTab] Fallback 2 failed: {e3}")
+                                    # Fallback 3: Nichts tun - Hauptsache kein Crash
+                                    pass
+                except Exception as e:
+                    print(f"DEBUG: [NetworkStatus.updateNetworkStatusTab] Outer try failed: {e}")
+                    # WICHTIG: Kein re-raise, einfach nur loggen
+                    # Der Fehler wird hier gefangen und nicht weitergeworfen
                 
         except Exception as e:
             print(f"DEBUG: [NetworkStatus.updateNetworkStatusTab] Error updating network status: {e}")
             import traceback
             traceback.print_exc()
+            # WICHTIG: Kein re-raise hier - die Methode muss beendet werden ohne Crash
         finally:
-            self.tableWidgetConnectionCount.setUpdatesEnabled(True)
-            self.tableWidgetConnectionCount.setSortingEnabled(True)
+            try:
+                self.tableWidgetConnectionCount.setUpdatesEnabled(True)
+                self.tableWidgetConnectionCount.setSortingEnabled(True)
+            except Exception:
+                pass  # Falls das auch fehlschlägt, ignorieren
 
     def runEveryTwoSeconds(self):
         """Updates counters, runs every 2 seconds if the timer is running"""
