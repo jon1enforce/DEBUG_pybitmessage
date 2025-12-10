@@ -46,6 +46,8 @@ class sqlThread(threading.Thread):
         debug_print("Initializing sqlThread instance")
         threading.Thread.__init__(self, name="SQL")
         debug_print("sqlThread initialized")
+        self.vacuum_in_progress = False
+        self.vacuum_start_time = 0
 
     def run(self):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         """Process SQL queries from `.helper_sql.sqlSubmitQueue`"""
@@ -206,8 +208,13 @@ class sqlThread(threading.Thread):
                 '''('Bitmessage new releases/announcements','BM-GtovgYdgs7qXPkoYaRgrLFuFKz1SFpsw',1)''')
             logger.debug('Commiting.')
             self.conn.commit()
+            
+            # IMPORTANT: Set sql_ready BEFORE vacuum for new databases
+            helper_sql.sql_ready.set()
+            debug_print("SQL thread marked as ready BEFORE vacuum for new database")
+            
             logger.debug('Vacuuming message.dat. You might notice that the file size gets much smaller.')
-            self.cur.execute(''' VACUUM ''')
+            self.safe_vacuum_with_progress()
             debug_print("Completed initial database setup")
 
         # After code refactoring, the possible status values for sent messages
@@ -530,41 +537,13 @@ class sqlThread(threading.Thread):
                 logger.error(err)
                 debug_print(f"Error during null value test: {err}")
 
-        # Let us check to see the last time we vaccumed the messages.dat file.
-        # If it has been more than a month let's do it now.
-        item = '''SELECT value FROM settings WHERE key='lastvacuumtime';'''
-        parameters = ''
-        debug_print("Checking last vacuum time")
-        self.cur.execute(item, parameters)
-        queryreturn = self.cur.fetchall()
-        for row in queryreturn:
-            value, = row
-            if int(value) < int(time.time()) - 86400:
-                logger.info('It has been a long time since the messages.dat file has been vacuumed. Vacuuming now...')
-                debug_print("Performing database vacuum")
-                try:
-                    self.cur.execute(''' VACUUM ''')
-                except Exception as err:
-                    if str(err) == 'database or disk is full':
-                        logger.fatal(
-                            '(While VACUUM) Alert: Your disk or data storage volume is full.'
-                            ' sqlThread will now exit.')
-                        queues.UISignalQueue.put((
-                            'alert', (
-                                _translate(
-                                    "MainWindow",
-                                    "Disk full"),
-                                _translate(
-                                    "MainWindow",
-                                    'Alert: Your disk or data storage volume is full. Bitmessage will now exit.'),
-                                True)))
-                        os._exit(0)
-                item = '''update settings set value=? WHERE key='lastvacuumtime';'''
-                parameters = (int(time.time()),)
-                self.cur.execute(item, parameters)
-                debug_print("Database vacuum completed")
-
+        # WICHTIG: Setze sql_ready BEVOR VACUUM für existierende Datenbanken
         helper_sql.sql_ready.set()
+        debug_print("SQL thread marked as ready (other threads can start now)")
+        
+        # Asynchroner VACUUM nachdem sql_ready gesetzt wurde
+        self.schedule_async_vacuum_if_needed()
+        
         debug_print("Database initialization complete, entering main loop")
 
         while True:
@@ -647,23 +626,8 @@ class sqlThread(threading.Thread):
                 self.cur.execute('''delete from inbox where folder='trash' ''')
                 self.cur.execute('''delete from sent where folder='trash' ''')
                 self.conn.commit()
-                try:
-                    self.cur.execute(''' VACUUM ''')
-                except Exception as err:
-                    if str(err) == 'database or disk is full':
-                        logger.fatal(
-                            '(while deleteandvacuume) Alert: Your disk or data storage volume is full.'
-                            ' sqlThread will now exit.')
-                        queues.UISignalQueue.put((
-                            'alert', (
-                                _translate(
-                                    "MainWindow",
-                                    "Disk full"),
-                                _translate(
-                                    "MainWindow",
-                                    'Alert: Your disk or data storage volume is full. Bitmessage will now exit.'),
-                                True)))
-                        os._exit(0)
+                # Asynchrones VACUUM für deleteandvacuume
+                self.async_vacuum()
             else:
                 parameters = helper_sql.sqlSubmitQueue.get()
                 rowcount = 0
@@ -715,5 +679,90 @@ class sqlThread(threading.Thread):
                 "Got error while pass deterministic in sqlite create function {}, Passing 3 params".format(err))
             self.conn.create_function("enaddr", 3, encodeAddress)
             debug_print("Successfully created non-deterministic SQL function 'enaddr'")
+    
+    def safe_vacuum_with_progress(self):
+        """Sicheres VACUUM mit Progress-Anzeige"""
+        if self.vacuum_in_progress:
+            logger.debug("VACUUM already in progress, skipping")
+            return
+            
+        self.vacuum_in_progress = True
+        self.vacuum_start_time = time.time()
+        
+        try:
+            logger.info("Starting database VACUUM (this may take several minutes for large databases)...")
+            debug_print("Performing database vacuum with progress monitoring")
+            
+            # Prüfe Datenbank-Größe vorher
+            self.cur.execute("PRAGMA page_count;")
+            page_count_before = self.cur.fetchone()[0]
+            self.cur.execute("PRAGMA page_size;")
+            page_size = self.cur.fetchone()[0]
+            size_before = page_count_before * page_size
+            
+            logger.info(f"Database size before VACUUM: {size_before / (1024*1024):.2f} MB")
+            
+            # Führe VACUUM aus
+            self.cur.execute(''' VACUUM ''')
+            
+            # Prüfe Datenbank-Größe nachher
+            self.cur.execute("PRAGMA page_count;")
+            page_count_after = self.cur.fetchone()[0]
+            size_after = page_count_after * page_size
+            
+            elapsed = time.time() - self.vacuum_start_time
+            size_saved = max(0, size_before - size_after)
+            
+            logger.info(f"VACUUM completed in {elapsed:.1f} seconds")
+            logger.info(f"Database size after VACUUM: {size_after / (1024*1024):.2f} MB")
+            if size_saved > 0:
+                logger.info(f"Space saved: {size_saved / (1024*1024):.2f} MB")
+                
+            item = '''update settings set value=? WHERE key='lastvacuumtime';'''
+            parameters = (int(time.time()),)
+            self.cur.execute(item, parameters)
+            
+            debug_print("Database vacuum completed successfully")
+            
+        except Exception as err:
+            if str(err) == 'database or disk is full':
+                logger.error(
+                    '(While VACUUM) Alert: Your disk or data storage volume is full.'
+                    ' VACUUM failed, but continuing anyway.')
+            else:
+                logger.error(f"VACUUM failed with error: {err}, but continuing...")
+        finally:
+            self.vacuum_in_progress = False
+    
+    def schedule_async_vacuum_if_needed(self):
+        """Prüfe ob VACUUM nötig ist und führe es asynchron aus"""
+        item = '''SELECT value FROM settings WHERE key='lastvacuumtime';'''
+        parameters = ''
+        self.cur.execute(item, parameters)
+        queryreturn = self.cur.fetchall()
+        
+        if queryreturn:
+            value, = queryreturn[0]
+            # VACUUM-Intervall von 24h auf 7 Tage erhöht für bessere Performance
+            if int(value) < int(time.time()) - 604800:  # 7 Tage statt 1 Tag
+                logger.info('Scheduling async VACUUM (last was more than 7 days ago)...')
+                # Starte VACUUM in separatem Thread
+                vacuum_thread = threading.Thread(
+                    target=self.safe_vacuum_with_progress,
+                    name="AsyncVACUUM",
+                    daemon=True
+                )
+                vacuum_thread.start()
+                debug_print("Async VACUUM thread started")
+    
+    def async_vacuum(self):
+        """Asynchrones VACUUM für deleteandvacuume"""
+        vacuum_thread = threading.Thread(
+            target=self.safe_vacuum_with_progress,
+            name="AsyncVACUUM-delete",
+            daemon=True
+        )
+        vacuum_thread.start()
+        debug_print("Async VACUUM for deleteandvacuume started")
 
 debug_print("sqlThread module initialization complete")
