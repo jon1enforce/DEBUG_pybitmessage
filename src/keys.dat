@@ -1,0 +1,84 @@
+[bitmessagesettings]
+maxaddrperstreamsend = 100
+maxbootstrapconnections = 8
+maxdownloadrate = 0
+maxoutboundconnections = 4
+maxtotalconnections = 50
+maxuploadrate = 0
+apiinterface = 127.0.0.1
+apiport = 8442
+udp = True
+port = 8444
+timeformat = %%c
+blackwhitelist = black
+startonlogon = False
+showtraynotifications = True
+startintray = False
+socksproxytype = none
+sockshostname = localhost
+socksport = 9050
+socksauthentication = False
+socksusername = 
+sockspassword = 
+keysencrypted = False
+messagesencrypted = False
+minimizeonclose = False
+replybelow = False
+stopresendingafterxdays = 2
+stopresendingafterxmonths = 0
+opencl = None
+bind = 
+defaultnoncetrialsperbyte = 5000
+defaultpayloadlengthextrabytes = 10000
+maxacceptablenoncetrialsperbyte = 20000000000
+maxacceptablepayloadlengthextrabytes = 20000000000
+ttl = 2424835
+dontconnect = False
+onionservicesonly = False
+sockslisten = False
+settingsversion = 10
+minimizetotray = False
+trayonclose = False
+useidenticons = True
+identiconsuffix = hFqQWxmSdwBa
+windowstyle = Windows
+font = Sans Serif,9
+userlocale = system
+hidetrayconnectionnotifications = False
+namecoinrpctype = namecoind
+namecoinrpchost = localhost
+namecoinrpcport = 8336
+namecoinrpcuser = 
+namecoinrpcpassword = 
+willinglysendtomobile = False
+onionport = 8444
+onionbindip = 127.0.0.1
+smtpdeliver = 
+sendoutgoingconnections = True
+
+[threads]
+receive = 3
+
+[network]
+bind = 
+dandelion = 90
+
+[inventory]
+storage = sqlite
+acceptmismatch = False
+
+[knownnodes]
+maxnodes = 10000
+
+[zlib]
+maxsize = 1048576
+
+[BM-2cVPgFmwGwcKXMuKntG7cT8yPhJUAkBrmT]
+label = 
+enabled = true
+decoy = false
+noncetrialsperbyte = 5000
+payloadlengthextrabytes = 10000
+privsigningkey = 5KY1Ba3jtVg7fFK7hyexcGV89W8WQxbFRd76zszimNVcBHaog8b
+privencryptionkey = 5KNZfA1hpv8RN5Rmrrx2BtnTu5YwychWPMSZWQTPBdPofGkibVK
+

@@ -1,0 +1,122 @@
+[
+    {
+        "stream": 1,
+        "peer": {
+            "host": "175.0.122.203",
+            "port": 2841
+        },
+        "info": {
+            "lastseen": 1765546354,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "78.1.155.147",
+            "port": 65530
+        },
+        "info": {
+            "lastseen": 1765546330,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "78.1.155.147",
+            "port": 65533
+        },
+        "info": {
+            "lastseen": 1765546330,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "158.222.217.190",
+            "port": 8080
+        },
+        "info": {
+            "lastseen": 1765552171,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "118.71.31.8",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765550271,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "139.99.120.109",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765545985,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "170.254.173.151",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765555100,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "187.93.71.10",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765554979,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "175.0.120.154",
+            "port": 2841
+        },
+        "info": {
+            "lastseen": 1765546353,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "5.196.95.34",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765553857,
+            "rating": -1.0,
+            "self": false
+        }
+    }
+]

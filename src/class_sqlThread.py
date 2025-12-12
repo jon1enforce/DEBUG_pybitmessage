@@ -172,10 +172,11 @@ class sqlThread(threading.Thread):
         return params
 
     def _check_health(self):
-        """Check if SQL thread is still healthy"""
+        """Check if SQL thread is still healthy - less aggressive warnings"""
         current_time = time.time()
         
-        if current_time - self._last_success_time > 60.0:
+        # Only warn if no successful operation for 5 minutes (instead of 1 minute)
+        if current_time - self._last_success_time > 300.0:  # 5 minutes
             logger.warning("SQL thread appears stuck, forcing health check")
             
             try:
@@ -571,6 +572,7 @@ class sqlThread(threading.Thread):
             return
         
         helper_sql.sql_available = True
+        self._last_success_time = time.time()  # Initialize
         
         # Wait for config
         try:
@@ -585,6 +587,7 @@ class sqlThread(threading.Thread):
             self._run_migrations()
             self._test_database()
             self._check_vacuum()
+            self._last_success_time = time.time()  # Update after setup
         except Exception as err:
             logger.error(f"Database setup failed: {err}")
         
@@ -600,9 +603,10 @@ class sqlThread(threading.Thread):
                 # Get query with timeout
                 try:
                     item = helper_sql.sqlSubmitQueue.get(timeout=1.0)
+                    self._last_success_time = time.time()  # Update when we get work
                 except std_queue.Empty:
-                    # Regular timeout, check health
-                    if time.time() - self._last_success_time > 30.0:
+                    # Regular timeout, check health less frequently
+                    if time.time() - self._last_success_time > 300.0:  # 5 minutes
                         if not self._check_health():
                             logger.warning("SQL thread unhealthy, attempting recovery...")
                             self._close_database()
@@ -622,6 +626,7 @@ class sqlThread(threading.Thread):
                 if item == 'commit':
                     try:
                         self._conn.commit()
+                        self._last_success_time = time.time()  # Update
                         consecutive_errors = 0
                     except Exception as err:
                         logger.error(f"Commit failed: {err}")
@@ -634,10 +639,12 @@ class sqlThread(threading.Thread):
                     
                 elif item in ('movemessagstoprog', 'movemessagstoappdata'):
                     self._handle_move_operation(item)
+                    self._last_success_time = time.time()  # Update
                     consecutive_errors = 0
                     
                 elif item == 'deleteandvacuume':
                     self._handle_vacuum()
+                    self._last_success_time = time.time()  # Update
                     consecutive_errors = 0
                     
                 else:
@@ -661,7 +668,7 @@ class sqlThread(threading.Thread):
                         result = self._cur.fetchall()
                         
                         helper_sql.sqlReturnQueue.put((result, rowcount))
-                        self._last_success_time = time.time()
+                        self._last_success_time = time.time()  # Already updated in _safe_execute
                         consecutive_errors = 0
                         
                     except Exception as err:

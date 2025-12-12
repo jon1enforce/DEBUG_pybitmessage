@@ -4043,24 +4043,32 @@ class MyForm(settingsmixin.SMainWindow):
         folder = self.getCurrentFolder()
         shifted = (QtWidgets.QApplication.queryKeyboardModifiers() &
                    QtCore.Qt.ShiftModifier)
+        
         while tableWidget.selectedIndexes() != []:
             currentRow = tableWidget.selectedIndexes()[0].row()
-            ackdataToTrash = as_msgid(tableWidget.item(currentRow, 3).data())
-            rowcount = sqlExecute(
-                "DELETE FROM sent" if folder == "trash" or shifted else
-                "UPDATE sent SET folder='trash'"
-                " WHERE ackdata = ?", sqlite3.Binary(ackdataToTrash)
-            )
-            if rowcount < 1:
-                sqlExecute(
+            item = tableWidget.item(currentRow, 3)
+            if item:
+                # KORREKTUR: data() mit QtCore.Qt.UserRole aufrufen
+                ackdataToTrash = as_msgid(item.data(QtCore.Qt.UserRole))
+            else:
+                ackdataToTrash = None
+                
+            if ackdataToTrash:
+                rowcount = sqlExecute(
                     "DELETE FROM sent" if folder == "trash" or shifted else
                     "UPDATE sent SET folder='trash'"
-                    " WHERE ackdata = CAST(? AS TEXT)", ackdataToTrash
+                    " WHERE ackdata = ?", sqlite3.Binary(ackdataToTrash)
                 )
-            self.getCurrentMessageTextedit().setPlainText("")
-            tableWidget.removeRow(currentRow)
-            self.updateStatusBar(_translate(
-                "MainWindow", "Moved items to trash."))
+                if rowcount < 1:
+                    sqlExecute(
+                        "DELETE FROM sent" if folder == "trash" or shifted else
+                        "UPDATE sent SET folder='trash'"
+                        " WHERE ackdata = CAST(? AS TEXT)", ackdataToTrash
+                    )
+                self.getCurrentMessageTextedit().setPlainText("")
+                tableWidget.removeRow(currentRow)
+                self.updateStatusBar(_translate(
+                    "MainWindow", "Moved items to trash."))
 
         self.ui.tableWidgetInbox.selectRow(
             currentRow if currentRow == 0 else currentRow - 1)
@@ -4878,9 +4886,20 @@ class MyForm(settingsmixin.SMainWindow):
             logger.error(f"Error copying to clipboard: {e}")
     def on_context_menuSent(self, point):
         currentRow = self.ui.tableWidgetInbox.currentRow()
+        # Get the ackdata safely with proper role parameter
+        if currentRow >= 0:
+            item = self.ui.tableWidgetInbox.item(currentRow, 3)
+            if item:
+                # KORREKTUR: data() mit QtCore.Qt.UserRole aufrufen
+                ackData = as_msgid(item.data(QtCore.Qt.UserRole))
+            else:
+                ackData = None
+        else:
+            ackData = None
+        
         self.popMenuSent = QtWidgets.QMenu(self)
         self.popMenuSent.addAction(self.actionSentClipboard)
-        self._contact_selected = self.ui.tableWidgetInbox.item(currentRow, 0)
+        self._contact_selected = self.ui.tableWidgetInbox.item(currentRow, 0) if currentRow >= 0 else None
         # preloaded gui.menu plugins with prefix 'address'
         for plugin in self.menu_plugins['address']:
             self.popMenuSent.addAction(plugin)
@@ -4890,8 +4909,7 @@ class MyForm(settingsmixin.SMainWindow):
 
         # Check to see if this item is toodifficult and display an additional
         # menu option (Force Send) if it is.
-        if currentRow >= 0:
-            ackData = as_msgid(self.ui.tableWidgetInbox.item(currentRow, 3).data())
+        if ackData:
             queryreturn = sqlQuery('''SELECT status FROM sent where ackdata=?''', sqlite3.Binary(ackData))
             if len(queryreturn) < 1:
                 queryreturn = sqlQuery('''SELECT status FROM sent where ackdata=CAST(? AS TEXT)''', ackData)
