@@ -354,8 +354,26 @@ def epoll_poller(timeout=0.0, map=None):
         logger.debug("DEBUG: Creating new epoll instance")
         epoll_poller.pollster = select.epoll()
     if map:
-        for fd, obj in map.items():
+        # THREAD-SAFE: Create a copy of items before iterating
+        items_copy = []
+        try:
+            items_copy = list(map.items())  # Copy to avoid RuntimeError
+        except RuntimeError:
+            # Map changed during copy, retry once
+            logger.debug("DEBUG: Map changed during copy, retrying...")
+            time.sleep(0.001)
+            try:
+                items_copy = list(map.items())
+            except RuntimeError:
+                logger.debug("DEBUG: Failed to copy map, using empty list")
+                items_copy = []
+        
+        for fd, obj in items_copy:
             flags = newflags = 0
+            # Check if object still exists (might have been removed)
+            if map.get(fd) != obj:
+                continue
+                
             if obj.readable():
                 flags |= select.POLLIN | select.POLLPRI
                 newflags |= OP_READ
@@ -395,8 +413,10 @@ def epoll_poller(timeout=0.0, map=None):
                 raise
             r = []
         logger.debug("DEBUG: Processing %d epoll events", len(r))
+        
+        # THREAD-SAFE: Process events
         for fd, flags in random.sample(r, len(r)):
-            obj = map.get(fd)
+            obj = map.get(fd)  # Use .get() which is thread-safe
             if obj is None:
                 continue
             logger.debug("DEBUG: Calling readwrite() for fd %s, flags %s", fd, flags)

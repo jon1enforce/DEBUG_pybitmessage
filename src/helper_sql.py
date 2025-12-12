@@ -17,10 +17,9 @@ SQLite objects can only be used from one thread.
 """
 
 import threading
+import time
 import logging
 from six.moves import queue
-
-logger = logging.getLogger('default')
 
 sqlSubmitQueue = queue.Queue()
 """the queue for SQL"""
@@ -37,6 +36,21 @@ sql_ready = threading.Event()
 sql_timeout = 60
 """timeout for waiting for sql_ready in seconds"""
 
+# Shutdown detection
+try:
+    import state
+    HAS_STATE = True
+except ImportError:
+    HAS_STATE = False
+
+def _is_shutting_down():
+    """Check if system is shutting down"""
+    try:
+        if HAS_STATE and hasattr(state, 'shutdown'):
+            return state.shutdown > 0
+    except Exception:
+        pass
+    return False
 
 def sqlQuery(sql_statement, *args):
     """
@@ -46,195 +60,230 @@ def sqlQuery(sql_statement, *args):
     :param list args: SQL query parameters
     :rtype: list
     """
-    logger.debug("DEBUG: Entering sqlQuery() with statement: %s, args: %s", 
-                sql_statement, args)
-    assert sql_available
-    logger.debug("DEBUG: SQL is available, acquiring lock")
+    if not sql_available:
+        return []
     
-    sql_lock.acquire()
-    logger.debug("DEBUG: Lock acquired, putting statement in submit queue")
-    sqlSubmitQueue.put(sql_statement)
-
-    if args == ():
-        logger.debug("DEBUG: No args provided, putting empty string")
-        sqlSubmitQueue.put('')
-    elif isinstance(args[0], (list, tuple)):
-        logger.debug("DEBUG: Args is list/tuple, putting as is")
-        sqlSubmitQueue.put(args[0])
-    else:
-        logger.debug("DEBUG: Putting args directly")
-        sqlSubmitQueue.put(args)
+    # During shutdown, return empty
+    if _is_shutting_down():
+        return []
+    
+    try:
+        if not sql_lock.acquire(timeout=2.0):  # 2 second timeout
+            logging.debug(f"SQL lock timeout for query: {sql_statement[:50]}...")
+            return []
         
-    logger.debug("DEBUG: Waiting for return from sqlReturnQueue")
-    queryreturn, _ = sqlReturnQueue.get()
-    logger.debug("DEBUG: Got return value, releasing lock")
-    sql_lock.release()
+        try:
+            sqlSubmitQueue.put(sql_statement)
 
-    logger.debug("DEBUG: Returning query result: %s", queryreturn)
-    return queryreturn
+            if args == ():
+                sqlSubmitQueue.put('')
+            elif isinstance(args[0], (list, tuple)):
+                sqlSubmitQueue.put(args[0])
+            else:
+                sqlSubmitQueue.put(args)
+            
+            # Timeout for response
+            try:
+                queryreturn, _ = sqlReturnQueue.get(timeout=10.0)
+                return queryreturn
+            except queue.Empty:
+                logging.debug(f"SQL query timeout: {sql_statement[:50]}...")
+                return []
+        finally:
+            sql_lock.release()
+            
+    except Exception as e:
+        logging.debug(f"SQL query error: {e}")
+        return []
 
 
 def sqlExecuteChunked(sql_statement, as_text, idCount, *args):
     """Execute chunked SQL statement to avoid argument limit"""
-    logger.debug("DEBUG: Entering sqlExecuteChunked() with statement: %s, "
-                "as_text: %s, idCount: %d, args: %s",
-                sql_statement, as_text, idCount, args)
+    if not sql_available or _is_shutting_down():
+        return 0
     
-    # SQLITE_MAX_VARIABLE_NUMBER,
-    # unfortunately getting/setting isn't exposed to python
-    assert sql_available
-    logger.debug("DEBUG: SQL is available")
-    
-    sqlExecuteChunked.chunkSize = 999
-    logger.debug("DEBUG: Chunk size set to %d", sqlExecuteChunked.chunkSize)
+    # SQLITE_MAX_VARIABLE_NUMBER
+    chunkSize = 999
 
     if idCount == 0 or idCount > len(args):
-        logger.debug("DEBUG: idCount invalid (%d), returning 0", idCount)
         return 0
 
     total_row_count = 0
-    with sql_lock:
-        logger.debug("DEBUG: Lock acquired for chunked execution")
-        for i in range(
-                len(args) - idCount, len(args),
-                sqlExecuteChunked.chunkSize - (len(args) - idCount)
-        ):
-            chunk_slice = args[
-                i:i + sqlExecuteChunked.chunkSize - (len(args) - idCount)
-            ]
-            logger.debug("DEBUG: Processing chunk slice: %s", chunk_slice)
-            
-            if as_text:
-                q = ""
-                n = len(chunk_slice)
-                for i in range(n):
-                    q += "CAST(? AS TEXT)"
-                    if i != n - 1:
-                        q += ","
-                logger.debug("DEBUG: Formatting as text: %s", q)
-                sqlSubmitQueue.put(sql_statement.format(q))
-            else:
-                formatted = ','.join('?' * len(chunk_slice))
-                logger.debug("DEBUG: Formatting with placeholders: %s", formatted)
-                sqlSubmitQueue.put(sql_statement.format(formatted))
-                
-            # first static args, and then iterative chunk
-            combined_args = args[0:len(args) - idCount] + chunk_slice
-            logger.debug("DEBUG: Putting combined args: %s", combined_args)
-            sqlSubmitQueue.put(combined_args)
-            
-            ret_val = sqlReturnQueue.get()
-            logger.debug("DEBUG: Got return value: %s", ret_val)
-            total_row_count += ret_val[1]
-            
-        logger.debug("DEBUG: Putting commit to submit queue")
-        sqlSubmitQueue.put('commit')
+    
+    try:
+        if not sql_lock.acquire(timeout=2.0):
+            logging.debug("SQL lock timeout for executeChunked")
+            return 0
         
-    logger.debug("DEBUG: Returning total row count: %d", total_row_count)
+        try:
+            for i in range(
+                    len(args) - idCount, len(args),
+                    chunkSize - (len(args) - idCount)
+            ):
+                chunk_slice = args[
+                    i:i + chunkSize - (len(args) - idCount)
+                ]
+                if as_text:
+                    q = ""
+                    n = len(chunk_slice)
+                    for i in range(n):
+                        q += "CAST(? AS TEXT)"
+                        if i != n - 1:
+                            q += ","
+                    sqlSubmitQueue.put(sql_statement.format(q))
+                else:
+                    sqlSubmitQueue.put(
+                        sql_statement.format(','.join('?' * len(chunk_slice)))
+                    )
+                # first static args, and then iterative chunk
+                sqlSubmitQueue.put(
+                    args[0:len(args) - idCount] + chunk_slice
+                )
+                ret_val = sqlReturnQueue.get(timeout=5.0)
+                total_row_count += ret_val[1]
+            sqlSubmitQueue.put('commit')
+        finally:
+            sql_lock.release()
+    except Exception as e:
+        logging.debug(f"SQL executeChunked error: {e}")
+    
     return total_row_count
 
 
 def sqlExecute(sql_statement, *args):
     """Execute SQL statement (optionally with arguments)"""
-    logger.debug("DEBUG: Entering sqlExecute() with statement: %s, args: %s", 
-                sql_statement, args)
+    if not sql_available or _is_shutting_down():
+        return 0
     
-    assert sql_available
-    logger.debug("DEBUG: SQL is available, acquiring lock")
-    
-    sql_lock.acquire()
-    logger.debug("DEBUG: Lock acquired, putting statement in submit queue")
-    sqlSubmitQueue.put(sql_statement)
-
-    if args == ():
-        logger.debug("DEBUG: No args provided, putting empty string")
-        sqlSubmitQueue.put('')
-    else:
-        logger.debug("DEBUG: Putting args in submit queue")
-        sqlSubmitQueue.put(args)
+    try:
+        if not sql_lock.acquire(timeout=2.0):
+            logging.debug(f"SQL lock timeout for execute: {sql_statement[:50]}...")
+            return 0
         
-    logger.debug("DEBUG: Waiting for return from sqlReturnQueue")
-    _, rowcount = sqlReturnQueue.get()
-    logger.debug("DEBUG: Got rowcount: %d, putting commit", rowcount)
-    sqlSubmitQueue.put('commit')
-    logger.debug("DEBUG: Releasing lock")
-    sql_lock.release()
-    
-    logger.debug("DEBUG: Returning rowcount: %d", rowcount)
-    return rowcount
+        try:
+            sqlSubmitQueue.put(sql_statement)
+
+            if args == ():
+                sqlSubmitQueue.put('')
+            else:
+                sqlSubmitQueue.put(args)
+            
+            _, rowcount = sqlReturnQueue.get(timeout=5.0)
+            sqlSubmitQueue.put('commit')
+            return rowcount
+        finally:
+            sql_lock.release()
+            
+    except Exception as e:
+        logging.debug(f"SQL execute error: {e}")
+        return 0
 
 
 def sqlExecuteScript(sql_statement):
     """Execute SQL script statement"""
-    logger.debug("DEBUG: Entering sqlExecuteScript() with statement: %s", 
-                sql_statement)
-    
-    statements = sql_statement.split(";")
-    logger.debug("DEBUG: Split into %d statements", len(statements))
-    
-    with SqlBulkExecute() as sql:
-        for i, q in enumerate(statements):
-            logger.debug("DEBUG: Executing statement %d: %s", i, q)
-            sql.execute("{}".format(q))
-    
-    logger.debug("DEBUG: Exiting sqlExecuteScript()")
+    if not sql_available or _is_shutting_down():
+        return
+
+    try:
+        with SqlBulkExecute() as sql:
+            statements = sql_statement.split(";")
+            for q in statements:
+                if q.strip():
+                    sql.execute("{}".format(q))
+    except Exception as e:
+        logging.debug(f"SQL executeScript error: {e}")
 
 
 def sqlStoredProcedure(procName):
     """Schedule procName to be run"""
-    logger.debug("DEBUG: Entering sqlStoredProcedure() with procName: %s", 
-                procName)
+    if not sql_available or _is_shutting_down():
+        return
     
-    assert sql_available
-    logger.debug("DEBUG: SQL is available, acquiring lock")
-    
-    sql_lock.acquire()
-    logger.debug("DEBUG: Lock acquired, putting procName in submit queue")
-    sqlSubmitQueue.put(procName)
-    
-    if procName == "exit":
-        logger.debug("DEBUG: Exit procedure detected")
-        sqlSubmitQueue.task_done()
-        sqlSubmitQueue.put("terminate")
+    try:
+        if not sql_lock.acquire(timeout=2.0):
+            logging.debug(f"SQL lock timeout for procedure: {procName}")
+            return
         
-    logger.debug("DEBUG: Releasing lock")
-    sql_lock.release()
-    logger.debug("DEBUG: Exiting sqlStoredProcedure()")
+        try:
+            sqlSubmitQueue.put(procName)
+            if procName == "exit":
+                sqlSubmitQueue.task_done()
+                sqlSubmitQueue.put("terminate")
+        finally:
+            sql_lock.release()
+    except Exception as e:
+        logging.debug(f"SQL storedProcedure error: {e}")
 
 
 class SqlBulkExecute(object):
     """This is used when you have to execute the same statement in a cycle."""
-
+    
+    def __init__(self):
+        self._lock_acquired = False
+    
     def __enter__(self):
-        logger.debug("DEBUG: SqlBulkExecute.__enter__()")
-        sql_lock.acquire()
-        logger.debug("DEBUG: Lock acquired in __enter__")
+        # During shutdown, don't even try
+        if _is_shutting_down():
+            return self
+            
+        try:
+            self._lock_acquired = sql_lock.acquire(timeout=2.0)
+            if not self._lock_acquired:
+                if _is_shutting_down():
+                    # During shutdown, it's ok to fail
+                    return self
+                else:
+                    raise Exception("SQL bulk execute lock busy (timeout: 2s)")
+        except Exception as e:
+            if _is_shutting_down():
+                # During shutdown, ignore errors
+                return self
+            raise e
+            
         return self
-
+    
     def __exit__(self, exc_type, value, traceback):
-        logger.debug("DEBUG: SqlBulkExecute.__exit__()")
-        logger.debug("DEBUG: Putting commit in submit queue")
-        sqlSubmitQueue.put('commit')
-        logger.debug("DEBUG: Releasing lock in __exit__")
-        sql_lock.release()
-
+        try:
+            # Only commit if we have the lock and not shutting down
+            if self._lock_acquired and not _is_shutting_down():
+                try:
+                    sqlSubmitQueue.put('commit')
+                except Exception:
+                    pass  # Ignore during shutdown
+        finally:
+            # Only release if we actually acquired it
+            if self._lock_acquired:
+                try:
+                    sql_lock.release()
+                except RuntimeError:
+                    # Lock might already be released, ignore
+                    pass
+                self._lock_acquired = False
+    
     @staticmethod
     def execute(sql_statement, *args):
         """Used for statements that do not return results."""
-        logger.debug("DEBUG: SqlBulkExecute.execute() with statement: %s, args: %s",
-                    sql_statement, args)
-        
-        assert sql_available
-        logger.debug("DEBUG: SQL is available, putting statement in submit queue")
-        sqlSubmitQueue.put(sql_statement)
-
-        if args == ():
-            logger.debug("DEBUG: No args provided, putting empty string")
-            sqlSubmitQueue.put('')
-        else:
-            logger.debug("DEBUG: Putting args in submit queue")
-            sqlSubmitQueue.put(args)
+        if not sql_available or _is_shutting_down():
+            return
             
-        logger.debug("DEBUG: Waiting for return from sqlReturnQueue")
-        sqlReturnQueue.get()
-        logger.debug("DEBUG: Got return from sqlReturnQueue")
+        try:
+            sqlSubmitQueue.put(sql_statement)
+
+            if args == ():
+                sqlSubmitQueue.put('')
+            else:
+                sqlSubmitQueue.put(args)
+            
+            sqlReturnQueue.get(timeout=5.0)
+        except Exception as e:
+            if not _is_shutting_down():
+                logging.debug(f"SQL bulk execute error: {e}")
+
+
+# Helper for shutdown
+def sqlPrepareShutdown():
+    """Prepare SQL for shutdown"""
+    try:
+        sqlSubmitQueue.put('commit')
+    except:
+        pass
