@@ -4649,39 +4649,148 @@ class MyForm(settingsmixin.SMainWindow):
             self.on_context_menuSent(point)
             return
 
+        # SICHERSTELLEN, DASS EINE ZEILE AUSGEWÄHLT IST
+        currentRow = tableWidget.currentRow()
+        if currentRow < 0 or currentRow >= tableWidget.rowCount():
+            logger.warning("No row selected or invalid row index")
+            return
+        
+        # SICHERER ZUGRIFF AUF DAS ITEM
+        item0 = tableWidget.item(currentRow, 0)
+        if item0 is None:
+            logger.warning(f"No item at row {currentRow}, column 0")
+            return
+        
+        # SICHERER ZUGRIFF AUF DIE DATEN
+        address_data = None
+        if hasattr(item0, 'data'):
+            address_data = item0.data(QtCore.Qt.UserRole)
+        
+        if address_data is None:
+            logger.warning(f"No address data in row {currentRow}")
+            # Versuche, die Adresse aus einem anderen Attribut zu holen
+            if hasattr(item0, 'address'):
+                address_data = item0.address
+            else:
+                # Wenn keine Daten verfügbar sind, zeige ein eingeschränktes Menü
+                self._show_limited_context_menu(tableWidget, point)
+                return
+        
+        try:
+            account = accountClass(address_data)
+        except Exception as e:
+            logger.error(f"Error creating account from data: {e}")
+            account = None
+
         self.popMenuInbox = QtWidgets.QMenu(self)
+        
+        # Füge nur Aktionen hinzu, die ohne Account funktionieren
         self.popMenuInbox.addAction(self.actionForceHtml)
         self.popMenuInbox.addAction(self.actionMarkUnread)
         self.popMenuInbox.addSeparator()
-        currentRow = tableWidget.currentRow()
-        account = accountClass(
-            tableWidget.item(currentRow, 0).data(QtCore.Qt.UserRole))
-
-        if account.type == AccountMixin.CHAN:
-            self.popMenuInbox.addAction(self.actionReplyChan)
-        self.popMenuInbox.addAction(self.actionReply)
-        self.popMenuInbox.addAction(self.actionAddSenderToAddressBook)
+        
+        # Füge kontextabhängige Aktionen hinzu, wenn Account verfügbar
+        if account is not None:
+            if account.type == AccountMixin.CHAN:
+                self.popMenuInbox.addAction(self.actionReplyChan)
+            self.popMenuInbox.addAction(self.actionReply)
+            self.popMenuInbox.addAction(self.actionAddSenderToAddressBook)
+        
+        # Clipboard-Aktion (funktioniert immer)
         self.actionClipboardMessagelist = self.ui.inboxContextMenuToolbar.addAction(
             _translate("MainWindow", "Copy subject to clipboard")
             if tableWidget.currentColumn() == 2 else
             _translate("MainWindow", "Copy address to clipboard"),
             self.on_action_ClipboardMessagelist)
         self.popMenuInbox.addAction(self.actionClipboardMessagelist)
-        # pylint: disable=no-member
-        self._contact_selected = tableWidget.item(currentRow, 1)
+        
+        # Kontakt auswählen nur wenn verfügbar
+        item1 = tableWidget.item(currentRow, 1)
+        if item1 is not None:
+            # pylint: disable=no-member
+            self._contact_selected = item1
+        
         # preloaded gui.menu plugins with prefix 'address'
         for plugin in self.menu_plugins['address']:
             self.popMenuInbox.addAction(plugin)
+        
         self.popMenuInbox.addSeparator()
-        self.popMenuInbox.addAction(self.actionAddSenderToBlackList)
+        
+        # Blacklist-Aktion nur wenn Account verfügbar
+        if account is not None:
+            self.popMenuInbox.addAction(self.actionAddSenderToBlackList)
+        
         self.popMenuInbox.addSeparator()
         self.popMenuInbox.addAction(self.actionSaveMessageAs)
+        
+        # Trash/Undelete Aktionen
         if currentFolder == "trash":
             self.popMenuInbox.addAction(self.actionUndeleteTrashedMessage)
         else:
             self.popMenuInbox.addAction(self.actionTrashInboxMessage)
+        
         self.popMenuInbox.exec_(tableWidget.mapToGlobal(point))
 
+    def _show_limited_context_menu(self, tableWidget, point):
+        """Zeige ein eingeschränktes Kontextmenü, wenn keine vollständigen Daten verfügbar sind"""
+        limited_menu = QtWidgets.QMenu(self)
+        
+        # Nur grundlegende Aktionen
+        limited_menu.addAction(self.actionForceHtml)
+        limited_menu.addAction(self.actionMarkUnread)
+        limited_menu.addSeparator()
+        
+        # Clipboard-Aktion
+        currentRow = tableWidget.currentRow()
+        currentColumn = tableWidget.currentColumn()
+        
+        # Bestimme, was kopiert werden soll
+        if currentColumn == 2:  # Subject
+            clipboard_text = _translate("MainWindow", "Copy subject to clipboard")
+        else:  # Address
+            clipboard_text = _translate("MainWindow", "Copy to clipboard")
+        
+        action = limited_menu.addAction(clipboard_text)
+        action.triggered.connect(lambda: self._safe_clipboard_copy(tableWidget, currentRow, currentColumn))
+        
+        # Trash-Aktion
+        currentFolder = self.getCurrentFolder()
+        if currentFolder == "trash":
+            limited_menu.addAction(self.actionUndeleteTrashedMessage)
+        else:
+            limited_menu.addAction(self.actionTrashInboxMessage)
+        
+        limited_menu.exec_(tableWidget.mapToGlobal(point))
+
+    def _safe_clipboard_copy(self, tableWidget, row, column):
+        """Sicheres Kopieren in die Zwischenablage"""
+        try:
+            item = tableWidget.item(row, column)
+            if item is None:
+                logger.warning(f"No item at row {row}, column {column}")
+                return
+            
+            text_to_copy = ""
+            
+            # Versuche verschiedene Methoden, um Text zu erhalten
+            if hasattr(item, 'text') and callable(item.text):
+                text_to_copy = item.text()
+            elif hasattr(item, 'label'):
+                text_to_copy = item.label
+            elif hasattr(item, 'data'):
+                data = item.data(QtCore.Qt.UserRole)
+                if data:
+                    text_to_copy = str(data)
+            
+            if text_to_copy:
+                clipboard = QtWidgets.QApplication.clipboard()
+                clipboard.setText(text_to_copy)
+                logger.info(f"Copied to clipboard: {text_to_copy[:50]}...")
+            else:
+                logger.warning("No text to copy")
+                
+        except Exception as e:
+            logger.error(f"Error copying to clipboard: {e}")
     def on_context_menuSent(self, point):
         currentRow = self.ui.tableWidgetInbox.currentRow()
         self.popMenuSent = QtWidgets.QMenu(self)
