@@ -524,10 +524,24 @@ class MessageList_TimeWidget(BMTableWidgetItem):
     def __init__(self, label=None, unread=False, timestamp=None, msgid=b''):
         super(MessageList_TimeWidget, self).__init__(label, unread)
         self.setData(QtCore.Qt.UserRole, QtCore.QByteArray(bytes(msgid)))
+        # Stelle sicher, dass timestamp ein gültiger int ist
+        if timestamp is None:
+            timestamp = 0
         self.setData(TimestampRole, int(timestamp))
 
     def __lt__(self, other):
-        return self.data(TimestampRole) < other.data(TimestampRole)
+        # Hole die Timestamps sicher
+        self_timestamp = self.data(TimestampRole)
+        other_timestamp = other.data(TimestampRole) if hasattr(other, 'data') else 0
+        
+        # Konvertiere zu int mit Default-Wert 0 falls None
+        if self_timestamp is None:
+            self_timestamp = 0
+        if other_timestamp is None:
+            other_timestamp = 0
+            
+        # Vergleiche als ints
+        return int(self_timestamp) < int(other_timestamp)
 
     def data(self, role=QtCore.Qt.UserRole):
         """
@@ -536,11 +550,14 @@ class MessageList_TimeWidget(BMTableWidgetItem):
         """
         data = super(MessageList_TimeWidget, self).data(role)
         if role == TimestampRole:
-            return int(data)
+            # Stelle sicher, dass wir einen int zurückgeben
+            try:
+                return int(data) if data is not None else 0
+            except (ValueError, TypeError):
+                return 0
         if role == QtCore.Qt.UserRole:
-            return ustr(data)
+            return ustr(data) if data is not None else ""
         return data
-
 
 class Ui_AddressBookWidgetItem(BMAddressWidget):
     """Addressbook item"""
