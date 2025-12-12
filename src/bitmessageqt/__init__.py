@@ -1669,29 +1669,38 @@ class MyForm(settingsmixin.SMainWindow):
             
             # Column 0: To
             item0 = QtWidgets.QTableWidgetItem(toAddress[:50])
-            item0.setData(QtCore.Qt.UserRole, toAddress)  # WICHTIG: data setzen!
+            item0.setData(QtCore.Qt.UserRole, toAddress)
+            
+            # Setze fett für ungelesene Nachrichten
             if not read:
                 font = item0.font()
                 font.setBold(True)
                 item0.setFont(font)
+            
+            # NICHT: item0.setLabel() aufrufen - einfache Items haben diese Methode nicht
             tableWidget.setItem(row, 0, item0)
             
             # Column 1: From
             item1 = QtWidgets.QTableWidgetItem(fromAddress[:50])
-            item1.setData(QtCore.Qt.UserRole, fromAddress)  # WICHTIG: data setzen!
+            item1.setData(QtCore.Qt.UserRole, fromAddress)
+            
             if not read:
                 font = item1.font()
                 font.setBold(True)
                 item1.setFont(font)
+            
+            # NICHT: item1.setLabel() aufrufen
             tableWidget.setItem(row, 1, item1)
             
             # Column 2: Subject
             item2 = QtWidgets.QTableWidgetItem(subject[:100])
-            item2.setData(QtCore.Qt.UserRole, subject)  # WICHTIG: data setzen!
+            item2.setData(QtCore.Qt.UserRole, subject)
+            
             if not read:
                 font = item2.font()
                 font.setBold(True)
                 item2.setFont(font)
+            
             tableWidget.setItem(row, 2, item2)
             
             # Column 3: Time
@@ -1699,13 +1708,18 @@ class MyForm(settingsmixin.SMainWindow):
                 time_text = l10n.formatTimestamp(received)
             except:
                 time_text = received[:20] if received else "No date"
+            
             item3 = QtWidgets.QTableWidgetItem(time_text)
-            item3.setData(QtCore.Qt.UserRole, msgid)  # WICHTIGSTES: msgid hier speichern!
+            item3.setData(QtCore.Qt.UserRole, msgid)
+            
             if not read:
                 font = item3.font()
                 font.setBold(True)
                 item3.setFont(font)
+            
             tableWidget.setItem(row, 3, item3)
+            
+            logger.debug(f"Added simple message row {row}: {subject[:30]}...")
             
         except Exception as e:
             logger.error("Failed to add message row: %s", e)
@@ -2520,15 +2534,86 @@ class MyForm(settingsmixin.SMainWindow):
         for messagelist in (self.ui.tableWidgetInbox,
                             self.ui.tableWidgetInboxChans,
                             self.ui.tableWidgetInboxSubscriptions):
+            if not messagelist:
+                continue
+                
             for i in range(messagelist.rowCount()):
-                messagelist.item(i, 1).setLabel()
+                item = messagelist.item(i, 1)
+                if item is None:
+                    # Erstelle ein neues Item falls es nicht existiert
+                    try:
+                        # Versuche, die Daten aus anderen Spalten zu holen
+                        address_item = messagelist.item(i, 0)
+                        if address_item and hasattr(address_item, 'data'):
+                            address_data = address_item.data(QtCore.Qt.UserRole)
+                            if address_data:
+                                # Erstelle ein neues Item
+                                fromAddress = str(address_data)
+                                acct = accountClass(fromAddress) if fromAddress else None
+                                if acct is None:
+                                    acct = BMAccount(fromAddress) if fromAddress else BMAccount("")
+                                
+                                try:
+                                    acct.parseMessage("", fromAddress, "", "")
+                                except:
+                                    pass
+                                    
+                                label = acct.fromLabel if hasattr(acct, 'fromLabel') else fromAddress
+                                new_item = MessageList_AddressWidget(fromAddress, label, True)
+                                messagelist.setItem(i, 1, new_item)
+                                item = new_item
+                    except Exception as e:
+                        logger.debug(f"Could not create missing item at row {i}, col 1: {e}")
+                        continue
+                
+                # Jetzt sicher auf setLabel() zugreifen
+                if item is not None and hasattr(item, 'setLabel'):
+                    try:
+                        item.setLabel()
+                    except Exception as e:
+                        logger.debug(f"Error calling setLabel() at row {i}: {e}")
 
     def rerenderMessagelistToLabels(self):
         for messagelist in (self.ui.tableWidgetInbox,
                             self.ui.tableWidgetInboxChans,
                             self.ui.tableWidgetInboxSubscriptions):
+            if not messagelist:
+                continue
+                
             for i in range(messagelist.rowCount()):
-                messagelist.item(i, 0).setLabel()
+                item = messagelist.item(i, 0)
+                if item is None:
+                    # Erstelle ein neues Item falls es nicht existiert
+                    try:
+                        # Versuche, die Daten aus anderen Spalten zu holen
+                        from_item = messagelist.item(i, 1)
+                        if from_item and hasattr(from_item, 'data'):
+                            address_data = from_item.data(QtCore.Qt.UserRole)
+                            if address_data:
+                                toAddress = str(address_data)
+                                acct = accountClass(toAddress) if toAddress else None
+                                if acct is None:
+                                    acct = BMAccount(toAddress) if toAddress else BMAccount("")
+                                
+                                try:
+                                    acct.parseMessage(toAddress, "", "", "")
+                                except:
+                                    pass
+                                    
+                                label = acct.toLabel if hasattr(acct, 'toLabel') else toAddress
+                                new_item = MessageList_AddressWidget(toAddress, label, True)
+                                messagelist.setItem(i, 0, new_item)
+                                item = new_item
+                    except Exception as e:
+                        logger.debug(f"Could not create missing item at row {i}, col 0: {e}")
+                        continue
+                
+                # Jetzt sicher auf setLabel() zugreifen
+                if item is not None and hasattr(item, 'setLabel'):
+                    try:
+                        item.setLabel()
+                    except Exception as e:
+                        logger.debug(f"Error calling setLabel() at row {i}: {e}")
 
     def rerenderAddressBook(self):
         def addRow(address, label, type):
@@ -4875,48 +4960,78 @@ class MyForm(settingsmixin.SMainWindow):
             )
 
     def treeWidgetItemChanged(self, item, column):
-        # only for manual edits. automatic edits (setText) are ignored
-        if column != 0:
-            return
-        # only account names of normal addresses (no chans/mailinglists)
-        if (not isinstance(item, Ui_AddressWidget)) or \
-                (not self.getCurrentTreeWidget()) or \
-                self.getCurrentTreeWidget().currentItem() is None:
-            return
-        # not visible
-        if (not self.getCurrentItem()) or (not isinstance(self.getCurrentItem(), Ui_AddressWidget)):
-            return
-        # only currently selected item
-        if item.address != self.getCurrentAccount():
-            return
-        # "All accounts" can't be renamed
-        if item.type == AccountMixin.ALL:
-            return
+        """Handle tree widget item changes - ROBUST VERSION"""
+        try:
+            # only for manual edits. automatic edits (setText) are ignored
+            if column != 0:
+                return
+            
+            # Validate item
+            if item is None:
+                return
+                
+            # only account names of normal addresses (no chans/mailinglists)
+            if (not isinstance(item, Ui_AddressWidget)) or \
+                    (not self.getCurrentTreeWidget()) or \
+                    self.getCurrentTreeWidget().currentItem() is None:
+                return
+            
+            # not visible
+            current_item = self.getCurrentItem()
+            if (not current_item) or (not isinstance(current_item, Ui_AddressWidget)):
+                return
+            
+            # only currently selected item
+            if not hasattr(item, 'address') or item.address != self.getCurrentAccount():
+                return
+            
+            # "All accounts" can't be renamed
+            if not hasattr(item, 'type') or item.type == AccountMixin.ALL:
+                return
 
-        newLabel = unic(ustr(item.text(0)))
-        oldLabel = item.defaultLabel()
+            newLabel = unic(ustr(item.text(0)))
+            oldLabel = item.defaultLabel() if hasattr(item, 'defaultLabel') else ""
 
-        # unchanged, do not do anything either
-        if newLabel == oldLabel:
-            return
+            # unchanged, do not do anything either
+            if newLabel == oldLabel:
+                return
 
-        # recursion prevention
-        if self.recurDepth > 0:
-            return
+            # recursion prevention
+            if self.recurDepth > 0:
+                return
 
-        self.recurDepth += 1
-        if item.type == AccountMixin.NORMAL or item.type == AccountMixin.MAILINGLIST:
-            self.rerenderComboBoxSendFromBroadcast()
-        if item.type == AccountMixin.NORMAL or item.type == AccountMixin.CHAN:
-            self.rerenderComboBoxSendFrom()
-        self.rerenderMessagelistFromLabels()
-        if item.type != AccountMixin.SUBSCRIPTION:
-            self.rerenderMessagelistToLabels()
-        if item.type in (
-            AccountMixin.NORMAL, AccountMixin.CHAN, AccountMixin.SUBSCRIPTION
-        ):
-            self.rerenderAddressBook()
-        self.recurDepth -= 1
+            self.recurDepth += 1
+            try:
+                if item.type == AccountMixin.NORMAL or item.type == AccountMixin.MAILINGLIST:
+                    self.rerenderComboBoxSendFromBroadcast()
+                if item.type == AccountMixin.NORMAL or item.type == AccountMixin.CHAN:
+                    self.rerenderComboBoxSendFrom()
+                
+                # SICHERE AUFRUFE MIT EXCEPTION HANDLING
+                try:
+                    self.rerenderMessagelistFromLabels()
+                except Exception as e:
+                    logger.error(f"Error in rerenderMessagelistFromLabels: {e}")
+                
+                if item.type != AccountMixin.SUBSCRIPTION:
+                    try:
+                        self.rerenderMessagelistToLabels()
+                    except Exception as e:
+                        logger.error(f"Error in rerenderMessagelistToLabels: {e}")
+                
+                if item.type in (
+                    AccountMixin.NORMAL, AccountMixin.CHAN, AccountMixin.SUBSCRIPTION
+                ):
+                    try:
+                        self.rerenderAddressBook()
+                    except Exception as e:
+                        logger.error(f"Error in rerenderAddressBook: {e}")
+                        
+            finally:
+                self.recurDepth -= 1
+                
+        except Exception as e:
+            logger.error(f"Error in treeWidgetItemChanged: {e}")
     def tableWidgetInboxItemClicked(self):
         messageTextedit = self.getCurrentMessageTextedit()
         if not messageTextedit:
