@@ -6,7 +6,7 @@ import hashlib
 import locale
 import logging
 import os
-import helper_random as random
+import random
 import string
 import subprocess
 import sys
@@ -1018,81 +1018,185 @@ class MyForm(settingsmixin.SMainWindow):
     # - corresponding account if current is "All accounts"
     # - current account otherwise
     def propagateUnreadCount(self, folder=None, widget=None):
-        queryReturn = sqlQuery(
-            'SELECT toaddress, folder, COUNT(msgid) AS cnt'
-            ' FROM inbox WHERE read = 0 GROUP BY toaddress, folder')
-        totalUnread = {}
-        normalUnread = {}
-        broadcastsUnread = {}
-        for addr, fld, count in queryReturn:
-            addr = addr.decode("utf-8", "replace")
-            fld = fld.decode("utf-8", "replace")
+        """
+        Update unread message counts for all folders and widgets
+        with robust error handling
+        """
+        try:
+            # ROBUSTE SQL-Abfrage mit Fehlerbehandlung
             try:
-                normalUnread[addr][fld] = count
-            except KeyError:
-                normalUnread[addr] = {fld: count}
-            try:
-                totalUnread[fld] += count
-            except KeyError:
-                totalUnread[fld] = count
-        if widget in (
-                self.ui.treeWidgetSubscriptions, self.ui.treeWidgetChans):
-            widgets = (self.ui.treeWidgetYourIdentities,)
-        else:
-            widgets = (
-                self.ui.treeWidgetYourIdentities,
-                self.ui.treeWidgetSubscriptions, self.ui.treeWidgetChans
-            )
-            queryReturn = sqlQuery(
-                'SELECT fromaddress, folder, COUNT(msgid) AS cnt'
-                ' FROM inbox WHERE read = 0 AND toaddress = ?'
-                ' GROUP BY fromaddress, folder', dbstr(str_broadcast_subscribers))
-            for addr, fld, count in queryReturn:
-                addr = addr.decode("utf-8", "replace")
-                fld = fld.decode("utf-8", "replace")
-                try:
-                    broadcastsUnread[addr][fld] = count
-                except KeyError:
-                    broadcastsUnread[addr] = {fld: count}
-
-        for treeWidget in widgets:
-            root = treeWidget.invisibleRootItem()
-            for i in range(root.childCount()):
-                addressItem = root.child(i)
-                if addressItem.type == AccountMixin.ALL:
-                    newCount = sum(six.itervalues(totalUnread))
-                    self.drawTrayIcon(self.currentTrayIconFileName, newCount)
-                else:
-                    try:
-                        newCount = sum(six.itervalues((
-                            broadcastsUnread
-                            if addressItem.type == AccountMixin.SUBSCRIPTION
-                            else normalUnread
-                        )[addressItem.address]))
-                    except KeyError:
-                        newCount = 0
-                if newCount != addressItem.unreadCount:
-                    addressItem.setUnreadCount(newCount)
-                for j in range(addressItem.childCount()):
-                    folderItem = addressItem.child(j)
-                    folderName = folderItem.folderName
-                    if folderName == "new":
-                        folderName = "inbox"
-                    if folder and folderName != folder:
+                queryReturn = sqlQuery(
+                    'SELECT toaddress, folder, COUNT(msgid) AS cnt '
+                    'FROM inbox WHERE read = 0 GROUP BY toaddress, folder')
+            except Exception as e:
+                logger.error("SQL query failed in propagateUnreadCount: %s", e)
+                return
+            
+            totalUnread = {}
+            normalUnread = {}
+            broadcastsUnread = {}
+            
+            # SICHERE Verarbeitung der SQL-Ergebnisse
+            if queryReturn:
+                for row in queryReturn:
+                    # Prüfe ob row valide ist
+                    if not isinstance(row, (tuple, list)):
+                        logger.debug("Invalid row format, skipping: %s", row)
                         continue
-                    if addressItem.type == AccountMixin.ALL:
-                        newCount = totalUnread.get(folderName, 0)
-                    else:
+                    
+                    # Prüfe ob genügend Elemente vorhanden sind
+                    if len(row) < 3:
+                        logger.debug("Row has insufficient elements (%d), skipping: %s", 
+                                    len(row), row)
+                        continue
+                    
+                    try:
+                        addr, fld, count = row[0], row[1], row[2]
+                        
+                        # Konvertiere bytes zu strings falls nötig
+                        if isinstance(addr, bytes):
+                            addr = addr.decode("utf-8", "replace")
+                        if isinstance(fld, bytes):
+                            fld = fld.decode("utf-8", "replace")
+                        
+                        # Konvertiere count zu int
                         try:
-                            newCount = (
-                                broadcastsUnread
-                                if addressItem.type == AccountMixin.SUBSCRIPTION
-                                else normalUnread
-                            )[addressItem.address][folderName]
-                        except KeyError:
-                            newCount = 0
-                    if newCount != folderItem.unreadCount:
-                        folderItem.setUnreadCount(newCount)
+                            count = int(count)
+                        except (TypeError, ValueError):
+                            count = 0
+                            logger.debug("Invalid count value: %s", row[2])
+                        
+                        # Speichere in normalUnread
+                        if addr not in normalUnread:
+                            normalUnread[addr] = {}
+                        normalUnread[addr][fld] = count
+                        
+                        # Speichere in totalUnread
+                        if fld not in totalUnread:
+                            totalUnread[fld] = 0
+                        totalUnread[fld] += count
+                        
+                    except Exception as e:
+                        logger.error("Error processing row %s: %s", row, e)
+                        continue
+            
+            # Abfrage für Broadcasts
+            try:
+                queryReturn = sqlQuery(
+                    'SELECT fromaddress, folder, COUNT(msgid) AS cnt '
+                    'FROM inbox WHERE read = 0 AND toaddress = ? '
+                    'GROUP BY fromaddress, folder', dbstr(str_broadcast_subscribers))
+                
+                if queryReturn:
+                    for row in queryReturn:
+                        if len(row) < 3:
+                            continue
+                        
+                        addr, fld, count = row[0], row[1], row[2]
+                        
+                        if isinstance(addr, bytes):
+                            addr = addr.decode("utf-8", "replace")
+                        if isinstance(fld, bytes):
+                            fld = fld.decode("utf-8", "replace")
+                        
+                        try:
+                            count = int(count)
+                        except (TypeError, ValueError):
+                            count = 0
+                        
+                        if addr not in broadcastsUnread:
+                            broadcastsUnread[addr] = {}
+                        broadcastsUnread[addr][fld] = count
+                        
+            except Exception as e:
+                logger.error("Broadcast SQL query failed: %s", e)
+            
+            # Update der TreeWidgets
+            widgets = []
+            if widget in (self.ui.treeWidgetSubscriptions, self.ui.treeWidgetChans):
+                widgets = (self.ui.treeWidgetYourIdentities,)
+            else:
+                widgets = (
+                    self.ui.treeWidgetYourIdentities,
+                    self.ui.treeWidgetSubscriptions, 
+                    self.ui.treeWidgetChans
+                )
+            
+            for treeWidget in widgets:
+                if not treeWidget:
+                    continue
+                    
+                root = treeWidget.invisibleRootItem()
+                if not root:
+                    continue
+                    
+                try:
+                    for i in range(root.childCount()):
+                        addressItem = root.child(i)
+                        if not addressItem:
+                            continue
+                        
+                        # Berechne neue Unread-Count
+                        if addressItem.type == AccountMixin.ALL:
+                            newCount = sum(six.itervalues(totalUnread))
+                            # Tray-Icon nur einmal updaten
+                            if treeWidget == self.ui.treeWidgetYourIdentities:
+                                self.drawTrayIcon(self.currentTrayIconFileName, newCount)
+                        else:
+                            try:
+                                if addressItem.type == AccountMixin.SUBSCRIPTION:
+                                    unread_data = broadcastsUnread
+                                else:
+                                    unread_data = normalUnread
+                                
+                                if addressItem.address in unread_data:
+                                    newCount = sum(six.itervalues(unread_data[addressItem.address]))
+                                else:
+                                    newCount = 0
+                            except KeyError:
+                                newCount = 0
+                        
+                        # Update nur wenn sich was geändert hat
+                        if newCount != addressItem.unreadCount:
+                            addressItem.setUnreadCount(newCount)
+                        
+                        # Update der Folders
+                        for j in range(addressItem.childCount()):
+                            folderItem = addressItem.child(j)
+                            if not folderItem:
+                                continue
+                                
+                            folderName = folderItem.folderName
+                            if folderName == "new":
+                                folderName = "inbox"
+                            
+                            # Skip wenn nicht gewünschter folder
+                            if folder and folderName != folder:
+                                continue
+                            
+                            # Berechne folder count
+                            if addressItem.type == AccountMixin.ALL:
+                                newFolderCount = totalUnread.get(folderName, 0)
+                            else:
+                                try:
+                                    if addressItem.type == AccountMixin.SUBSCRIPTION:
+                                        unread_data = broadcastsUnread
+                                    else:
+                                        unread_data = normalUnread
+                                    
+                                    newFolderCount = unread_data[addressItem.address].get(folderName, 0)
+                                except KeyError:
+                                    newFolderCount = 0
+                            
+                            # Update nur wenn nötig
+                            if newFolderCount != folderItem.unreadCount:
+                                folderItem.setUnreadCount(newFolderCount)
+                                
+                except Exception as e:
+                    logger.error("Error updating tree widget %s: %s", treeWidget.objectName(), e)
+                    
+        except Exception as e:
+            logger.error("Critical error in propagateUnreadCount: %s", e, exc_info=True)
 
     def addMessageListItem(self, tableWidget, items):
         sortingEnabled = tableWidget.isSortingEnabled()
@@ -1489,10 +1593,10 @@ class MyForm(settingsmixin.SMainWindow):
                 logger.warning("No notification.sound plugin found")
 
     def notifierShow(
-            self, title, subtitle='', category='', label='', icon=''):
-        """Show notification - redirect to safe version"""
-        # Einfach zur sicheren Version weiterleiten
-        return self.safeNotifierShow(title, subtitle, category, label, icon)
+            self, title, subtitle, category, label=None, icon=None):
+        self.playSound(category, label)
+        self._notifier(
+            unic(ustr(title)), unic(ustr(subtitle)), category, label, icon)
 
     # tree
     def treeWidgetKeyPressEvent(self, event):
@@ -1757,128 +1861,66 @@ class MyForm(settingsmixin.SMainWindow):
     connected = False
 
     def setStatusIcon(self, color):
-        """Set status icon color with safe error handling"""
-        # Sicherheitscheck - nur gültige Farben erlauben
+        _notifications_enabled = not config.getboolean(
+            'bitmessagesettings', 'hidetrayconnectionnotifications')
         if color not in ('red', 'yellow', 'green'):
             return
-        
-        # 1. Icon immer zuerst setzen (funktioniert normalerweise immer)
-        try:
-            if hasattr(self, 'pushButtonStatusIcon'):
-                self.pushButtonStatusIcon.setIcon(
-                    QtGui.QIcon(":/newPrefix/images/%sicon.png" % color))
-        except Exception as e:
-            logger.debug("Could not set status button icon: %s", str(e))
-        
-        # Statusfarbe im State speichern
+
+        self.pushButtonStatusIcon.setIcon(
+            QtGui.QIcon(":/newPrefix/images/%sicon.png" % color))
         state.statusIconColor = color
-        
-        # Benachrichtigungen in den Einstellungen prüfen
-        try:
-            _notifications_enabled = not config.getboolean(
-                'bitmessagesettings', 'hidetrayconnectionnotifications', False)
-        except Exception:
-            _notifications_enabled = False
-        
-        # Vorherigen Verbindungsstatus merken
-        was_connected = getattr(self, 'connected', False)
-        
         if color == 'red':
-            # Verbindung verloren
-            if was_connected and _notifications_enabled:
-                # SICHERE Benachrichtigung
-                self.safeNotifierShow(
+            # if the connection is lost then show a notification
+            if self.connected and _notifications_enabled:
+                self.notifierShow(
                     'Bitmessage',
                     _translate("MainWindow", "Connection lost"),
                     sound.SOUND_DISCONNECTED)
-            
-            # Netzwerkhinweise
-            try:
-                proxy = config.safeGet(
-                    'bitmessagesettings', 'socksproxytype', 'none')
-                if proxy == 'none' and not config.safeGetBoolean(
-                        'bitmessagesettings', 'upnp', False):
-                    self.updateStatusBar(
-                        _translate(
-                            "MainWindow",
-                            "Problems connecting? Try enabling UPnP in the Network"
-                            " Settings"
-                        ))
-                elif proxy == 'SOCKS5' and config.safeGetBoolean(
-                        'bitmessagesettings', 'onionservicesonly', False):
-                    self.updateStatusBar((
-                        _translate(
-                            "MainWindow",
-                            "With recent tor you may never connect having"
-                            " 'onionservicesonly' set in your config."), 1
+            proxy = config.safeGet(
+                'bitmessagesettings', 'socksproxytype', 'none')
+            if proxy == 'none' and not config.safeGetBoolean(
+                    'bitmessagesettings', 'upnp'):
+                self.updateStatusBar(
+                    _translate(
+                        "MainWindow",
+                        "Problems connecting? Try enabling UPnP in the Network"
+                        " Settings"
                     ))
-            except Exception:
-                pass
-            
+            elif proxy == 'SOCKS5' and config.safeGetBoolean(
+                    'bitmessagesettings', 'onionservicesonly'):
+                self.updateStatusBar((
+                    _translate(
+                        "MainWindow",
+                        "With recent tor you may never connect having"
+                        " 'onionservicesonly' set in your config."), 1
+                ))
             self.connected = False
 
-            # Status in Tray/UI aktualisieren
-            try:
-                if hasattr(self, 'actionStatus') and self.actionStatus is not None:
-                    self.actionStatus.setText(_translate(
-                        "MainWindow", "Not Connected"))
-                    self.setTrayIconFile("can-icon-24px-red.png")
-            except Exception:
-                pass
+            if self.actionStatus is not None:
+                self.actionStatus.setText(_translate(
+                    "MainWindow", "Not Connected"))
+                self.setTrayIconFile("can-icon-24px-red.png")
             return
 
-        # Statusmeldung löschen wenn nötig
-        try:
-            if self.statusbar.currentMessage() == (
-                "Warning: You are currently not connected. Bitmessage will do"
-                " the work necessary to send the message but it won't send"
-                " until you connect."
-            ):
-                self.statusbar.clearMessage()
-        except Exception:
-            pass
-        
-        # Neue Verbindung hergestellt
-        if not was_connected and _notifications_enabled:
-            self.safeNotifierShow(
+        if self.statusbar.currentMessage() == (
+            "Warning: You are currently not connected. Bitmessage will do"
+            " the work necessary to send the message but it won't send"
+            " until you connect."
+        ):
+            self.statusbar.clearMessage()
+        # if a new connection has been established then show a notification
+        if not self.connected and _notifications_enabled:
+            self.notifierShow(
                 'Bitmessage',
                 _translate("MainWindow", "Connected"),
                 sound.SOUND_CONNECTED)
-        
         self.connected = True
 
-        # Status in Tray/UI aktualisieren
-        try:
-            if hasattr(self, 'actionStatus') and self.actionStatus is not None:
-                self.actionStatus.setText(_translate(
-                    "MainWindow", "Connected"))
-                self.setTrayIconFile("can-icon-24px-%s.png" % color)
-        except Exception:
-            pass
-    def safeNotifierShow(self, title, subtitle='', category='', label='', icon=''):
-        """Show notification with complete error safety - will never crash"""
-        # Wenn Notifier nicht verfügbar oder kaputt, einfach zurück
-        if not hasattr(self, '_notifier') or self._notifier is None:
-            logger.debug("Notifier not available or disabled")
-            return False
-        
-        # Maximal 1 Versuch - wenn fehlschlägt, Notifier für immer deaktivieren
-        try:
-            self._notifier(
-                unic(ustr(title)), unic(ustr(subtitle)), category, label, icon)
-            logger.debug("Notification shown: %s - %s", title, subtitle)
-            return True
-        except Exception as e:
-            # JEDER Fehler führt dazu, dass wir den Notifier komplett deaktivieren
-            error_msg = str(e)
-            if 'g-io-error-quark' in error_msg or 'DBus' in error_msg or 'Verbindung' in error_msg:
-                logger.warning("DBus/Notification system permanently disabled: %s", error_msg)
-            else:
-                logger.warning("Notification system permanently disabled: %s", error_msg)
-            
-            # Notifier für immer als kaputt markieren
-            self._notifier = None
-            return False
+        if self.actionStatus is not None:
+            self.actionStatus.setText(_translate(
+                "MainWindow", "Connected"))
+            self.setTrayIconFile("can-icon-24px-%s.png" % color)
+
     def initTrayIcon(self, iconFileName, app):
         self.currentTrayIconFileName = iconFileName
         self.tray = QtWidgets.QSystemTrayIcon(
@@ -2763,11 +2805,13 @@ class MyForm(settingsmixin.SMainWindow):
             for col in xrange(tableWidget.columnCount()):
                 tableWidget.item(i, col).setUnread(False)
 
-        markread = sqlExecuteChunked("UPDATE inbox SET read = 1 WHERE msgid IN ({}) AND read=0".format(",".join("?" * idCount)),
+        markread = sqlExecuteChunked(
+            "UPDATE inbox SET read = 1 WHERE msgid IN({0}) AND read=0",
             False, idCount, *msgids
         )
         if markread < 1:
-            markread = sqlExecuteChunked("UPDATE inbox SET read = 1 WHERE msgid IN ({}) AND read=0".format(",".join("?" * idCount)),
+            markread = sqlExecuteChunked(
+                "UPDATE inbox SET read = 1 WHERE msgid IN({0}) AND read=0",
                 True, idCount, *msgids
             )
 
@@ -3043,29 +3087,42 @@ class MyForm(settingsmixin.SMainWindow):
             return
 
         msgids = set()
-        # modified = 0
         for row in tableWidget.selectedIndexes():
             currentRow = row.row()
-            msgid = as_msgid(tableWidget.item(currentRow, 3).data())
-            msgids.add(sqlite3.Binary(msgid))
-            # if not tableWidget.item(currentRow, 0).unread:
-            #     modified += 1
-            self.updateUnreadStatus(tableWidget, currentRow, msgid, False)
+            try:
+                item = tableWidget.item(currentRow, 3)
+                if not item:
+                    continue
+                    
+                msgid = as_msgid(item.data())
+                if msgid:
+                    msgids.add(sqlite3.Binary(msgid))
+                
+                # Update UI status
+                self.updateUnreadStatus(tableWidget, currentRow, msgid, False)
+                
+            except Exception as e:
+                logger.error("Error processing row %d: %s", currentRow, e)
+                continue
 
-        # for 1081
-        idCount = len(msgids)
-        # rowcount =
-        total_row_count = sqlExecuteChunked(
-            '''UPDATE inbox SET read=0 WHERE msgid IN ({0}) AND read=1''',
-            False, idCount, *msgids
-        )
-        if total_row_count < 1:
-            sqlExecuteChunked(
-                '''UPDATE inbox SET read=0 WHERE msgid IN ({0}) AND read=1''',
-                True, idCount, *msgids
-            )
-
-        self.propagateUnreadCount()
+        # Update database
+        if msgids:
+            idCount = len(msgids)
+            try:
+                total_row_count = sqlExecuteChunked(
+                    '''UPDATE inbox SET read=0 WHERE msgid IN ({}) AND read=1''',
+                    False, idCount, *msgids
+                )
+                if total_row_count < 1:
+                    sqlExecuteChunked(
+                        '''UPDATE inbox SET read=0 WHERE msgid IN ({}) AND read=1''',
+                        True, idCount, *msgids
+                    )
+                
+                self.propagateUnreadCount()
+                
+            except Exception as e:
+                logger.error("Error updating database: %s", e)
 
     # Format predefined text on message reply.
     def quoted_text(self, message):
@@ -3312,37 +3369,80 @@ class MyForm(settingsmixin.SMainWindow):
         tableWidget = self.getCurrentMessagelist()
         if not tableWidget:
             return
+        
         currentRow = 0
         folder = self.getCurrentFolder()
         shifted = (QtWidgets.QApplication.queryKeyboardModifiers() &
                    QtCore.Qt.ShiftModifier)
+        
         tableWidget.setUpdatesEnabled(False)
         inventoryHashesToTrash = set()
-        # ranges in reversed order
-        for r in sorted(
-            tableWidget.selectedRanges(), key=lambda r: r.topRow()
-        )[::-1]:
-            for i in range(r.bottomRow() - r.topRow() + 1):
-                inventoryHashesToTrash.add(
-                    sqlite3.Binary(as_msgid(tableWidget.item(r.topRow() + i, 3).data())))
-            currentRow = r.topRow()
-            self.getCurrentMessageTextedit().setText("")
-            tableWidget.model().removeRows(
-                r.topRow(), r.bottomRow() - r.topRow() + 1)
-        idCount = len(inventoryHashesToTrash)
-        total_row_count = sqlExecuteChunked(
-            ("DELETE FROM inbox" if folder == "trash" or shifted else
-             "UPDATE inbox SET folder='trash', read=1") +
-            " WHERE msgid IN ({0})", False, idCount, *inventoryHashesToTrash)
-        if total_row_count < 1:
-            sqlExecuteChunked(
-                ("DELETE FROM inbox" if folder == "trash" or shifted else
-                 "UPDATE inbox SET folder='trash', read=1") +
-                " WHERE msgid IN ({0})", True, idCount, *inventoryHashesToTrash)
-        tableWidget.selectRow(0 if currentRow == 0 else currentRow - 1)
-        tableWidget.setUpdatesEnabled(True)
-        self.propagateUnreadCount(folder)
-        self.updateStatusBar(_translate("MainWindow", "Moved items to trash."))
+        
+        # Sicherheitsprüfung
+        try:
+            selectedRanges = tableWidget.selectedRanges()
+            if not selectedRanges:
+                return
+                
+            # Ranges in umgekehrter Reihenfolge
+            for r in sorted(selectedRanges, key=lambda r: r.topRow())[::-1]:
+                for i in range(r.bottomRow() - r.topRow() + 1):
+                    try:
+                        item = tableWidget.item(r.topRow() + i, 3)
+                        if item and item.data():
+                            msgid = as_msgid(item.data())
+                            if msgid:
+                                inventoryHashesToTrash.add(sqlite3.Binary(msgid))
+                    except Exception as e:
+                        logger.debug("Error getting msgid from row %d: %s", 
+                                    r.topRow() + i, e)
+                
+                currentRow = r.topRow()
+                self.getCurrentMessageTextedit().setText("")
+                
+                # Entferne rows
+                try:
+                    tableWidget.model().removeRows(
+                        r.topRow(), r.bottomRow() - r.topRow() + 1)
+                except Exception as e:
+                    logger.error("Error removing rows: %s", e)
+                    
+            # Update database
+            if inventoryHashesToTrash:
+                idCount = len(inventoryHashesToTrash)
+                try:
+                    if folder == "trash" or shifted:
+                        sql_template = "DELETE FROM inbox WHERE msgid IN ({})"
+                    else:
+                        sql_template = "UPDATE inbox SET folder='trash', read=1 WHERE msgid IN ({})"
+                    
+                    sqlExecuteChunked(sql_template, False, idCount, *inventoryHashesToTrash)
+                    
+                except Exception as e:
+                    logger.error("Error updating database: %s", e)
+            
+            # Wähle nächste Zeile
+            if tableWidget.rowCount() > 0:
+                if currentRow >= tableWidget.rowCount():
+                    currentRow = tableWidget.rowCount() - 1
+                if currentRow >= 0:
+                    tableWidget.selectRow(currentRow)
+            else:
+                self.getCurrentMessageTextedit().setText("")
+                
+            tableWidget.setUpdatesEnabled(True)
+            
+            # Update counts
+            try:
+                self.propagateUnreadCount(folder)
+            except Exception as e:
+                logger.error("Error in propagateUnreadCount: %s", e)
+                
+            self.updateStatusBar(_translate("MainWindow", "Moved items to trash."))
+            
+        except Exception as e:
+            logger.error("Critical error in on_action_InboxTrash: %s", e, exc_info=True)
+            tableWidget.setUpdatesEnabled(True)
 
     def on_action_TrashUndelete(self):
         tableWidget = self.getCurrentMessagelist()
@@ -3407,7 +3507,7 @@ class MyForm(settingsmixin.SMainWindow):
         if not filename:
             return
         try:
-            f = safe_open(filename, 'w')
+            f = open(filename, 'w')
             f.write(message.encode("utf-8", "replace"))
             f.close()
         except Exception:
@@ -3902,7 +4002,7 @@ class MyForm(settingsmixin.SMainWindow):
     def setAvatar(self, addressAtCurrentRow):
         if not os.path.exists(state.appdata + 'avatars/'):
             os.makedirs(state.appdata + 'avatars/')
-        hash = hashlib.sha256(addBMIfNotPresent(addressAtCurrentRow).encode("utf-8", "replace")).hexdigest()
+        hash = hashlib.md5(addBMIfNotPresent(addressAtCurrentRow).encode("utf-8", "replace")).hexdigest()
         # http://pyqt.sourceforge.net/Docs/PyQt4/qimagereader.html#supportedImageFormats
         names = {
             'BMP': 'Windows Bitmap',
@@ -4194,16 +4294,32 @@ class MyForm(settingsmixin.SMainWindow):
         messagelist = self.getCurrentMessagelist()
         if not messagelist:
             return
+            
         messageTextedit = self.getCurrentMessageTextedit()
         if messageTextedit:
             messageTextedit.setPlainText("")
+            
         account = self.getCurrentAccount()
         folder = self.getCurrentFolder()
-        # refresh count indicator
-        self.propagateUnreadCount(folder)
-        self.loadMessagelist(
-            messagelist, account, folder,
-            self.getCurrentSearchOption(), self.getCurrentSearchLine())
+        
+        # refresh count indicator - mit Fehlerbehandlung
+        try:
+            self.propagateUnreadCount(folder)
+        except Exception as e:
+            logger.error("Error in propagateUnreadCount from treeWidgetItemClicked: %s", e)
+        
+        # Load messages
+        try:
+            self.loadMessagelist(
+                messagelist, account, folder,
+                self.getCurrentSearchOption(), self.getCurrentSearchLine())
+        except Exception as e:
+            logger.error("Error loading messagelist: %s", e)
+            QtWidgets.QMessageBox.warning(
+                self, 
+                _translate("MainWindow", "Error"),
+                _translate("MainWindow", "Could not load messages: {}").format(str(e))
+            )
 
     def treeWidgetItemChanged(self, item, column):
         # only for manual edits. automatic edits (setText) are ignored
@@ -4265,10 +4381,11 @@ class MyForm(settingsmixin.SMainWindow):
             )
             if len(queryreturn) < 1:
                 queryreturn = sqlQuery(
-                'SELECT message FROM ' + ('sent' if folder == 'sent' else 'inbox') + 
-                ' WHERE ' + ('ackdata' if folder == 'sent' else 'msgid') + '=CAST(? AS TEXT)',
-                msgid
-            )
+                    'SELECT message FROM %s WHERE %s=CAST(? AS TEXT)' % (
+                        ('sent', 'ackdata') if folder == 'sent'
+                        else ('inbox', 'msgid')
+                    ), msgid
+                )
 
         try:
             message = queryreturn[-1][0].decode("utf-8", "replace")
