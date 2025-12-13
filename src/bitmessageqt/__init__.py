@@ -2962,7 +2962,21 @@ class MyForm(settingsmixin.SMainWindow):
                         if queryreturn != []:
                             for row in queryreturn:
                                 toLabel, = row
-                            toLabel = toLabel.decode("utf-8", "replace")
+                            try:
+                                # Sicherstellen, dass toLabel ein String ist
+                                if isinstance(toLabel, bytes):
+                                    toLabel = toLabel.decode("utf-8", "replace")
+                                elif isinstance(toLabel, int):
+                                    # WICHTIG: Integer zu String konvertieren
+                                    toLabel = str(toLabel)
+                                elif toLabel is None:
+                                    toLabel = ""
+                                else:
+                                    # Alle anderen Typen zu String konvertieren
+                                    toLabel = str(toLabel)
+                            except Exception as e:
+                                logger.error(f"Error processing toLabel: {e}, type: {type(toLabel)}, value: {toLabel}")
+                                toLabel = ""
 
                         self.displayNewSentMessage(
                             toAddress, toLabel, fromAddress, subject, message, ackdata)
@@ -4927,22 +4941,24 @@ class MyForm(settingsmixin.SMainWindow):
     def on_context_menuSent(self, point):
         currentRow = self.ui.tableWidgetInbox.currentRow()
         # Get the ackdata safely with proper role parameter
+        ackData = None
         if currentRow >= 0:
             item = self.ui.tableWidgetInbox.item(currentRow, 3)
             if item:
                 # KORREKTUR: data() mit QtCore.Qt.UserRole aufrufen
                 ackData = as_msgid(item.data(QtCore.Qt.UserRole))
-            else:
-                ackData = None
-        else:
-            ackData = None
+        
+        # KORREKTUR: Variable 'status' initialisieren
+        status = None  # <-- DIESE ZEILE HINZUFÜGEN
         
         self.popMenuSent = QtWidgets.QMenu(self)
         self.popMenuSent.addAction(self.actionSentClipboard)
         self._contact_selected = self.ui.tableWidgetInbox.item(currentRow, 0) if currentRow >= 0 else None
+        
         # preloaded gui.menu plugins with prefix 'address'
         for plugin in self.menu_plugins['address']:
             self.popMenuSent.addAction(plugin)
+        
         self.popMenuSent.addSeparator()
         self.popMenuSent.addAction(self.actionTrashSentMessage)
         self.popMenuSent.addAction(self.actionSentReply)
@@ -4950,14 +4966,24 @@ class MyForm(settingsmixin.SMainWindow):
         # Check to see if this item is toodifficult and display an additional
         # menu option (Force Send) if it is.
         if ackData:
-            queryreturn = sqlQuery('''SELECT status FROM sent where ackdata=?''', sqlite3.Binary(ackData))
-            if len(queryreturn) < 1:
-                queryreturn = sqlQuery('''SELECT status FROM sent where ackdata=CAST(? AS TEXT)''', ackData)
-            for row in queryreturn:
-                status, = row
-            status = status.decode("utf-8", "replace")
-            if status == 'toodifficult':
-                self.popMenuSent.addAction(self.actionForceSend)
+            try:
+                queryreturn = sqlQuery('''SELECT status FROM sent where ackdata=?''', sqlite3.Binary(ackData))
+                if len(queryreturn) < 1:
+                    queryreturn = sqlQuery('''SELECT status FROM sent where ackdata=CAST(? AS TEXT)''', ackData)
+                
+                if queryreturn:  # <-- PRÜFEN OB ERGEBNIS EXISTIERT
+                    status = queryreturn[0][0]
+                    # KORREKTUR: Status dekodieren wenn nötig
+                    if isinstance(status, bytes):
+                        status = status.decode("utf-8", "replace")
+                        
+            except Exception as e:
+                logger.error(f"Error getting status: {e}")
+                status = None
+        
+        # KORREKTUR: Prüfen ob status definiert ist
+        if status == 'toodifficult':
+            self.popMenuSent.addAction(self.actionForceSend)
 
         self.popMenuSent.exec_(self.ui.tableWidgetInbox.mapToGlobal(point))
 
