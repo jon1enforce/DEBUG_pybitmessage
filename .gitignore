@@ -25,3 +25,9 @@ coverage.xml
 **coverage.json
 .buildozer
 .tox
+debug.log
+knownnodes.dat
+messages.dat*
+singleton.lock
+*.pyc
+__pycache__/
