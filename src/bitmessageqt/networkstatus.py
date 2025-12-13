@@ -65,15 +65,35 @@ class NetworkStatus(QtWidgets.QWidget, RetranslateMixin):
 
     @staticmethod
     def formatBytes(num):
-        """Format bytes nicely (SI prefixes)"""
-        for x in (
-            _translate("networkstatus", "byte(s)", None, num),
-            "kB", "MB", "GB"
-        ):
-            if num < 1000.0:
-                return "%3.0f %s" % (num, x)
-            num /= 1000.0
-        return "%3.0f %s" % (num, "TB")
+        """Format bytes nicely (binary prefixes - KiB, MiB, GiB)"""
+        if num is None:
+            num = 0
+        
+        # Konvertiere zu float für die Berechnung
+        num_float = float(num)
+        
+        units = [
+            _translate("networkstatus", "byte(s)", None, int(num)),
+            "KiB",  # Kibibytes (1024 bytes)
+            "MiB",  # Mebibytes
+            "GiB",  # Gibibytes
+            "TiB"   # Tebibytes
+        ]
+        
+        unit_index = 0
+        formatted_num = num_float
+        
+        # Use 1024 for binary prefixes
+        while abs(formatted_num) >= 1024.0 and unit_index < len(units) - 1:
+            formatted_num /= 1024.0
+            unit_index += 1
+        
+        # Für die Übersetzung müssen wir sicherstellen, dass die Zahl im 32-Bit Bereich ist
+        # Aber hier geben wir nur einen formatierten String zurück, keine Übersetzung
+        if unit_index == 0:  # bytes
+            return "%3.0f %s" % (formatted_num, units[unit_index])
+        else:  # KiB, MiB, etc.
+            return "%3.1f %s" % (formatted_num, units[unit_index])
 
     @staticmethod
     def formatByteRate(num):
@@ -83,45 +103,61 @@ class NetworkStatus(QtWidgets.QWidget, RetranslateMixin):
 
     def updateNumberOfObjectsToBeSynced(self):
         """Update the counter for number of objects to be synced"""
+        pending = network.stats.pendingDownload() + network.stats.pendingUpload()
+        # Sicherstellen, dass die Zahl für die Übersetzung im 32-Bit Bereich ist
+        safe_pending = min(pending, 2147483647) if pending >= 0 else max(pending, -2147483648)
         self.labelSyncStatus.setText(_translate(
-            "networkstatus", "Object(s) to be synced: %n", None,
-            network.stats.pendingDownload() + network.stats.pendingUpload()))
+            "networkstatus", "Object(s) to be synced: %n", None, safe_pending))
 
     def updateNumberOfMessagesProcessed(self):
         """Update the counter for number of processed messages"""
         self.updateNumberOfObjectsToBeSynced()
+        # Sicherstellen, dass die Zahl für die Übersetzung im 32-Bit Bereich ist
+        safe_count = min(state.numberOfMessagesProcessed, 2147483647) if state.numberOfMessagesProcessed >= 0 else max(state.numberOfMessagesProcessed, -2147483648)
         self.labelMessageCount.setText(_translate(
             "networkstatus", "Processed %n person-to-person message(s).",
-            None, state.numberOfMessagesProcessed))
+            None, safe_count))
 
     def updateNumberOfBroadcastsProcessed(self):
         """Update the counter for the number of processed broadcasts"""
         self.updateNumberOfObjectsToBeSynced()
+        # Sicherstellen, dass die Zahl für die Übersetzung im 32-Bit Bereich ist
+        safe_count = min(state.numberOfBroadcastsProcessed, 2147483647) if state.numberOfBroadcastsProcessed >= 0 else max(state.numberOfBroadcastsProcessed, -2147483648)
         self.labelBroadcastCount.setText(_translate(
-            "networkstatus", "Processed %n broadcast message(s).", None,
-            state.numberOfBroadcastsProcessed))
+            "networkstatus", "Processed %n broadcast message(s).", None, safe_count))
 
     def updateNumberOfPubkeysProcessed(self):
         """Update the counter for the number of processed pubkeys"""
         self.updateNumberOfObjectsToBeSynced()
+        # Sicherstellen, dass die Zahl für die Übersetzung im 32-Bit Bereich ist
+        safe_count = min(state.numberOfPubkeysProcessed, 2147483647) if state.numberOfPubkeysProcessed >= 0 else max(state.numberOfPubkeysProcessed, -2147483648)
         self.labelPubkeyCount.setText(_translate(
-            "networkstatus", "Processed %n public key(s).", None,
-            state.numberOfPubkeysProcessed))
+            "networkstatus", "Processed %n public key(s).", None, safe_count))
 
     def updateNumberOfBytes(self):
         """
         This function is run every two seconds, so we divide the rate
         of bytes sent and received by 2.
         """
-        self.labelBytesRecvCount.setText(_translate(
-            "networkstatus", "Down: {0}/s  Total: {1}").format(
-                self.formatByteRate(network.stats.downloadSpeed()),
-                self.formatBytes(network.stats.receivedBytes())
+        # Hier verwenden wir keine _translate() mit %n Platzhalter,
+        # sondern nur String-Formatierung, da die Byte-Zahlen zu groß sein können
+        download_speed = network.stats.downloadSpeed()
+        total_download = network.stats.receivedBytes()
+        upload_speed = network.stats.uploadSpeed()
+        total_upload = network.stats.sentBytes()
+        
+        # Nur den statischen Text übersetzen
+        down_text = _translate("networkstatus", "Down: {0}/s  Total: {1}")
+        up_text = _translate("networkstatus", "Up: {0}/s  Total: {1}")
+        
+        # Formatierte Strings einfügen
+        self.labelBytesRecvCount.setText(down_text.format(
+            self.formatByteRate(download_speed),
+            self.formatBytes(total_download)
         ))
-        self.labelBytesSentCount.setText(_translate(
-            "networkstatus", "Up: {0}/s  Total: {1}").format(
-                self.formatByteRate(network.stats.uploadSpeed()),
-                self.formatBytes(network.stats.sentBytes())
+        self.labelBytesSentCount.setText(up_text.format(
+            self.formatByteRate(upload_speed),
+            self.formatBytes(total_upload)
         ))
 
     def updateNetworkStatusTab(self, outbound, add, destination):
@@ -236,9 +272,12 @@ class NetworkStatus(QtWidgets.QWidget, RetranslateMixin):
     # timer driven
     def runEveryTwoSeconds(self):
         """Updates counters, runs every 2 seconds if the timer is running"""
+        lookups = state.Inventory.numberOfInventoryLookupsPerformed / 2
+        # Sicherstellen, dass die Zahl für die Übersetzung im 32-Bit Bereich ist
+        safe_lookups = min(lookups, 2147483647) if lookups >= 0 else max(lookups, -2147483648)
         self.labelLookupsPerSecond.setText(_translate(
             "networkstatus", "Inventory lookups per second: {0}"
-        ).format(state.Inventory.numberOfInventoryLookupsPerformed / 2))
+        ).format(safe_lookups))
         state.Inventory.numberOfInventoryLookupsPerformed = 0
         self.updateNumberOfBytes()
         self.updateNumberOfObjectsToBeSynced()

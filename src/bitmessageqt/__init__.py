@@ -2370,14 +2370,7 @@ class MyForm(settingsmixin.SMainWindow):
                 "MainWindow", "Connected"))
             self.setTrayIconFile("can-icon-24px-%s.png" % color)
 
-    def initTrayIcon(self, iconFileName, app):
-        self.currentTrayIconFileName = iconFileName
-        self.tray = QtWidgets.QSystemTrayIcon(
-            self.calcTrayIcon(iconFileName, self.findInboxUnreadCount()), app)
 
-    def setTrayIconFile(self, iconFileName):
-        self.currentTrayIconFileName = iconFileName
-        self.drawTrayIcon(iconFileName, self.findInboxUnreadCount())
 
     def calcTrayIcon(self, iconFileName, inboxUnreadCount):
         pixmap = QtGui.QPixmap(":/newPrefix/images/" + iconFileName)
@@ -2422,15 +2415,62 @@ class MyForm(settingsmixin.SMainWindow):
         self.rerenderTabTreeChans()
 
     def findInboxUnreadCount(self, count=None):
+        """Count unread inbox messages"""
         if count is None:
             queryreturn = sqlQuery('''SELECT count(*) from inbox WHERE folder='inbox' and read=0''')
             cnt = 0
             for row in queryreturn:
                 cnt, = row
-            self.unreadCount = int(cnt)
+            
+            # Sicherstellen, dass cnt eine gültige Zahl ist
+            try:
+                # Wenn cnt ein Byte-String ist, zuerst dekodieren
+                if isinstance(cnt, bytes):
+                    # Versuchen, den Byte-String in einen String zu dekodieren
+                    try:
+                        cnt_str = cnt.decode('utf-8', errors='ignore')
+                    except:
+                        cnt_str = str(cnt)
+                    # Nur numerische Zeichen behalten
+                    cnt_str = ''.join(c for c in cnt_str if c.isdigit() or c == '.')
+                    if cnt_str:
+                        self.unreadCount = int(float(cnt_str))
+                    else:
+                        self.unreadCount = 0
+                else:
+                    # Direkte Konvertierung für andere Typen
+                    self.unreadCount = int(cnt)
+            except (ValueError, TypeError) as e:
+                print(f"DEBUG: Error converting count to int: {e}, cnt type: {type(cnt)}, cnt value: {cnt}")
+                self.unreadCount = 0
         else:
-            self.unreadCount = count
+            # Wenn count direkt übergeben wurde
+            try:
+                self.unreadCount = int(count)
+            except (ValueError, TypeError):
+                print(f"DEBUG: Invalid count parameter: {count}")
+                self.unreadCount = 0
         return self.unreadCount
+
+    def initTrayIcon(self, iconFileName, app):
+        self.currentTrayIconFileName = iconFileName
+        self.tray = QtWidgets.QSystemTrayIcon(
+            self.calcTrayIcon(iconFileName, self.findInboxUnreadCount()), app)
+
+    def setTrayIconFile(self, iconFileName, unreadCount=None):
+        """Set tray icon with optional unread count badge"""
+        self.currentTrayIconFileName = iconFileName
+        if unreadCount is None:
+            unreadCount = self.findInboxUnreadCount()
+        else:
+            # Sicherstellen, dass unreadCount eine gültige Zahl ist
+            try:
+                unreadCount = int(unreadCount)
+            except (ValueError, TypeError):
+                print(f"DEBUG: Invalid unreadCount parameter: {unreadCount}, using findInboxUnreadCount()")
+                unreadCount = self.findInboxUnreadCount()
+        
+        self.drawTrayIcon(iconFileName, unreadCount)
 
     def updateSentItemStatusByToAddress(self, toAddress, textToDisplay):
         for sent in (
