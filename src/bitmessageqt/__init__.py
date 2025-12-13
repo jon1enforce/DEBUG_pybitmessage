@@ -96,6 +96,8 @@ def openKeysFile():
 
 
 def as_msgid(id_data):
+    if id_data is None:
+        return None
     if six.PY3:
         return escape_decode(id_data)[0][2:-1]
     else:  # assume six.PY2
@@ -1009,12 +1011,11 @@ class MyForm(settingsmixin.SMainWindow):
                 related = None
             
             # Find matching row in related widget
-            if related:
+            if related and msgid:  # WICHTIG: msgid prüfen
                 for r in range(related.rowCount()):
                     try:
                         item = related.item(r, 3)
                         if item:
-                            # KORREKTUR: data() mit QtCore.Qt.UserRole
                             item_data = item.data(QtCore.Qt.UserRole)
                             if item_data and as_msgid(item_data) == msgid:
                                 rrow = r
@@ -3965,7 +3966,7 @@ class MyForm(settingsmixin.SMainWindow):
                         item = tableWidget.item(r.topRow() + i, 3)
                         if item and item.data():
                             msgid = as_msgid(item.data())
-                            if msgid:
+                            if msgid:  # WICHTIG: Nur hinzufügen wenn nicht None
                                 inventoryHashesToTrash.add(sqlite3.Binary(msgid))
                     except Exception as e:
                         logger.debug("Error getting msgid from row %d: %s", 
@@ -3981,7 +3982,7 @@ class MyForm(settingsmixin.SMainWindow):
                 except Exception as e:
                     logger.error("Error removing rows: %s", e)
                     
-            # Update database
+            # Update database nur wenn IDs vorhanden
             if inventoryHashesToTrash:
                 idCount = len(inventoryHashesToTrash)
                 try:
@@ -4102,12 +4103,11 @@ class MyForm(settingsmixin.SMainWindow):
             currentRow = tableWidget.selectedIndexes()[0].row()
             item = tableWidget.item(currentRow, 3)
             if item:
-                # KORREKTUR: data() mit QtCore.Qt.UserRole aufrufen
                 ackdataToTrash = as_msgid(item.data(QtCore.Qt.UserRole))
             else:
                 ackdataToTrash = None
                 
-            if ackdataToTrash:
+            if ackdataToTrash:  # WICHTIG: Nur verarbeiten wenn nicht None
                 rowcount = sqlExecute(
                     "DELETE FROM sent" if folder == "trash" or shifted else
                     "UPDATE sent SET folder='trash'"
@@ -4393,7 +4393,6 @@ class MyForm(settingsmixin.SMainWindow):
                 try:
                     item = messagelist.item(currentRow, 3)
                     if item:
-                        # data() braucht QtCore.Qt.UserRole als Argument!
                         msgid_data = item.data(QtCore.Qt.UserRole)
                         if msgid_data:
                             return as_msgid(msgid_data)
@@ -4945,11 +4944,7 @@ class MyForm(settingsmixin.SMainWindow):
         if currentRow >= 0:
             item = self.ui.tableWidgetInbox.item(currentRow, 3)
             if item:
-                # KORREKTUR: data() mit QtCore.Qt.UserRole aufrufen
                 ackData = as_msgid(item.data(QtCore.Qt.UserRole))
-        
-        # KORREKTUR: Variable 'status' initialisieren
-        status = None  # <-- DIESE ZEILE HINZUFÜGEN
         
         self.popMenuSent = QtWidgets.QMenu(self)
         self.popMenuSent.addAction(self.actionSentClipboard)
@@ -4965,28 +4960,23 @@ class MyForm(settingsmixin.SMainWindow):
 
         # Check to see if this item is toodifficult and display an additional
         # menu option (Force Send) if it is.
-        if ackData:
+        if ackData:  # WICHTIG: Nur verarbeiten wenn nicht None
             try:
                 queryreturn = sqlQuery('''SELECT status FROM sent where ackdata=?''', sqlite3.Binary(ackData))
                 if len(queryreturn) < 1:
                     queryreturn = sqlQuery('''SELECT status FROM sent where ackdata=CAST(? AS TEXT)''', ackData)
                 
-                if queryreturn:  # <-- PRÜFEN OB ERGEBNIS EXISTIERT
+                if queryreturn:  # Nur verarbeiten wenn Ergebnisse existieren
                     status = queryreturn[0][0]
-                    # KORREKTUR: Status dekodieren wenn nötig
-                    if isinstance(status, bytes):
-                        status = status.decode("utf-8", "replace")
+                    status = status.decode("utf-8", "replace") if isinstance(status, bytes) else str(status)
+                    
+                    if status == 'toodifficult':
+                        self.popMenuSent.addAction(self.actionForceSend)
                         
             except Exception as e:
                 logger.error(f"Error getting status: {e}")
-                status = None
-        
-        # KORREKTUR: Prüfen ob status definiert ist
-        if status == 'toodifficult':
-            self.popMenuSent.addAction(self.actionForceSend)
 
         self.popMenuSent.exec_(self.ui.tableWidgetInbox.mapToGlobal(point))
-
     def inboxSearchLineEditUpdated(self, text):
         # dynamic search for too short text is slow
         text = ustr(text)
@@ -5125,7 +5115,7 @@ class MyForm(settingsmixin.SMainWindow):
             msgid = self.getCurrentMessageId()
             folder = self.getCurrentFolder()
             
-            if msgid:
+            if msgid:  # WICHTIG: Nur verarbeiten wenn nicht None
                 try:
                     # Query database safely
                     if folder == 'sent':

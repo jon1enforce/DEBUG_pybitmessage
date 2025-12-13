@@ -95,3 +95,49 @@ TypeError: the JSON object must be str, bytes or bytearray, not NoneType
 2025-12-12 17:19:44,746 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
 2025-12-12 17:19:44,775 - WARNING - No indicator plugin found
 2025-12-12 17:19:44,791 - WARNING - No notification.message plugin found
+2025-12-13 17:33:51,413 - WARNING - Using default logger configuration
+2025-12-13 17:33:52,526 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 362, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-13 17:33:52,531 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-13 17:33:52,531 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 165, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 224, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-13 17:33:52,532 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-13 17:33:52,560 - WARNING - No indicator plugin found
+2025-12-13 17:33:52,576 - WARNING - No notification.message plugin found
+2025-12-13 17:36:42,591 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-13 17:42:56,559 - WARNING - Using default logger configuration
+2025-12-13 17:42:57,158 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 362, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-13 17:42:57,163 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-13 17:42:57,163 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 165, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 224, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-13 17:42:57,164 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-13 17:42:57,193 - WARNING - No indicator plugin found
+2025-12-13 17:42:57,209 - WARNING - No notification.message plugin found
+2025-12-13 17:44:03,212 - WARNING - ⚠️ GUI still running, forcing exit
