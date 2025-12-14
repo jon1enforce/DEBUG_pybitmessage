@@ -13,12 +13,6 @@ import time
 from distutils.version import StrictVersion
 from struct import pack
 from six.moves import configparser
-if sys.platform.startswith('openbsd'):
-    socket.has_ipv6 = False  # Informiert andere Module, dass IPv6 nicht verfügbar ist
-    socket.AF_INET6 = None   # Deaktiviert IPv6 komplett
-    socket.IPPROTO_IPV6 = None
-    socket.IPV6_V6ONLY = None
-
 
 try:
     import defaults
@@ -45,50 +39,47 @@ StoreConfigFilesInSameDirectoryAsProgramByDefault = False
 
 def loadConfig():
     """Load the config"""
-    logger.debug("DEBUG: Entering loadConfig()")
-    
     if state.appdata:
-        logger.debug("DEBUG: appdata path is already set: %s", state.appdata)
         config.read(state.appdata + 'keys.dat')
+        # state.appdata must have been specified as a startup option.
         needToCreateKeysFile = config.safeGet(
             'bitmessagesettings', 'settingsversion') is None
         if not needToCreateKeysFile:
-            logger.debug("DEBUG: Loading existing config from startup directory")
             logger.info(
                 'Loading config files from directory specified'
                 ' on startup: %s', state.appdata)
     else:
-        logger.debug("DEBUG: No appdata path set, looking in exe folder")
         config.read(paths.lookupExeFolder() + 'keys.dat')
 
         if config.safeGet('bitmessagesettings', 'settingsversion'):
-            logger.debug("DEBUG: Found valid config in exe folder")
             logger.info('Loading config files from same directory as program.')
             needToCreateKeysFile = False
             state.appdata = paths.lookupExeFolder()
         else:
-            logger.debug("DEBUG: No config in exe folder, trying appdata")
+            # Could not load the keys.dat file in the program directory.
+            # Perhaps it is in the appdata directory.
             state.appdata = paths.lookupAppdataFolder()
             config.read(state.appdata + 'keys.dat')
             needToCreateKeysFile = config.safeGet(
                 'bitmessagesettings', 'settingsversion') is None
             if not needToCreateKeysFile:
-                logger.debug("DEBUG: Found valid config in appdata folder")
                 logger.info(
                     'Loading existing config files from %s', state.appdata)
 
     if needToCreateKeysFile:
-        logger.debug("DEBUG: Need to create new config file")
+
+        # This appears to be the first time running the program; there is
+        # no config file (or it cannot be accessed). Create config file.
+        # config.add_section('bitmessagesettings')
         config.read()
         config.set('bitmessagesettings', 'settingsversion', '10')
-        
         if 'linux' in sys.platform:
-            logger.debug("DEBUG: Linux platform detected")
             config.set('bitmessagesettings', 'minimizetotray', 'false')
+        # This isn't implimented yet and when True on
+        # Ubuntu causes Bitmessage to disappear while
+        # running when minimized.
         else:
-            logger.debug("DEBUG: Non-Linux platform detected")
             config.set('bitmessagesettings', 'minimizetotray', 'true')
-            
         config.set(
             'bitmessagesettings', 'defaultnoncetrialsperbyte',
             str(defaults.networkDefaultProofOfWorkNonceTrialsPerByte))
@@ -96,42 +87,38 @@ def loadConfig():
             'bitmessagesettings', 'defaultpayloadlengthextrabytes',
             str(defaults.networkDefaultPayloadLengthExtraBytes))
         config.set('bitmessagesettings', 'dontconnect', 'true')
+        # UI setting to stop trying to send messages after X days/months
+        # config.set('bitmessagesettings', 'stopresendingafterxdays', '')
+        # config.set('bitmessagesettings', 'stopresendingafterxmonths', '')
+
+        # Are you hoping to add a new option to the keys.dat file? You're in
+        # the right place for adding it to users who install the software for
+        # the first time. But you must also add it to the keys.dat file of
+        # existing users. To do that, search the class_sqlThread.py file
+        # for the text: "right above this line!"
 
         if StoreConfigFilesInSameDirectoryAsProgramByDefault:
-            logger.debug("DEBUG: Using program directory for config")
+            # Just use the same directory as the program and forget about
+            # the appdata folder
             state.appdata = ''
             logger.info(
                 'Creating new config files in same directory as program.')
         else:
-            logger.debug("DEBUG: Using appdata directory for config")
             logger.info('Creating new config files in %s', state.appdata)
             if not os.path.exists(state.appdata):
-                logger.debug("DEBUG: Creating appdata directory")
                 os.makedirs(state.appdata)
-                
         if not sys.platform.startswith('win'):
-            logger.debug("DEBUG: Setting umask for non-Windows platform")
             os.umask(0o077)
-            
         config.save()
-        logger.debug("DEBUG: New config file created and saved")
     else:
-        logger.debug("DEBUG: Existing config found, updating if needed")
         updateConfig()
-        
     config_ready.set()
-    logger.debug("DEBUG: Exiting loadConfig()")
 
 
 def updateConfig():
     """Save the config"""
-    logger.debug("DEBUG: Entering updateConfig()")
-    
     settingsversion = config.getint('bitmessagesettings', 'settingsversion')
-    logger.debug("DEBUG: Current settings version: %d", settingsversion)
-    
     if settingsversion == 1:
-        logger.debug("DEBUG: Upgrading from version 1 to 2")
         config.set('bitmessagesettings', 'socksproxytype', 'none')
         config.set('bitmessagesettings', 'sockshostname', 'localhost')
         config.set('bitmessagesettings', 'socksport', '9050')
@@ -142,9 +129,8 @@ def updateConfig():
         config.set('bitmessagesettings', 'keysencrypted', 'false')
         config.set('bitmessagesettings', 'messagesencrypted', 'false')
         settingsversion = 2
-        
+    # let class_sqlThread update SQL and continue
     elif settingsversion == 4:
-        logger.debug("DEBUG: Upgrading from version 4 to 5")
         config.set(
             'bitmessagesettings', 'defaultnoncetrialsperbyte',
             str(defaults.networkDefaultProofOfWorkNonceTrialsPerByte))
@@ -154,7 +140,6 @@ def updateConfig():
         settingsversion = 5
 
     if settingsversion == 5:
-        logger.debug("DEBUG: Upgrading from version 5 to 7")
         config.set(
             'bitmessagesettings', 'maxacceptablenoncetrialsperbyte', '0')
         config.set(
@@ -162,38 +147,35 @@ def updateConfig():
         settingsversion = 7
 
     if not config.has_option('bitmessagesettings', 'sockslisten'):
-        logger.debug("DEBUG: Adding missing sockslisten option")
         config.set('bitmessagesettings', 'sockslisten', 'false')
 
     if not config.has_option('bitmessagesettings', 'userlocale'):
-        logger.debug("DEBUG: Adding missing userlocale option")
         config.set('bitmessagesettings', 'userlocale', 'system')
 
     if not config.has_option('bitmessagesettings', 'sendoutgoingconnections'):
-        logger.debug("DEBUG: Adding missing sendoutgoingconnections option")
         config.set('bitmessagesettings', 'sendoutgoingconnections', 'True')
 
     if not config.has_option('bitmessagesettings', 'useidenticons'):
-        logger.debug("DEBUG: Adding missing useidenticons option")
         config.set('bitmessagesettings', 'useidenticons', 'True')
-        
     if not config.has_option('bitmessagesettings', 'identiconsuffix'):
-        logger.debug("DEBUG: Adding missing identiconsuffix option")
+        # acts as a salt
         config.set(
             'bitmessagesettings', 'identiconsuffix', ''.join(
                 helper_random.randomchoice(
                     "123456789ABCDEFGHJKLMNPQRSTUVWXYZ"
                     "abcdefghijkmnopqrstuvwxyz") for x in range(12))
-        )
+        )  # a twelve character pseudo-password to salt the identicons
 
+    # Add settings to support no longer resending messages after
+    # a certain period of time even if we never get an ack
     if settingsversion == 7:
-        logger.debug("DEBUG: Upgrading from version 7 to 8")
         config.set('bitmessagesettings', 'stopresendingafterxdays', '')
         config.set('bitmessagesettings', 'stopresendingafterxmonths', '')
         settingsversion = 8
 
+    # With the change to protocol version 3, reset the user-settable
+    # difficulties to 1
     if settingsversion == 8:
-        logger.debug("DEBUG: Upgrading from version 8 to 9")
         config.set(
             'bitmessagesettings', 'defaultnoncetrialsperbyte',
             str(defaults.networkDefaultProofOfWorkNonceTrialsPerByte))
@@ -216,8 +198,9 @@ def updateConfig():
             str(previousSmallMessageDifficulty * 1000))
         settingsversion = 9
 
+    # Adjust the required POW values for each of this user's addresses
+    # to conform to protocol v3 norms.
     if settingsversion == 9:
-        logger.debug("DEBUG: Upgrading from version 9 to 10")
         for addressInKeysFile in config.addresses():
             try:
                 previousTotalDifficulty = float(
@@ -238,24 +221,21 @@ def updateConfig():
                     str(int(previousSmallMessageDifficulty * 1000)))
             except (ValueError, TypeError, configparser.NoSectionError,
                     configparser.NoOptionError):
-                logger.debug("DEBUG: Error processing address %s", addressInKeysFile)
                 continue
         config.set('bitmessagesettings', 'maxdownloadrate', '0')
         config.set('bitmessagesettings', 'maxuploadrate', '0')
         settingsversion = 10
 
+    # sanity check
     if config.safeGetInt(
             'bitmessagesettings', 'maxacceptablenoncetrialsperbyte') == 0:
-        logger.debug("DEBUG: Setting default maxacceptablenoncetrialsperbyte")
         config.set(
             'bitmessagesettings', 'maxacceptablenoncetrialsperbyte',
             str(defaults.ridiculousDifficulty
                 * defaults.networkDefaultProofOfWorkNonceTrialsPerByte)
         )
-        
     if config.safeGetInt(
             'bitmessagesettings', 'maxacceptablepayloadlengthextrabytes') == 0:
-        logger.debug("DEBUG: Setting default maxacceptablepayloadlengthextrabytes")
         config.set(
             'bitmessagesettings', 'maxacceptablepayloadlengthextrabytes',
             str(defaults.ridiculousDifficulty
@@ -263,87 +243,67 @@ def updateConfig():
         )
 
     if not config.has_option('bitmessagesettings', 'onionport'):
-        logger.debug("DEBUG: Adding missing onionport option")
         config.set('bitmessagesettings', 'onionport', '8444')
-        
     if not config.has_option('bitmessagesettings', 'onionbindip'):
-        logger.debug("DEBUG: Adding missing onionbindip option")
         config.set('bitmessagesettings', 'onionbindip', '127.0.0.1')
-        
     if not config.has_option('bitmessagesettings', 'smtpdeliver'):
-        logger.debug("DEBUG: Adding missing smtpdeliver option")
         config.set('bitmessagesettings', 'smtpdeliver', '')
-        
     if not config.has_option(
             'bitmessagesettings', 'hidetrayconnectionnotifications'):
-        logger.debug("DEBUG: Adding missing hidetrayconnectionnotifications option")
         config.set(
             'bitmessagesettings', 'hidetrayconnectionnotifications', 'false')
-            
     if config.safeGetInt('bitmessagesettings', 'maxoutboundconnections') < 1:
-        logger.debug("DEBUG: Fixing invalid maxoutboundconnections value")
         config.set('bitmessagesettings', 'maxoutboundconnections', '8')
         logger.warning('Your maximum outbound connections must be a number.')
 
+    # TTL is now user-specifiable. Let's add an option to save
+    # whatever the user selects.
     if not config.has_option('bitmessagesettings', 'ttl'):
-        logger.debug("DEBUG: Adding missing ttl option")
         config.set('bitmessagesettings', 'ttl', '367200')
 
     config.set('bitmessagesettings', 'settingsversion', str(settingsversion))
     config.save()
-    logger.debug("DEBUG: Config updated and saved. Exiting updateConfig()")
 
 
 def adjustHalfOpenConnectionsLimit():
     """Check and satisfy half-open connections limit (mainly XP and Vista)"""
-    logger.debug("DEBUG: Entering adjustHalfOpenConnectionsLimit()")
-    
     if config.safeGet(
             'bitmessagesettings', 'socksproxytype', 'none') != 'none':
-        logger.debug("DEBUG: SOCKS proxy detected, limiting connections to 4")
         state.maximumNumberOfHalfOpenConnections = 4
         return
 
     is_limited = False
     try:
         if sys.platform[0:3] == "win":
-            logger.debug("DEBUG: Windows platform detected")
+            # Some XP and Vista systems can only have 10 outgoing
+            # connections at a time.
             VER_THIS = StrictVersion(platform.version())
             is_limited = (
                 StrictVersion("5.1.2600") <= VER_THIS
                 and StrictVersion("6.0.6000") >= VER_THIS
             )
-            logger.debug("DEBUG: Windows version limited status: %s", is_limited)
     except ValueError:
-        logger.debug("DEBUG: Error checking Windows version", exc_info=True)
         pass
 
     state.maximumNumberOfHalfOpenConnections = 9 if is_limited else 64
-    logger.debug("DEBUG: Set maximumNumberOfHalfOpenConnections to %d", 
-                state.maximumNumberOfHalfOpenConnections)
-    logger.debug("DEBUG: Exiting adjustHalfOpenConnectionsLimit()")
 
 
 def fixSocket():
     """Add missing socket options and methods mainly on Windows"""
-    logger.debug("DEBUG: Entering fixSocket()")
-    
     if sys.platform.startswith('linux'):
-        logger.debug("DEBUG: Linux platform detected, adding SO_BINDTODEVICE")
         socket.SO_BINDTODEVICE = 25
 
     if not sys.platform.startswith('win'):
-        logger.debug("DEBUG: Non-Windows platform, exiting fixSocket()")
         return
 
+    # Python 2 on Windows doesn't define a wrapper for
+    # socket.inet_ntop but we can make one ourselves using ctypes
     if not hasattr(socket, 'inet_ntop'):
-        logger.debug("DEBUG: Adding missing inet_ntop function")
         addressToString = ctypes.windll.ws2_32.WSAAddressToStringA
 
         def inet_ntop(family, host):
             """Converting an IP address in packed
             binary format to string format"""
-            logger.debug("DEBUG: inet_ntop called with family: %d", family)
             if family == socket.AF_INET:
                 if len(host) != 4:
                     raise ValueError("invalid IPv4 host")
@@ -357,20 +317,16 @@ def fixSocket():
             buf = "\0" * 64
             lengthBuf = pack("I", len(buf))
             addressToString(host, len(host), None, buf, lengthBuf)
-            result = buf[0:buf.index("\0")]
-            logger.debug("DEBUG: inet_ntop returning: %s", result)
-            return result
+            return buf[0:buf.index("\0")]
         socket.inet_ntop = inet_ntop
 
+    # Same for inet_pton
     if not hasattr(socket, 'inet_pton'):
-        logger.debug("DEBUG: Adding missing inet_pton function")
         stringToAddress = ctypes.windll.ws2_32.WSAStringToAddressA
 
         def inet_pton(family, host):
             """Converting an IP address in string format
             to a packed binary format"""
-            logger.debug("DEBUG: inet_pton called with family: %d, host: %s", 
-                        family, host)
             buf = "\0" * 28
             lengthBuf = pack("I", len(buf))
             if stringToAddress(str(host),
@@ -380,46 +336,33 @@ def fixSocket():
                                lengthBuf) != 0:
                 raise socket.error("illegal IP address passed to inet_pton")
             if family == socket.AF_INET:
-                result = buf[4:8]
+                return buf[4:8]
             elif family == socket.AF_INET6:
-                result = buf[8:24]
+                return buf[8:24]
             else:
                 raise ValueError("invalid address family")
-            logger.debug("DEBUG: inet_pton returning: %s", result)
-            return result
         socket.inet_pton = inet_pton
 
+    # These sockopts are needed on for IPv6 support
     if not hasattr(socket, 'IPPROTO_IPV6'):
-        logger.debug("DEBUG: Adding missing IPPROTO_IPV6 constant")
         socket.IPPROTO_IPV6 = 41
-        
     if not hasattr(socket, 'IPV6_V6ONLY'):
-        logger.debug("DEBUG: Adding missing IPV6_V6ONLY constant")
         socket.IPV6_V6ONLY = 27
-        
-    logger.debug("DEBUG: Exiting fixSocket()")
 
 
 def start_proxyconfig():
     """Check socksproxytype and start any proxy configuration plugin"""
-    logger.debug("DEBUG: Entering start_proxyconfig()")
-    
     if not get_plugin:
-        logger.debug("DEBUG: No plugin system available, exiting")
         return
-        
     config_ready.wait()
     proxy_type = config.safeGet('bitmessagesettings', 'socksproxytype')
-    logger.debug("DEBUG: Proxy type: %s", proxy_type)
-    
     if proxy_type and proxy_type not in ('none', 'SOCKS4a', 'SOCKS5'):
         try:
             proxyconfig_start = time.time()
-            logger.debug("DEBUG: Attempting to start proxy config plugin: %s", 
-                        proxy_type)
             if not get_plugin('proxyconfig', name=proxy_type)(config):
                 raise TypeError()
         except TypeError:
+            # cannot import shutdown here ):
             logger.error(
                 'Failed to run proxy config plugin %s',
                 proxy_type, exc_info=True)
@@ -428,6 +371,3 @@ def start_proxyconfig():
             logger.info(
                 'Started proxy config plugin %s in %s sec',
                 proxy_type, time.time() - proxyconfig_start)
-            logger.debug("DEBUG: Proxy config plugin started successfully")
-            
-    logger.debug("DEBUG: Exiting start_proxyconfig()")

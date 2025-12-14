@@ -1,84 +1,149 @@
 [bitmessagesettings]
-# Netzwerk-Einstellungen
-maxaddrperstreamsend = 200
-maxbootstrapconnections = 5
-maxoutboundconnections = 4
-maxtotalconnections = 50
-udp = True
-port = 8444
-dontconnect = false
-sendoutgoingconnections = True
+# =================== NETZWERK EINSTELLUNGEN ===================
+# Alpine/musl Netzwerk Optimierungen
+maxoutboundconnections = 3          # Reduziert für Alpine/musl Stabilität
+maxinboundconnections = 10          # Weniger für Container/VM
+maxbootstrapconnections = 2         # Minimale Bootstrap-Verbindungen
+maxtotalconnections = 15            # Gesamtlimit für Alpine
+maxaddrperstreamsend = 100          # Reduzierte Peer-Announcements
 
-# OpenBSD-spezifische Netzwerkoptimierungen
-bind = 0.0.0.0
-onionbindip = 0.0.0.0
+# Statische Netzwerkkonfiguration (kein DHCP)
+bind = 192.168.8.169                # Deine statische IP ANPASSEN!
+port = 8444
+onionbindip = 192.168.8.169         # Gleiche IP für Onion
 sockslisten = false
 
-# DNS und Peer Discovery optimieren
-dns = 1.1.1.1
+# DNS Konfiguration für Alpine/musl
+dns = 1.1.1.1                       # Cloudflare DNS 1
+dnsserver = 1.0.0.1                 # Cloudflare DNS 2
 dnsport = 53
-dnsserver = 1.1.1.1
-maxnodes = 1000
+usednspython = true                 # Python DNS statt musl DNS
+usepeerdns = false                  # Keine DNS von Peers (statisch besser)
 
-# Performance für OpenBSD anpassen
-maxdownloadrate = 20000
-maxuploadrate = 10000
-ttl = 259200  # 3 Tage (reduziert von 4.25 Tagen)
+# Gateway/Router
+defaultgateway = 192.168.8.1        # Dein Router
 
-# Sicherheitseinstellungen
+# Verbindungseinstellungen
+dontconnect = false
+sendoutgoingconnections = true
+udp = true
+onionservicesonly = false
+stopresendingafterxdays = 3         # Kürzer für Alpine
+
+# =================== ALPINE SPEZIFISCHE OPTIMIERUNGEN ===================
+# musl libc Threading Limits
+threads = 1                          # Weniger Threads für musl
+receivequeues = 2                    # Reduzierte Queues
+
+# Socket Timeouts für Alpine
+sockettimeout = 45                   # Längere Timeouts für musl
+connectiontimeout = 60
+maxsocketidletime = 300
+
+# Performance Limits für Alpine
+maxdownloadrate = 15000              # 15 KB/s Download Limit
+maxuploadrate = 8000                 # 8 KB/s Upload Limit
+maxbandwidth = 25000                 # Gesamtbandbreite
+
+# =================== PEER MANAGEMENT ===================
+# Statische Peer-Liste (manuelle Peers)
+staticpeers = 194.182.189.194:8444,158.69.63.42:8080,41.193.189.143:8444,85.214.65.189:8444
+
+# Peer Discovery
+maxnodes = 500                       # Reduziert für Alpine
+maxnodesperstream = 200
+preferredmaximumage = 86400          # 1 Tag
+
+# =================== PROOF OF WORK ===================
+# Reduzierte PoW für Alpine Performance
+defaultnoncetrialsperbyte = 320      # Standard PoW
+defaultpayloadlengthextrabytes = 14000
+maxacceptablenoncetrialsperbyte = 1000000
+maxacceptablepayloadlengthextrabytes = 1000000
+usepycryptodome = true               # Python Crypto statt C
+
+# =================== SICHERHEIT ===================
 blackwhitelist = black
 socksproxytype = none
-keysencrypted = True
-messagesencrypted = True
+keysencrypted = true
+messagesencrypted = true
+ttl = 172800                         # 2 Tage (reduziert)
 
-# API Einstellungen
+# =================== API ===================
 apiinterface = 127.0.0.1
 apiport = 8442
+apienabled = true
+apiusername = username
+apipassword = password
 
-# UI Einstellungen
-timeformat = %%c
-startonlogon = False
-showtraynotifications = True
-startintray = False
-minimizeonclose = False
+# =================== UI EINSTELLUNGEN ===================
+startonlogon = false
+startintray = false
+showtraynotifications = true
 minimizetotray = false
-useidenticons = True
+minimizeonclose = false
+trayonclose = false
+useidenticons = true
 identiconsuffix = tptSRsmnXXdV
-hidetrayconnectionnotifications = true
+hidetrayconnectionnotifications = false
 userlocale = system
+timeformat = %%c
+dateformat = %%x
 
-# Proof of Work Einstellungen (reduziert für OpenBSD Performance)
-defaultnoncetrialsperbyte = 500
-defaultpayloadlengthextrabytes = 500
-maxacceptablenoncetrialsperbyte = 1000000000
-maxacceptablepayloadlengthextrabytes = 1000000000
+# =================== ALPINE DEBUGGING ===================
+logdebug = true
+lognetworkdebug = true
+logsqlitedebug = false
 
-# Versionskontrolle
+# =================== VERSION ===================
 settingsversion = 10
 
-[threads]
-receive = 1  # Reduziert für OpenBSD
+# =================== ALPINE MUSL OPTIMIERUNGEN ===================
+[alpine]
+# musl libc spezifische Optimierungen
+musl_threading = 1                   # Single-threaded musl mode
+musl_dns_fallback = true             # Fallback DNS bei musl Fehlern
+musl_socket_buffer = 8192            # Größerer Buffer für musl
+musl_network_retry = 3               # Wiederholungsversuche
 
-[network]
-bind = 0.0.0.0
-dandelion = 60  # Reduziert für bessere Stabilität
+# Container/VM Optimierungen
+container_mode = true                Alpine läuft oft in Containern
+vm_optimized = true                  # VM-spezifische Optimierungen
 
+# =================== INVENTORY ===================
 [inventory]
 storage = sqlite
-acceptmismatch = False
+maxsize = 500                        # Reduzierte Inventory Größe
+acceptmismatch = false
+cleanonstartup = true                # Beim Start aufräumen
 
-[knownnodes]
-maxnodes = 2000  # Reduziert für OpenBSD
+# =================== NETZWERK TIMEOUTS ===================
+[networktimeouts]
+# Längere Timeouts für Alpine/musl
+initial = 60
+established = 300
+ping = 120
+bootstrap = 180
 
-[zlib]
-maxsize = 524288  # Halbiert für OpenBSD Performance
+# =================== STATISCHE ROUTEN ===================
+[staticroutes]
+# Für statisches Netzwerk
+192.168.8.0/24 = 192.168.8.1
+default = 192.168.8.1
 
-# OpenBSD-spezifische Optimierungen
-[openbsd]
-# Vermeidet bestimmte System calls die Probleme verursachen
-usegetifaddrs = false
-# Alternative DNS Resolution
-usednspython = true
-# Socket Timeouts anpassen
-sockettimeout = 30
-connectiontimeout = 45
+# =================== ALPINE RESOLV.CONF ===================
+[dnsresolvers]
+# Exakte musl DNS Konfiguration
+primary = 1.1.1.1
+secondary = 1.0.0.1  
+timeout = 5
+attempts = 2
+rotate = true                        # DNS Rotation für musl
+
+# =================== PERFORMANCE TWEAKS ===================
+[performance]
+# Alpine/musl Performance Optimierungen
+sqlite_cache_size = 2000
+sqlite_page_size = 4096
+sqlite_journal_mode = WAL
+python_gc_threshold = (700, 10, 10)  # Aggressive GC für Alpine

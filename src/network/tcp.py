@@ -5,12 +5,10 @@ TCP protocol handler
 
 import logging
 import math
-import helper_random as random
+import random
 import socket
 import time
 import six
-import errno
-import sys
 
 # magic imports!
 import addresses
@@ -33,7 +31,6 @@ from network.socks4a import Socks4aConnection
 from network.socks5 import Socks5Connection
 from network.tls import TLSDispatcher
 from .node import Peer
-from .helpers import is_openbsd, openbsd_socket_compat, get_socket_family
 
 
 logger = logging.getLogger('default')
@@ -55,153 +52,85 @@ class TCPConnection(BMProto, TLSDispatcher):
     .. todo:: Look to understand and/or fix the non-parent-init-called
     """
 
-class TCPConnection(BMProto, TLSDispatcher):
-    # pylint: disable=too-many-instance-attributes
-    """
-    .. todo:: Look to understand and/or fix the non-parent-init-called
-    """
-
     def __init__(self, address=None, sock=None):
-        logger.debug("DEBUG: Initializing TCPConnection with address: %s, sock: %s", address, sock)
         BMProto.__init__(self, address=address, sock=sock)
         self.verackReceived = False
         self.verackSent = False
         self.streams = [0]
         self.fullyEstablished = False
         self.skipUntil = 0
-        
         if address is None and sock is not None:
             self.destination = Peer(*sock.getpeername())
             self.isOutbound = False
             TLSDispatcher.__init__(self, sock, server_side=True)
             self.connectedAt = time.time()
             logger.debug(
-                'DEBUG: Received inbound connection from %s:%i',
+                'Received connection from %s:%i',
                 self.destination.host, self.destination.port)
             self.nodeid = randomBytes(8)
-            logger.debug("DEBUG: Generated nodeid: %s", self.nodeid)
         elif address is not None and sock is not None:
             TLSDispatcher.__init__(self, sock, server_side=False)
             self.isOutbound = True
             logger.debug(
-                'DEBUG: Outbound proxy connection to %s:%i',
+                'Outbound proxy connection to %s:%i',
                 self.destination.host, self.destination.port)
         else:
             self.destination = address
             self.isOutbound = True
-            
-            # ✅ KORREKT: Verwende address.host statt undefiniertem 'host'
-            bind_host = address.host if address and address.host else "0.0.0.0"
-            if bind_host is None:
-                bind_host = "0.0.0.0"  # OpenBSD Fix
-            
-            socket_family = get_socket_family(bind_host)
-            logger.debug("DEBUG: Creating new socket with family: %s for host: %s", socket_family, bind_host)
-            
-            # Socket erstellen mit Fallback-Mechanismus
-            socket_created = False
-            families_to_try = [socket_family]
-            
-            # Fallback auf IPv4 wenn die gewünschte Family nicht unterstützt wird
-            if socket_family != socket.AF_INET:
-                families_to_try.append(socket.AF_INET)
-            
-            for family in families_to_try:
-                try:
-                    self.create_socket(family, socket.SOCK_STREAM)
-                    socket_created = True
-                    logger.debug("DEBUG: Successfully created socket with family: %s", family)
-                    break
-                except (socket.error, OSError) as e:
-                    if e.errno == errno.EAFNOSUPPORT and family != families_to_try[-1]:
-                        logger.debug("DEBUG: Address family %s not supported, trying next", family)
-                        continue
-                    else:
-                        raise
-            
-            if not socket_created:
-                raise socket.error("Failed to create socket with any supported family")
-            
-            # OpenBSD-spezifische Socket-Kompatibilität
-            if is_openbsd():
-                logger.debug("DEBUG: Applying OpenBSD socket compatibility fix")
-                original_socket = self.socket
-                self.socket = openbsd_socket_compat(original_socket)
-                # Stelle sicher, dass der modifizierte Socket in der Parent-Klasse registriert wird
-                self._set_socket(self.socket)
-            
+            self.create_socket(
+                socket.AF_INET6 if ":" in address.host else socket.AF_INET,
+                socket.SOCK_STREAM)
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            TLSDispatcher.__init__(self, self.socket, server_side=False)
-            logger.debug(
-                'DEBUG: Connecting to %s:%i',
-                self.destination.host, self.destination.port)
+            TLSDispatcher.__init__(self, sock, server_side=False)
             self.connect(self.destination)
-            
+            logger.debug(
+                'Connecting to %s:%i',
+                self.destination.host, self.destination.port)
         try:
             self.local = (
                 protocol.checkIPAddress(
                     protocol.encodeHost(self.destination.host), True)
                 and not protocol.checkSocksIP(self.destination.host)
             )
-            logger.debug("DEBUG: Local connection check: %s", self.local)
-        except (socket.error, OSError) as e:
-            logger.debug("DEBUG: Socket error during local check: %s", e)
+        except socket.error:
+            # it's probably a hostname
             pass
-            
         self.network_group = protocol.network_group(self.destination.host)
-        logger.debug("DEBUG: Network group: %s", self.network_group)
-        
         ObjectTracker.__init__(self)  # pylint: disable=non-parent-init-called
         self.bm_proto_reset()
-        self.set_state("init", expectBytes=0)  # Starte mit init state
-        logger.debug("DEBUG: TCPConnection initialization complete")
-
-    # Füge die fehlenden State-Methoden hinzu
-    def state_init(self):
-        """Handle initial connection state"""
-        logger.debug("DEBUG: In state_init, transitioning to bm_header")
-        self.set_state("bm_header", expectBytes=24)
-        return True
-
-    def state_established(self):
-        """Handle established connection state - fallback"""
-        logger.debug("DEBUG: In state_established, transitioning to bm_header")
-        self.set_state("bm_header", expectBytes=24)
-        return True
-
-    def state_idle(self):
-        """Idle state handler"""
-        logger.debug("DEBUG: In idle state, waiting for data")
-        return len(self.read_buf) > 0
-
-    def state_close(self):
-        """Close state handler"""
-        logger.debug("DEBUG: In close state, shutting down")
-        self.handle_close()
-        return False
+        self.set_state("bm_header", expectBytes=protocol.Header.size)
 
     def antiIntersectionDelay(self, initial=False):
         """
         This is a defense against the so called intersection attacks.
+
+        It is called when you notice peer is requesting non-existing
+        objects, or right after the connection is established. It will
+        estimate how long an object will take to propagate across the
+        network, and skip processing "getdata" requests until then. This
+        means an attacker only has one shot per IP to perform the attack.
         """
-        logger.debug("DEBUG: Calculating antiIntersectionDelay (initial: %s)", initial)
+        # estimated time for a small object to propagate across the
+        # whole network
         max_known_nodes = max(
             len(knownnodes.knownNodes[x]) for x in knownnodes.knownNodes)
         delay = math.ceil(math.log(max_known_nodes + 2, 20)) * (
             0.2 + invQueue.queueCount / 2.0)
-            
-        logger.debug("DEBUG: Calculated delay: %.2f seconds", delay)
-        
+        # take the stream with maximum amount of nodes
+        # +2 is to avoid problems with log(0) and log(1)
+        # 20 is avg connected nodes count
+        # 0.2 is avg message transmission time
         if delay > 0:
             if initial:
                 self.skipUntil = self.connectedAt + delay
                 if self.skipUntil > time.time():
                     logger.debug(
-                        'DEBUG: Initial skipping processing getdata for %.2fs',
+                        'Initial skipping processing getdata for %.2fs',
                         self.skipUntil - time.time())
             else:
                 logger.debug(
-                    'DEBUG: Skipping processing getdata due to missing object for %.2fs', delay)
+                    'Skipping processing getdata due to missing object'
+                    ' for %.2fs', delay)
                 self.skipUntil = time.time() + delay
 
     def checkTimeOffsetNotification(self):
@@ -209,9 +138,9 @@ class TCPConnection(BMProto, TLSDispatcher):
         Check if we have connected to too many nodes which have too high
         time offset from us
         """
-        logger.debug("DEBUG: Checking time offset notification")
-        if BMProto.timeOffsetWrongCount > maximumTimeOffsetWrongCount and not self.fullyEstablished:
-            logger.debug("DEBUG: Too many wrong time offsets, showing warning")
+        if BMProto.timeOffsetWrongCount > \
+                maximumTimeOffsetWrongCount and \
+                not self.fullyEstablished:
             UISignalQueue.put((
                 'updateStatusBar',
                 _translate(
@@ -223,8 +152,9 @@ class TCPConnection(BMProto, TLSDispatcher):
     def state_connection_fully_established(self):
         """
         State after the bitmessage protocol handshake is completed
+        (version/verack exchange, and if both side support TLS,
+        the TLS handshake as well).
         """
-        logger.debug("DEBUG: Connection fully established")
         self.set_connection_fully_established()
         self.set_state("bm_header")
         self.bm_proto_reset()
@@ -232,38 +162,31 @@ class TCPConnection(BMProto, TLSDispatcher):
 
     def set_connection_fully_established(self):
         """Initiate inventory synchronisation."""
-        logger.debug("DEBUG: Setting connection as fully established")
         if not self.isOutbound and not self.local:
             state.clientHasReceivedIncomingConnections = True
             UISignalQueue.put(('setStatusIcon', 'green'))
-            logger.debug("DEBUG: Updated status icon to green")
-            
         UISignalQueue.put((
             'updateNetworkStatusTab', (self.isOutbound, True, self.destination)
         ))
-        logger.debug("DEBUG: Updated network status tab")
-        
         self.antiIntersectionDelay(True)
         self.fullyEstablished = True
-        
+        # The connection having host suitable for knownnodes
         if self.isOutbound or not self.local and not state.socksIP:
-            logger.debug("DEBUG: Updating known nodes for %s:%i", 
-                        self.destination.host, self.destination.port)
             knownnodes.increaseRating(self.destination)
             knownnodes.addKnownNode(
                 self.streams, self.destination, time.time())
             dandelion_ins.maybeAddStem(self, invQueue)
-            
         self.sendAddr()
         self.sendBigInv()
-        logger.debug("DEBUG: Sent addr and bigInv messages")
 
     def sendAddr(self):
         """Send a partial list of known addresses to peer."""
-        logger.debug("DEBUG: Preparing to send addr message")
+        # We are going to share a maximum number of 1000 addrs (per overlapping
+        # stream) with our peer. 500 from overlapping streams, 250 from the
+        # left child stream, and 250 from the right child stream.
         maxAddrCount = config.safeGetInt(
             "bitmessagesettings", "maxaddrperstreamsend", 500)
-            
+
         templist = []
         addrs = {}
         for stream in self.streams:
@@ -271,26 +194,24 @@ class TCPConnection(BMProto, TLSDispatcher):
                 for n, s in enumerate((stream, stream * 2, stream * 2 + 1)):
                     nodes = knownnodes.knownNodes.get(s)
                     if not nodes:
-                        logger.debug("DEBUG: No nodes for stream %s", s)
                         continue
-                        
+                    # only if more recent than 3 hours
+                    # and having positive or neutral rating
                     filtered = [
                         (k, v) for k, v in six.iteritems(nodes)
-                        if v["lastseen"] > int(time.time()) - maximumAgeOfNodesThatIAdvertiseToOthers
+                        if v["lastseen"] > int(time.time())
+                        - maximumAgeOfNodesThatIAdvertiseToOthers
                         and v["rating"] >= 0 and not _ends_with(k.host, '.onion')
                     ]
+                    # sent 250 only if the remote isn't interested in it
                     elemCount = min(
                         len(filtered),
                         maxAddrCount / 2 if n else maxAddrCount)
                     addrs[s] = random.sample(filtered, elemCount)
-                    logger.debug("DEBUG: Selected %d nodes for stream %s", elemCount, s)
-                    
         for substream in addrs:
             for peer, params in addrs[substream]:
                 templist.append((substream, peer, params["lastseen"]))
-                
         if templist:
-            logger.debug("DEBUG: Sending %d addr entries", len(templist))
             self.append_write_buf(protocol.assembleAddrMessage(templist))
 
     def sendBigInv(self):
@@ -298,58 +219,58 @@ class TCPConnection(BMProto, TLSDispatcher):
         Send hashes of all inventory objects, chunked as the protocol has
         a per-command limit.
         """
-        logger.debug("DEBUG: Preparing to send bigInv message")
-        
         def sendChunk():
             """Send one chunk of inv entries in one command"""
             if objectCount == 0:
-                logger.debug("DEBUG: No objects to send in this chunk")
                 return
             logger.debug(
-                'DEBUG: Sending inv message with %i objects', objectCount)
+                'Sending huge inv message with %i objects to just this'
+                ' one peer', objectCount)
             self.append_write_buf(protocol.CreatePacket(
                 b'inv', addresses.encodeVarint(objectCount) + payload))
 
+        # Select all hashes for objects in this stream.
         bigInvList = {}
         for stream in self.streams:
+            # may lock for a long time, but I think it's better than
+            # thousands of small locks
             with self.objectsNewToThemLock:
                 for objHash in state.Inventory.unexpired_hashes_by_stream(stream):
+                    # don't advertise stem objects on bigInv
                     if dandelion_ins.hasHash(objHash):
-                        logger.debug("DEBUG: Skipping stem object %s", objHash)
                         continue
                     bigInvList[objHash] = 0
-                    
         objectCount = 0
         payload = b''
-        
+        # Now let us start appending all of these hashes together.
+        # They will be sent out in a big inv message to our new peer.
         for obj_hash, _ in bigInvList.items():
             payload += obj_hash
             objectCount += 1
 
+            # Remove -1 below when sufficient time has passed for users to
+            # upgrade to versions of PyBitmessage that accept inv with 50,000
+            # items
             if objectCount >= protocol.MAX_OBJECT_COUNT - 1:
-                logger.debug("DEBUG: Sending full chunk of %d objects", objectCount)
                 sendChunk()
                 payload = b''
                 objectCount = 0
 
+        # flush
         sendChunk()
-        logger.debug("DEBUG: Finished sending bigInv message")
 
     def handle_connect(self):
         """Callback for TCP connection being established."""
-        logger.debug("DEBUG: Handling TCP connection")
         try:
             AdvancedDispatcher.handle_connect(self)
-        except (socket.error, OSError) as e:
+        except socket.error as e:
+            # pylint: disable=protected-access
             if e.errno in asyncore._DISCONNECTED:
                 logger.debug(
-                    'DEBUG: %s:%i: Connection failed: %s',
+                    '%s:%i: Connection failed: %s',
                     self.destination.host, self.destination.port, e)
                 return
-                
         self.nodeid = randomBytes(8)
-        logger.debug("DEBUG: Generated new nodeid: %s", self.nodeid)
-        
         self.append_write_buf(
             protocol.assembleVersionMessage(
                 self.destination.host, self.destination.port,
@@ -357,76 +278,56 @@ class TCPConnection(BMProto, TLSDispatcher):
                 False, nodeid=self.nodeid))
         self.connectedAt = time.time()
         receiveDataQueue.put(self.destination)
-        logger.debug("DEBUG: Sent version message and queued destination")
 
     def handle_read(self):
         """Callback for reading from a socket"""
-        logger.debug("DEBUG: Handling TCP read")
         TLSDispatcher.handle_read(self)
         receiveDataQueue.put(self.destination)
-        logger.debug("DEBUG: Queued destination after read")
 
     def handle_write(self):
         """Callback for writing to a socket"""
-        logger.debug("DEBUG: Handling TCP write")
         TLSDispatcher.handle_write(self)
 
     def handle_close(self):
         """Callback for connection being closed."""
-        logger.debug("DEBUG: Handling TCP connection close")
         host_is_global = self.isOutbound or not self.local and not state.socksIP
-        logger.debug("DEBUG: host_is_global: %s", host_is_global)
-        
         if self.fullyEstablished:
-            logger.debug("DEBUG: Connection was fully established")
             UISignalQueue.put((
                 'updateNetworkStatusTab',
                 (self.isOutbound, False, self.destination)
             ))
             if host_is_global:
-                logger.debug("DEBUG: Updating known nodes on close")
                 knownnodes.addKnownNode(
                     self.streams, self.destination, time.time())
                 dandelion_ins.maybeRemoveStem(self)
         else:
-            logger.debug("DEBUG: Connection was not fully established")
             self.checkTimeOffsetNotification()
             if host_is_global:
-                logger.debug("DEBUG: Decreasing rating for failed connection")
                 knownnodes.decreaseRating(self.destination)
-                
         BMProto.handle_close(self)
-        logger.debug("DEBUG: Connection close handling complete")
 
 
 class Socks5BMConnection(Socks5Connection, TCPConnection):
     """SOCKS5 wrapper for TCP connections"""
 
     def __init__(self, address):
-        logger.debug("DEBUG: Initializing Socks5BMConnection to %s:%i", 
-                    address.host, address.port)
         Socks5Connection.__init__(self, address=address)
         TCPConnection.__init__(self, address=address, sock=self.socket)
         self.set_state("init")
-        logger.debug("DEBUG: Socks5BMConnection initialized")
 
     def state_proxy_handshake_done(self):
         """
         State when SOCKS5 connection succeeds, we need to send a
         Bitmessage handshake to peer.
         """
-        logger.debug("DEBUG: SOCKS5 handshake done, proceeding to BM handshake")
         Socks5Connection.state_proxy_handshake_done(self)
         self.nodeid = randomBytes(8)
-        logger.debug("DEBUG: Generated nodeid: %s", self.nodeid)
-        
         self.append_write_buf(
             protocol.assembleVersionMessage(
                 self.destination.host, self.destination.port,
                 network.connectionpool.pool.streams, dandelion_ins.enabled,
                 False, nodeid=self.nodeid))
         self.set_state("bm_header", expectBytes=protocol.Header.size)
-        logger.debug("DEBUG: Sent version message and set BM header state")
         return True
 
 
@@ -434,61 +335,49 @@ class Socks4aBMConnection(Socks4aConnection, TCPConnection):
     """SOCKS4a wrapper for TCP connections"""
 
     def __init__(self, address):
-        logger.debug("DEBUG: Initializing Socks4aBMConnection to %s:%i", 
-                    address.host, address.port)
         Socks4aConnection.__init__(self, address=address)
         TCPConnection.__init__(self, address=address, sock=self.socket)
         self.set_state("init")
-        logger.debug("DEBUG: Socks4aBMConnection initialized")
 
     def state_proxy_handshake_done(self):
         """
         State when SOCKS4a connection succeeds, we need to send a
         Bitmessage handshake to peer.
         """
-        logger.debug("DEBUG: SOCKS4a handshake done, proceeding to BM handshake")
         Socks4aConnection.state_proxy_handshake_done(self)
         self.nodeid = randomBytes(8)
-        logger.debug("DEBUG: Generated nodeid: %s", self.nodeid)
-        
         self.append_write_buf(
             protocol.assembleVersionMessage(
                 self.destination.host, self.destination.port,
                 network.connectionpool.pool.streams, dandelion_ins.enabled,
                 False, nodeid=self.nodeid))
         self.set_state("bm_header", expectBytes=protocol.Header.size)
-        logger.debug("DEBUG: Sent version message and set BM header state")
         return True
 
 
 def bootstrap(connection_class):
     """Make bootstrapper class for connection type (connection_class)"""
-    logger.debug("DEBUG: Creating bootstrapper for connection class: %s", connection_class)
-    
     class Bootstrapper(connection_class):
         """Base class for bootstrappers"""
         _connection_base = connection_class
 
         def __init__(self, host, port):
-            logger.debug("DEBUG: Initializing Bootstrapper to %s:%i", host, port)
             self._connection_base.__init__(self, Peer(host, port))
             self.close_reason = self._succeed = False
-            logger.debug("DEBUG: Bootstrapper initialized")
 
         def bm_command_addr(self):
             """
             Got addr message - the bootstrap succeed.
+            Let BMProto process the addr message and switch state to 'close'
             """
-            logger.debug("DEBUG: Received addr message, bootstrap succeeded")
             BMProto.bm_command_addr(self)
             self._succeed = True
             self.close_reason = "Thanks for bootstrapping!"
             self.set_state("close")
-            logger.debug("DEBUG: Set state to close")
 
         def set_connection_fully_established(self):
             """Only send addr here"""
-            logger.debug("DEBUG: Bootstrapper connection established")
+            # pylint: disable=attribute-defined-outside-init
             self.fullyEstablished = True
             self.sendAddr()
 
@@ -497,11 +386,9 @@ def bootstrap(connection_class):
             After closing the connection switch knownnodes.knownNodesActual
             back to False if the bootstrapper failed.
             """
-            logger.debug("DEBUG: Bootstrapper closing, success: %s", self._succeed)
             BMProto.handle_close(self)
             if not self._succeed:
                 knownnodes.knownNodesActual = False
-                logger.debug("DEBUG: Marked knownNodes as not actual")
 
     return Bootstrapper
 
@@ -510,121 +397,59 @@ class TCPServer(AdvancedDispatcher):
     """TCP connection server for Bitmessage protocol"""
 
     def __init__(self, host='127.0.0.1', port=8444):
-        logger.debug("DEBUG: Initializing TCPServer on %s:%i", host, port)
-
         if not hasattr(self, '_map'):
             AdvancedDispatcher.__init__(self)
-            
-        # ✅ KORREKT: Host-Parameter verwenden, nicht undefinierte Variable
-        if host is None:
-            host = "0.0.0.0"  # OpenBSD Fix
-        
-        socket_family = get_socket_family(host)
-        logger.debug("DEBUG: Creating server socket with family: %s", socket_family)
-        
-        
-        # Socket mit Fallback-Mechanismus erstellen
-        socket_created = False
-        families_to_try = [socket_family]
-        
-        if socket_family != socket.AF_INET:
-            families_to_try.append(socket.AF_INET)
-        
-        for family in families_to_try:
-            try:
-                self.create_socket(family, socket.SOCK_STREAM)
-                socket_created = True
-                logger.debug("DEBUG: Successfully created server socket with family: %s", family)
-                break
-            except (socket.error, OSError) as e:
-                if e.errno == errno.EAFNOSUPPORT and family != families_to_try[-1]:
-                    logger.debug("DEBUG: Address family %s not supported for server, trying next", family)
-                    continue
-                else:
-                    raise
-        
-        if not socket_created:
-            raise socket.error("Failed to create server socket with any supported family")
-        
-        # OpenBSD-spezifische Socket-Kompatibilität
-        if is_openbsd():
-            logger.debug("DEBUG: Applying OpenBSD socket compatibility fix to server")
-            original_socket = self.socket
-            self.socket = openbsd_socket_compat(original_socket)
-            self._set_socket(self.socket)
-        
+        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.set_reuse_addr()
-        
         for attempt in range(50):
             try:
                 if attempt > 0:
-                    logger.warning('DEBUG: Failed to bind on port %s, trying random port', port)
+                    logger.warning('Failed to bind on port %s', port)
                     port = random.randint(32767, 65535)  # nosec B311
-                
-                # Versuche zu binden
                 self.bind((host, port))
-                logger.debug("DEBUG: Successfully bound to %s:%i", host, port)
+            except socket.error as e:
+                if e.errno in (asyncore.EADDRINUSE, asyncore.WSAEADDRINUSE):
+                    continue
+            else:
+                if attempt > 0:
+                    logger.warning('Setting port to %s', port)
+                    config.set(
+                        'bitmessagesettings', 'port', str(port))
+                    config.save()
                 break
-                
-            except (socket.error, OSError) as e:
-                if e.errno in (errno.EADDRINUSE, errno.EACCES):
-                    logger.debug("DEBUG: Port %i in use or access denied, retrying", port)
-                    continue
-                elif e.errno == errno.EAFNOSUPPORT:
-                    # OpenBSD-spezifisch: Address family not supported
-                    logger.debug("DEBUG: Address family not supported, trying IPv4 fallback")
-                    self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-                    if is_openbsd():
-                        original_socket = self.socket
-                        self.socket = openbsd_socket_compat(original_socket)
-                        self._set_socket(self.socket)
-                    continue
-                else:
-                    logger.error("DEBUG: Unexpected socket error: %s", e)
-                    raise
-        else:
-            # Wenn alle 50 Versuche fehlschlagen
-            raise Exception("Failed to bind to any port after 50 attempts")
-                
         self.destination = Peer(host, port)
         self.bound = True
         self.listen(5)
-        logger.debug("DEBUG: TCPServer initialized and listening")
 
     def is_bound(self):
         """Is the socket bound?"""
         try:
-            result = self.bound
+            return self.bound
         except AttributeError:
-            result = False
-        logger.debug("DEBUG: is_bound check: %s", result)
-        return result
+            return False
 
     def handle_accept(self):
         """Incoming connection callback"""
-        logger.debug("DEBUG: Handling incoming connection")
         try:
             sock = self.accept()[0]
-            logger.debug("DEBUG: Accepted connection from %s", sock.getpeername())
-        except (TypeError, IndexError) as e:
-            logger.debug("DEBUG: Accept failed: %s", e)
+        except (TypeError, IndexError):
             return
 
         state.ownAddresses[Peer(*sock.getsockname())] = True
-        current_connections = len(network.connectionpool.pool)
-        max_connections = config.safeGetInt('bitmessagesettings', 'maxtotalconnections') + \
-                         config.safeGetInt('bitmessagesettings', 'maxbootstrapconnections') + 10
-                         
-        logger.debug("DEBUG: Current connections: %d, max: %d", current_connections, max_connections)
-        
-        if current_connections > max_connections:
-            logger.warning("DEBUG: Server full, dropping connection")
+        if (
+            len(network.connectionpool.pool)
+            > config.safeGetInt(
+                'bitmessagesettings', 'maxtotalconnections')
+                + config.safeGetInt(
+                    'bitmessagesettings', 'maxbootstrapconnections') + 10
+        ):
+            # 10 is a sort of buffer, in between it will go through
+            # the version handshake and return an error to the peer
+            logger.warning("Server full, dropping connection")
             sock.close()
             return
-            
         try:
-            network.connectionpool.pool.addConnection(TCPConnection(sock=sock))
-            logger.debug("DEBUG: Successfully added new connection to pool")
-        except (socket.error, OSError) as e:
-            logger.debug("DEBUG: Error adding connection to pool: %s", e)
+            network.connectionpool.pool.addConnection(
+                TCPConnection(sock=sock))
+        except socket.error:
             pass

@@ -200,9 +200,9 @@ class Dandelion:  # pylint: disable=old-style-class
 
         with self.lock:
             try:
-                # Keine Sortierung nötig, sample funktioniert auch mit unsortierter Liste
-                connections = list(self.pool.outboundConnections.values())
-                self.stem = sample(connections, min(MAX_STEMS, len(connections)))
+                # random two connections
+                self.stem = sample(
+                    sorted(self.pool.outboundConnections.values()), MAX_STEMS)
             # not enough stems available
             except ValueError:
                 self.stem = list(self.pool.outboundConnections.values())

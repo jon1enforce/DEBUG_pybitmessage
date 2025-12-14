@@ -156,16 +156,11 @@ class sqlThread(threading.Thread):
         if isinstance(params, (list, tuple)):
             fixed = []
             for param in params:
-                if isinstance(param, str) and hasattr(sqlite3, 'Binary'):
-                    try:
-                        fixed.append(sqlite3.Binary(param.encode('utf-8')))
-                    except UnicodeEncodeError:
-                        try:
-                            fixed.append(sqlite3.Binary(param.encode('latin-1')))
-                        except:
-                            fixed.append(param)
-                else:
-                    fixed.append(param)
+                # KORREKTUR: Diese Logik ist FALSCH und verursacht das Problem!
+                # Sie konvertiert ALLE Strings zu Bytes, aber TEXT-Spalten sollten Strings bleiben.
+                # Wir entfernen diese Konvertierung komplett.
+                # Der aufrufende Code ist dafür verantwortlich, korrekte Typen zu liefern.
+                fixed.append(param)
             
             return tuple(fixed) if isinstance(params, tuple) else fixed
         

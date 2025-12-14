@@ -119,7 +119,7 @@ class smtpServerPyBitmessage(smtpd.SMTPServer):
                 int(time.time()),  # sentTime (this will never change)
                 int(time.time()),  # lastActionTime
                 0,  # sleepTill time. This will get set when the POW gets done.
-                dbstr('msgqueued'),
+                'msgqueued',  # KORREKTUR: Direkt als String, nicht dbstr('msgqueued')
                 0,  # retryNumber
                 dbstr('sent'),  # folder
                 2,  # encodingtype

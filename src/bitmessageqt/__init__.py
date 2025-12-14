@@ -1011,11 +1011,12 @@ class MyForm(settingsmixin.SMainWindow):
                 related = None
             
             # Find matching row in related widget
-            if related and msgid:  # WICHTIG: msgid prüfen
+            if related and msgid:
                 for r in range(related.rowCount()):
                     try:
                         item = related.item(r, 3)
                         if item:
+                            # KORREKTUR: data() mit QtCore.Qt.UserRole
                             item_data = item.data(QtCore.Qt.UserRole)
                             if item_data and as_msgid(item_data) == msgid:
                                 rrow = r
@@ -1223,9 +1224,27 @@ class MyForm(settingsmixin.SMainWindow):
         sortingEnabled = tableWidget.isSortingEnabled()
         if sortingEnabled:
             tableWidget.setSortingEnabled(False)
-        tableWidget.insertRow(0)
+        
+        row_position = tableWidget.rowCount()
+        tableWidget.insertRow(row_position)
+        
         for i, item in enumerate(items):
-            tableWidget.setItem(0, i, item)
+            tableWidget.setItem(row_position, i, item)
+            
+            # KORREKTUR: Für Custom Widgets sicherstellen, dass Daten gesetzt sind
+            if hasattr(item, 'address'):
+                # MessageList_AddressWidget
+                if item.data(QtCore.Qt.UserRole) is None:
+                    item.setData(QtCore.Qt.UserRole, item.address)
+            elif hasattr(item, 'subject'):
+                # MessageList_SubjectWidget
+                if item.data(QtCore.Qt.UserRole) is None:
+                    item.setData(QtCore.Qt.UserRole, item.subject)
+            elif hasattr(item, 'msgid'):
+                # MessageList_TimeWidget
+                if item.data(QtCore.Qt.UserRole) is None:
+                    item.setData(QtCore.Qt.UserRole, item.msgid)
+        
         if sortingEnabled:
             tableWidget.setSortingEnabled(True)
 
@@ -3764,26 +3783,65 @@ class MyForm(settingsmixin.SMainWindow):
         column_from = 0 if reply_type == self.REPLY_TYPE_UPD else 1
 
         currentInboxRow = tableWidget.currentRow()
-        toAddressAtCurrentInboxRow = tableWidget.item(
-            currentInboxRow, column_to).address
+        if currentInboxRow < 0:
+            return
+        
+        # KORREKTUR 1: Adresse aus Daten holen, nicht aus address-Attribut
+        to_item = tableWidget.item(currentInboxRow, column_to)
+        from_item = tableWidget.item(currentInboxRow, column_from)
+        subject_item = tableWidget.item(currentInboxRow, 2)
+        msgid_item = tableWidget.item(currentInboxRow, 3)
+        
+        if not to_item or not from_item or not subject_item or not msgid_item:
+            return
+        
+        # Adressen aus UserRole holen
+        toAddressAtCurrentInboxRow = to_item.data(QtCore.Qt.UserRole)
+        fromAddressAtCurrentInboxRow = from_item.data(QtCore.Qt.UserRole)
+        subject_data = subject_item.data(QtCore.Qt.UserRole)
+        msgid_data = msgid_item.data(QtCore.Qt.UserRole)
+        
+        # KORREKTUR 2: Konvertiere Bytes zu String falls nötig
+        def safe_decode(data):
+            if data is None:
+                return ""
+            if isinstance(data, bytes):
+                return data.decode("utf-8", "replace")
+            elif isinstance(data, bytearray):
+                return bytes(data).decode("utf-8", "replace")
+            else:
+                return str(data)
+        
+        toAddressAtCurrentInboxRow = safe_decode(toAddressAtCurrentInboxRow)
+        fromAddressAtCurrentInboxRow = safe_decode(fromAddressAtCurrentInboxRow)
+        subject = safe_decode(subject_data)
+        msgid = as_msgid(msgid_data)
+        
+        # KORREKTUR 3: Labels aus Text holen (falls Custom Widget nicht verfügbar)
+        to_label = to_item.text() if hasattr(to_item, 'text') else toAddressAtCurrentInboxRow
+        from_label = from_item.text() if hasattr(from_item, 'text') else fromAddressAtCurrentInboxRow
+        subject_label = subject_item.text() if hasattr(subject_item, 'text') else subject
+        
         acct = accountClass(toAddressAtCurrentInboxRow)
-        fromAddressAtCurrentInboxRow = tableWidget.item(
-            currentInboxRow, column_from).address
-        msgid = as_msgid(tableWidget.item(currentInboxRow, 3).data())
-        queryreturn = sqlQuery(
-            "SELECT message FROM inbox WHERE msgid=?", sqlite3.Binary(msgid)
-        ) or sqlQuery("SELECT message FROM sent WHERE ackdata=?", sqlite3.Binary(msgid))
-        if len(queryreturn) < 1:
+        
+        # Nachricht aus Datenbank holen
+        messageAtCurrentInboxRow = ""
+        if msgid:
             queryreturn = sqlQuery(
-                "SELECT message FROM inbox WHERE msgid=CAST(? AS TEXT)", msgid
-            ) or sqlQuery("SELECT message FROM sent WHERE ackdata=CAST(? AS TEXT)", msgid)
-        if queryreturn != []:
-            for row in queryreturn:
-                messageAtCurrentInboxRow, = row
-            messageAtCurrentInboxRow = messageAtCurrentInboxRow.decode("utf-8", "replace")
+                "SELECT message FROM inbox WHERE msgid=?", sqlite3.Binary(msgid)
+            ) or sqlQuery("SELECT message FROM sent WHERE ackdata=?", sqlite3.Binary(msgid))
+            if len(queryreturn) < 1:
+                queryreturn = sqlQuery(
+                    "SELECT message FROM inbox WHERE msgid=CAST(? AS TEXT)", msgid
+                ) or sqlQuery("SELECT message FROM sent WHERE ackdata=CAST(? AS TEXT)", msgid)
+            if queryreturn != []:
+                for row in queryreturn:
+                    message_data, = row
+                    messageAtCurrentInboxRow = safe_decode(message_data)
+        
         acct.parseMessage(
             toAddressAtCurrentInboxRow, fromAddressAtCurrentInboxRow,
-            tableWidget.item(currentInboxRow, 2).subject,
+            subject,
             messageAtCurrentInboxRow
         )
         widget = {
@@ -3796,7 +3854,6 @@ class MyForm(settingsmixin.SMainWindow):
             self.ui.tabWidgetSend.setCurrentIndex(
                 self.ui.tabWidgetSend.indexOf(self.ui.sendDirect)
             )
-#            toAddressAtCurrentInboxRow = fromAddressAtCurrentInboxRow
         elif not config.has_section(toAddressAtCurrentInboxRow):
             QtWidgets.QMessageBox.information(
                 self,
@@ -3807,6 +3864,7 @@ class MyForm(settingsmixin.SMainWindow):
                     " removed it?"
                 ).format(toAddressAtCurrentInboxRow),
                 QtWidgets.QMessageBox.Ok)
+            return
         elif not config.getboolean(
                 toAddressAtCurrentInboxRow, 'enabled'):
             QtWidgets.QMessageBox.information(
@@ -3818,6 +3876,7 @@ class MyForm(settingsmixin.SMainWindow):
                     " is disabled. You\'ll have to enable it on the \'Your"
                     " Identities\' tab before using it."
                 ), QtWidgets.QMessageBox.Ok)
+            return
         else:
             self.setBroadcastEnablementDependingOnWhetherThisIsAMailingListAddress(toAddressAtCurrentInboxRow)
             broadcast_tab_index = self.ui.tabWidgetSend.indexOf(
@@ -3831,15 +3890,22 @@ class MyForm(settingsmixin.SMainWindow):
                 }
                 self.ui.tabWidgetSend.setCurrentIndex(broadcast_tab_index)
                 toAddressAtCurrentInboxRow = fromAddressAtCurrentInboxRow
-        if fromAddressAtCurrentInboxRow == \
-            tableWidget.item(currentInboxRow, column_from).label or (
+        
+        # KORREKTUR 4: Label-Vergleich mit Text statt Attribut
+        if fromAddressAtCurrentInboxRow == from_label or (
                 isinstance(acct, GatewayAccount) and
                 fromAddressAtCurrentInboxRow == acct.relayAddress):
             self.ui.lineEditTo.setText(ustr(acct.fromAddress))
         else:
-            self.ui.lineEditTo.setText(
-                tableWidget.item(currentInboxRow, column_from).accountString()
-            )
+            # Versuche accountString() zu verwenden, fallback zu label
+            try:
+                # Prüfe ob das Item eine accountString()-Methode hat
+                if hasattr(from_item, 'accountString'):
+                    self.ui.lineEditTo.setText(from_item.accountString())
+                else:
+                    self.ui.lineEditTo.setText(from_label + " <" + fromAddressAtCurrentInboxRow + ">")
+            except:
+                self.ui.lineEditTo.setText(from_label + " <" + fromAddressAtCurrentInboxRow + ">")
 
         # If the previous message was to a chan then we should send our
         # reply to the chan rather than to the particular person who sent
@@ -3848,30 +3914,33 @@ class MyForm(settingsmixin.SMainWindow):
             logger.debug(
                 'Original sent to a chan. Setting the to address in the'
                 ' reply to the chan address.')
-            if toAddressAtCurrentInboxRow == \
-                    tableWidget.item(currentInboxRow, column_to).label:
+            if toAddressAtCurrentInboxRow == to_label:
                 self.ui.lineEditTo.setText(ustr(toAddressAtCurrentInboxRow))
             else:
-                self.ui.lineEditTo.setText(
-                    tableWidget.item(currentInboxRow, column_to).accountString()
-                )
+                try:
+                    if hasattr(to_item, 'accountString'):
+                        self.ui.lineEditTo.setText(to_item.accountString())
+                    else:
+                        self.ui.lineEditTo.setText(to_label + " <" + toAddressAtCurrentInboxRow + ">")
+                except:
+                    self.ui.lineEditTo.setText(to_label + " <" + toAddressAtCurrentInboxRow + ">")
 
         self.setSendFromComboBox(toAddressAtCurrentInboxRow)
 
         quotedText = self.quoted_text(
             unic(ustr(messageAtCurrentInboxRow)))
         widget['message'].setPlainText(quotedText)
+        
+        # KORREKTUR 5: Subject-Label-Vergleich
         if acct.subject[0:3] in ('Re:', 'RE:'):
-            widget['subject'].setText(
-                tableWidget.item(currentInboxRow, 2).label)
+            widget['subject'].setText(subject_label)
         else:
-            widget['subject'].setText(
-                'Re: ' + tableWidget.item(currentInboxRow, 2).label)
+            widget['subject'].setText('Re: ' + subject_label)
+        
         self.ui.tabWidget.setCurrentIndex(
             self.ui.tabWidget.indexOf(self.ui.send)
         )
         widget['message'].setFocus()
-
     def on_action_InboxAddSenderToAddressBook(self):
         tableWidget = self.getCurrentMessagelist()
         if not tableWidget:
@@ -4090,6 +4159,7 @@ class MyForm(settingsmixin.SMainWindow):
             self.updateStatusBar(_translate("MainWindow", "Write error."))
 
     # Send item on the Sent tab to trash
+    # Send item on the Sent tab to trash
     def on_action_SentTrash(self):
         currentRow = 0
         tableWidget = self.getCurrentMessagelist()
@@ -4099,9 +4169,18 @@ class MyForm(settingsmixin.SMainWindow):
         shifted = (QtWidgets.QApplication.queryKeyboardModifiers() &
                    QtCore.Qt.ShiftModifier)
         
-        while tableWidget.selectedIndexes() != []:
-            currentRow = tableWidget.selectedIndexes()[0].row()
-            item = tableWidget.item(currentRow, 3)
+        # Hole alle ausgewählten Zeilen zuerst
+        selected_rows = []
+        for index in tableWidget.selectedIndexes():
+            row = index.row()
+            if row not in selected_rows:
+                selected_rows.append(row)
+        
+        # Sortiere absteigend, damit Zeilenindizes beim Entfernen stimmen
+        selected_rows.sort(reverse=True)
+        
+        for row in selected_rows:
+            item = tableWidget.item(row, 3)
             if item:
                 ackdataToTrash = as_msgid(item.data(QtCore.Qt.UserRole))
             else:
@@ -4120,12 +4199,22 @@ class MyForm(settingsmixin.SMainWindow):
                         " WHERE ackdata = CAST(? AS TEXT)", ackdataToTrash
                     )
                 self.getCurrentMessageTextedit().setPlainText("")
-                tableWidget.removeRow(currentRow)
-                self.updateStatusBar(_translate(
-                    "MainWindow", "Moved items to trash."))
-
-        self.ui.tableWidgetInbox.selectRow(
-            currentRow if currentRow == 0 else currentRow - 1)
+                tableWidget.removeRow(row)
+        
+        if selected_rows:
+            # Aktualisiere StatusBar nur einmal
+            self.updateStatusBar(_translate(
+                "MainWindow", "Moved items to trash."))
+            
+            # Wähle eine Zeile nach der Operation
+            new_row = selected_rows[-1] - len(selected_rows) + 1
+            if new_row < 0:
+                new_row = 0
+            elif new_row >= tableWidget.rowCount():
+                new_row = tableWidget.rowCount() - 1
+                
+            if tableWidget.rowCount() > 0:
+                self.ui.tableWidgetInbox.selectRow(new_row)
 
     def on_action_ForceSend(self):
         currentRow = self.ui.tableWidgetInbox.currentRow()
@@ -4387,18 +4476,23 @@ class MyForm(settingsmixin.SMainWindow):
 
     def getCurrentMessageId(self):
         messagelist = self.getCurrentMessagelist()
-        if messagelist:
-            currentRow = messagelist.currentRow()
-            if currentRow >= 0:
-                try:
-                    item = messagelist.item(currentRow, 3)
-                    if item:
-                        msgid_data = item.data(QtCore.Qt.UserRole)
-                        if msgid_data:
-                            return as_msgid(msgid_data)
-                except Exception as e:
-                    logger.error("Error getting message ID: %s", e)
-        return None
+        if not messagelist:
+            return None
+            
+        currentRow = messagelist.currentRow()
+        if currentRow < 0 or currentRow >= messagelist.rowCount():
+            return None
+        
+        item = messagelist.item(currentRow, 3)  # Spalte 3 enthält msgid/ackdata
+        if not item:
+            return None
+        
+        # KORREKTUR: Daten mit korrekter Rolle holen
+        item_data = item.data(QtCore.Qt.UserRole)
+        if item_data is None:
+            return None
+        
+        return as_msgid(item_data)
 
     def getCurrentMessageTextedit(self):
         currentIndex = self.ui.tabWidget.currentIndex()
@@ -5115,9 +5209,10 @@ class MyForm(settingsmixin.SMainWindow):
             msgid = self.getCurrentMessageId()
             folder = self.getCurrentFolder()
             
-            if msgid:  # WICHTIG: Nur verarbeiten wenn nicht None
+            if msgid:  # Nur verarbeiten wenn nicht None
                 try:
                     # Query database safely
+                    queryreturn = None
                     if folder == 'sent':
                         queryreturn = sqlQuery(
                             'SELECT message FROM sent WHERE ackdata=?', 
@@ -5125,7 +5220,7 @@ class MyForm(settingsmixin.SMainWindow):
                         if not queryreturn:
                             queryreturn = sqlQuery(
                                 'SELECT message FROM sent WHERE ackdata=CAST(? AS TEXT)', 
-                                msgid)
+                                str(msgid))
                     else:
                         queryreturn = sqlQuery(
                             'SELECT message FROM inbox WHERE msgid=?', 
@@ -5133,21 +5228,33 @@ class MyForm(settingsmixin.SMainWindow):
                         if not queryreturn:
                             queryreturn = sqlQuery(
                                 'SELECT message FROM inbox WHERE msgid=CAST(? AS TEXT)', 
-                                msgid)
+                                str(msgid))
 
                     # Get message content
                     message = ""
                     if queryreturn and len(queryreturn) > 0:
                         try:
-                            message = queryreturn[-1][0]
-                            if isinstance(message, bytes):
-                                message = message.decode("utf-8", "replace")
+                            message_data = queryreturn[-1][0]
+                            # KORREKTUR: Bessere Bytes zu String Konvertierung
+                            if isinstance(message_data, bytes):
+                                message = message_data.decode("utf-8", "replace")
+                            elif isinstance(message_data, bytearray):
+                                message = bytes(message_data).decode("utf-8", "replace")
+                            elif isinstance(message_data, memoryview):
+                                message = bytes(message_data).decode("utf-8", "replace")
+                            elif isinstance(message_data, str):
+                                message = message_data
                             else:
-                                message = str(message)
+                                # Fallback für andere Typen
+                                try:
+                                    message = str(message_data)
+                                except:
+                                    message = "[Binary data]"
                         except Exception as decode_err:
-                            logger.error("Error decoding message: %s", decode_err)
+                            logger.error("Error decoding message: %s, type: %s", 
+                                        decode_err, type(message_data))
                             message = _translate("MainWindow", 
-                                "Error: Could not load message from disk.")
+                                "Error: Could not decode message.")
                     else:
                         message = _translate("MainWindow", 
                             "Message not found in database.")
@@ -5155,7 +5262,7 @@ class MyForm(settingsmixin.SMainWindow):
                     # Display message
                     messageTextedit.setPlainText(message)
                     
-                    # Mark as read if unread
+                    # Mark as read if unread (nur für inbox, nicht sent)
                     if folder != 'sent':
                         tableWidget = self.getCurrentMessagelist()
                         if tableWidget:
@@ -5173,25 +5280,28 @@ class MyForm(settingsmixin.SMainWindow):
                                         try:
                                             sqlExecute(
                                                 'UPDATE inbox SET read=1 WHERE msgid=CAST(? AS TEXT) AND read=0',
-                                                msgid)
-                                        except:
-                                            pass
+                                                str(msgid))
+                                        except Exception as db_err:
+                                            logger.error("Database update error: %s", db_err)
                                             
                                     # Update UI
-                                    self.updateUnreadStatus(tableWidget, currentRow, msgid)
-                                    self.propagateUnreadCount()
+                                    try:
+                                        self.updateUnreadStatus(tableWidget, currentRow, msgid)
+                                        self.propagateUnreadCount()
+                                    except Exception as ui_err:
+                                        logger.error("UI update error: %s", ui_err)
                                     
                 except Exception as query_err:
-                    logger.error("Database query failed: %s", query_err)
+                    logger.error("Database query failed: %s", query_err, exc_info=True)
                     messageTextedit.setPlainText(
                         _translate("MainWindow", 
-                        "Error occurred: could not load message from disk."))
+                        "Database error occurred: could not load message."))
             else:
                 # No message selected
                 messageTextedit.setPlainText("")
                 
         except Exception as e:
-            logger.error("Error in tableWidgetInboxItemClicked: %s", e)
+            logger.error("Error in tableWidgetInboxItemClicked: %s", e, exc_info=True)
             try:
                 messageTextedit.setPlainText(
                     _translate("MainWindow", "Error loading message."))
