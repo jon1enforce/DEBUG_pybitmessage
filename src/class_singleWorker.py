@@ -156,38 +156,52 @@ class singleWorker(StoppableThread):
             if command == 'sendmessage':
                 try:
                     self.sendMsg()
-                except:  # noqa:E722
-                    self.logger.warning("sendMsg didn't work")
+                except Exception as e:  # Spezifische Exception fangen
+                    self.logger.error(f"sendMsg failed: {type(e).__name__}: {e}")
+                    import traceback
+                    self.logger.error(f"Full traceback:\n{traceback.format_exc()}")
             elif command == 'sendbroadcast':
                 try:
                     self.sendBroadcast()
-                except:  # noqa:E722
-                    self.logger.warning("sendBroadcast didn't work")
+                except Exception as e:  # Spezifische Exception fangen
+                    self.logger.error(f"sendBroadcast failed: {type(e).__name__}: {e}")
+                    import traceback
+                    self.logger.error(f"Full traceback:\n{traceback.format_exc()}")
             elif command == 'doPOWForMyV2Pubkey':
                 try:
                     self.doPOWForMyV2Pubkey(data)
-                except:  # noqa:E722
-                    self.logger.warning("doPOWForMyV2Pubkey didn't work")
+                except Exception as e:  # Spezifische Exception fangen
+                    self.logger.error(f"doPOWForMyV2Pubkey failed: {type(e).__name__}: {e}")
+                    import traceback
+                    self.logger.error(f"Full traceback:\n{traceback.format_exc()}")
             elif command == 'sendOutOrStoreMyV3Pubkey':
                 try:
                     self.sendOutOrStoreMyV3Pubkey(data)
-                except:  # noqa:E722
-                    self.logger.warning("sendOutOrStoreMyV3Pubkey didn't work")
+                except Exception as e:  # Spezifische Exception fangen
+                    self.logger.error(f"sendOutOrStoreMyV3Pubkey failed: {type(e).__name__}: {e}")
+                    import traceback
+                    self.logger.error(f"Full traceback:\n{traceback.format_exc()}")
             elif command == 'sendOutOrStoreMyV4Pubkey':
                 try:
                     self.sendOutOrStoreMyV4Pubkey(data)
-                except:  # noqa:E722
-                    self.logger.warning("sendOutOrStoreMyV4Pubkey didn't work")
+                except Exception as e:  # Spezifische Exception fangen
+                    self.logger.error(f"sendOutOrStoreMyV4Pubkey failed: {type(e).__name__}: {e}")
+                    import traceback
+                    self.logger.error(f"Full traceback:\n{traceback.format_exc()}")
             elif command == 'sendOnionPeerObj':
                 try:
                     self.sendOnionPeerObj(data)
-                except:  # noqa:E722
-                    self.logger.warning("sendOnionPeerObj didn't work")
+                except Exception as e:  # Spezifische Exception fangen
+                    self.logger.error(f"sendOnionPeerObj failed: {type(e).__name__}: {e}")
+                    import traceback
+                    self.logger.error(f"Full traceback:\n{traceback.format_exc()}")
             elif command == 'resetPoW':
                 try:
                     proofofwork.resetPoW()
-                except:  # noqa:E722
-                    self.logger.warning("proofofwork.resetPoW didn't work")
+                except Exception as e:  # Spezifische Exception fangen
+                    self.logger.error(f"proofofwork.resetPoW failed: {type(e).__name__}: {e}")
+                    import traceback
+                    self.logger.error(f"Full traceback:\n{traceback.format_exc()}")
             elif command == 'stopThread':
                 self.busy = 0
                 return
@@ -200,7 +214,6 @@ class singleWorker(StoppableThread):
 
             queues.workerQueue.task_done()
         self.logger.info("Quitting...")
-
     def _getKeysForAddress(self, address):
         try:
             privSigningKeyBase58 = config.get(address, 'privsigningkey')

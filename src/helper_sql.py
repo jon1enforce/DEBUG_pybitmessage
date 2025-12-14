@@ -46,13 +46,16 @@ def sqlQuery(sql_statement, *args):
     :param list args: SQL query parameters
     :rtype: list
     """
-    assert sql_available
-    if not sql_lock.acquire(timeout=30):  # Added timeout
+    if not sql_available:  # ASSERT ENTFERNEN, IF STATTDESSEN
+        logger.error("SQL not available in sqlQuery")
+        return []
+    
+    if not sql_lock.acquire(timeout=30):
         logger.error('Could not acquire SQL lock after 30 seconds')
-        return []  # Return empty list instead of hanging
+        return []
     
     try:
-        sqlSubmitQueue.put(sql_statement, timeout=10)  # Added timeout
+        sqlSubmitQueue.put(sql_statement, timeout=10)
 
         if args == ():
             sqlSubmitQueue.put('', timeout=10)
@@ -80,13 +83,16 @@ def sqlExecuteChunked(sql_statement, as_text, idCount, *args):
     """Execute chunked SQL statement to avoid argument limit"""
     # SQLITE_MAX_VARIABLE_NUMBER,
     # unfortunately getting/setting isn't exposed to python
-    assert sql_available
+    if not sql_available:  # ASSERT ENTFERNEN, IF STATTDESSEN
+        logger.error("SQL not available in sqlExecuteChunked")
+        return 0
+        
     sqlExecuteChunked.chunkSize = 999
 
     if idCount == 0 or idCount > len(args):
         return 0
 
-    if not sql_lock.acquire(timeout=30):  # Added timeout
+    if not sql_lock.acquire(timeout=30):
         logger.error('Could not acquire SQL lock for chunked execute')
         return 0
 
@@ -133,8 +139,11 @@ def sqlExecuteChunked(sql_statement, as_text, idCount, *args):
 
 def sqlExecute(sql_statement, *args):
     """Execute SQL statement (optionally with arguments)"""
-    assert sql_available
-    if not sql_lock.acquire(timeout=30):  # Added timeout
+    if not sql_available:  # ASSERT ENTFERNEN, IF STATTDESSEN
+        logger.error("SQL not available in sqlExecute")
+        return 0
+    
+    if not sql_lock.acquire(timeout=30):
         logger.error('Could not acquire SQL lock for execute')
         return 0
     
@@ -172,8 +181,11 @@ def sqlExecuteScript(sql_statement):
 
 def sqlStoredProcedure(procName):
     """Schedule procName to be run"""
-    assert sql_available
-    if not sql_lock.acquire(timeout=30):  # Added timeout
+    if not sql_available:  # ASSERT ENTFERNEN, IF STATTDESSEN
+        logger.error("SQL not available in sqlStoredProcedure")
+        return
+    
+    if not sql_lock.acquire(timeout=30):
         logger.error('Could not acquire SQL lock for stored procedure')
         return
     
@@ -191,7 +203,7 @@ class SqlBulkExecute(object):
     """This is used when you have to execute the same statement in a cycle."""
 
     def __enter__(self):
-        if not sql_lock.acquire(timeout=30):  # Added timeout
+        if not sql_lock.acquire(timeout=30):
             logger.error('Could not acquire SQL lock for bulk execute')
             raise Exception('Could not acquire SQL lock')
         return self
@@ -207,7 +219,10 @@ class SqlBulkExecute(object):
     @staticmethod
     def execute(sql_statement, *args):
         """Used for statements that do not return results."""
-        assert sql_available
+        if not sql_available:  # ASSERT ENTFERNEN, IF STATTDESSEN
+            logger.error("SQL not available in SqlBulkExecute.execute")
+            return
+            
         try:
             sqlSubmitQueue.put(sql_statement, timeout=10)
 
