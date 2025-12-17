@@ -2,109 +2,217 @@
     {
         "stream": 1,
         "peer": {
-            "host": "bm-node01.duckdns.org",
-            "port": 443
+            "host": "7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion",
+            "port": 8444
         },
         "info": {
-            "lastseen": 1763300386,
+            "lastseen": 1765739089,
             "rating": -0.2,
-            "self": false
+            "self": null
         }
     },
     {
         "stream": 1,
         "peer": {
-            "host": "bitmessage.es",
-            "port": 443
+            "host": "yalbpgxjcforgqrifudfkieeduygyhuw6vkie2nlkhnd22z2tqhyfaid.onion",
+            "port": 8444
         },
         "info": {
-            "lastseen": 1763300386,
-            "rating": -0.4,
-            "self": false
+            "lastseen": 1765737483,
+            "rating": -0.8,
+            "self": null
         }
     },
     {
         "stream": 1,
         "peer": {
-            "host": "bm-node.ignorelist.com",
-            "port": 443
+            "host": "b7ywt3zjdnd2uzjqfalco3fdv47igi3obwexcc5ulxntacw65tgz27ad.onion",
+            "port": 8444
         },
         "info": {
-            "lastseen": 1763300386,
-            "rating": -0.4,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "bm2.bitmessage.today",
-            "port": 443
-        },
-        "info": {
-            "lastseen": 1763300386,
-            "rating": -0.4,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "bm3.cryptogroup.net",
-            "port": 443
-        },
-        "info": {
-            "lastseen": 1763300386,
-            "rating": -0.6,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "bitmsg.de",
-            "port": 443
-        },
-        "info": {
-            "lastseen": 1763300386,
-            "rating": -0.2,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "bm-node.anonymousmail.xyz",
-            "port": 443
-        },
-        "info": {
-            "lastseen": 1763300386,
-            "rating": -0.2,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "185.212.147.42",
-            "port": 443
-        },
-        "info": {
-            "lastseen": 1763300386,
-            "rating": -0.3,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "94.140.114.217",
-            "port": 443
-        },
-        "info": {
-            "lastseen": 1763300386,
+            "lastseen": 1765737493,
             "rating": -1.0,
-            "self": false
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "znp7g4ws4cx5fhwtlyctfvpwb7kbfod2yttl47pb7kpnbnru5nclsvad.onion",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765740352,
+            "rating": -0.6,
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "luhr6pfvbmnjj72woxaqbxyanpoq7vqbpwrhvnwgd2nb2sb7pjbrt3ad.onion",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765737560,
+            "rating": -0.8,
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "tz3pklhmhzcrhtd73z3memrrj5luzzq7xf7gf7mefzbxj7jkmuhuplad.onion",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765737574,
+            "rating": -1.0,
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "deadbeefgrqt53bn.onion",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765737595,
+            "rating": -1.0,
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "r54e3ocm2olhueqebxc6cgnbdkog6th3cxa5xo6ikwgpkawtc6vjmlqd.onion",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765737646,
+            "rating": -0.8,
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "i5ruc2kucorhpbgz.onion",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765737647,
+            "rating": -0.8,
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "vvfqbv6tik35rhzddq2hakbmn55thtrfg7m4nnpcanvwkk46il3aznqd.onion",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765737726,
+            "rating": -1.0,
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "cv5qihf5cbcp7ojie2oegr7m2dhmyply7ljdgmo65nfiowkrzcnhz6yd.onion",
+            "port": 2967
+        },
+        "info": {
+            "lastseen": 1765740352,
+            "rating": -0.6,
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "yj5hresiseclmf5tm2gj6nmyfw7mr26gqwwjmwg6ah2ulqlsiur7jaad.onion",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765740352,
+            "rating": -1.0,
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "27ibkhabkjlw7jxswwslij23jpi3bfjdiwmqfyrpkm7ivlwjttabmxqd.onion",
+            "port": 18444
+        },
+        "info": {
+            "lastseen": 1765738903,
+            "rating": -1.0,
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "msyh6wf5zqkdiiyooj4cuporh7hvfvmdqmbduk2ceo37ji4dc4tfb5id.onion",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765739077,
+            "rating": -1.0,
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "23anonyma3o7ieoqlxjp2nu2o4vp772u2joagumbe5eephojby6ubrqd.onion",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765739091,
+            "rating": -1.0,
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "dedaflwboukvxzil24smiev2elrrh5oyet5iastfqizaav75k2jjbdid.onion",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765739099,
+            "rating": -1.0,
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "r7rcxukuujhpe6rv.onion",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765739152,
+            "rating": -1.0,
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "bmessageo7emidr5tt5myvlx4leu2v2jjwwnmfw45ogdtotqdplgkzid.onion",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765739250,
+            "rating": -1.0,
+            "self": null
         }
     },
     {
@@ -114,8 +222,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765718506,
-            "rating": -0.1,
+            "lastseen": 1765739707,
+            "rating": -0.6,
             "self": false
         }
     },
@@ -126,8 +234,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765719653,
-            "rating": -0.4,
+            "lastseen": 1766009201,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -138,8 +246,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765718862,
-            "rating": -0.3,
+            "lastseen": 1766009058,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -150,8 +258,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765718616,
-            "rating": 0.0,
+            "lastseen": 1766009201,
+            "rating": -0.6,
             "self": false
         }
     },
@@ -162,8 +270,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720203,
-            "rating": 0.0,
+            "lastseen": 1766008214,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -174,8 +282,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720312,
-            "rating": 0.1,
+            "lastseen": 1766009987,
+            "rating": -0.6,
             "self": false
         }
     },
@@ -186,8 +294,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720132,
-            "rating": -0.8,
+            "lastseen": 1766009987,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -198,8 +306,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720314,
-            "rating": 0.1,
+            "lastseen": 1766010151,
+            "rating": 0.8,
             "self": false
         }
     },
@@ -210,8 +318,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765719653,
-            "rating": -0.1,
+            "lastseen": 1766008954,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -222,8 +330,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765718506,
-            "rating": -0.4,
+            "lastseen": 1766008940,
+            "rating": -0.8,
             "self": false
         }
     },
@@ -234,20 +342,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720270,
-            "rating": -0.1,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "61.43.187.72",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1765714762,
-            "rating": -0.4,
+            "lastseen": 1766009253,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -258,8 +354,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765719259,
-            "rating": -0.1,
+            "lastseen": 1766009230,
+            "rating": -0.9,
             "self": false
         }
     },
@@ -270,8 +366,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765718792,
-            "rating": -0.8,
+            "lastseen": 1766008923,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -283,7 +379,7 @@
         },
         "info": {
             "lastseen": 1765712481,
-            "rating": 0.0,
+            "rating": -0.4,
             "self": false
         }
     },
@@ -294,8 +390,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765719975,
-            "rating": 0.0,
+            "lastseen": 1766008940,
+            "rating": -0.9,
             "self": false
         }
     },
@@ -306,8 +402,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720132,
-            "rating": -0.8,
+            "lastseen": 1766009674,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -318,8 +414,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720190,
-            "rating": -0.1,
+            "lastseen": 1766010000,
+            "rating": -0.9,
             "self": false
         }
     },
@@ -330,8 +426,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765713719,
-            "rating": 0.0,
+            "lastseen": 1766000009,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -342,8 +438,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765717993,
-            "rating": 0.0,
+            "lastseen": 1766008954,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -354,8 +450,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720270,
-            "rating": -0.3,
+            "lastseen": 1766009201,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -366,8 +462,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765717776,
-            "rating": 0.0,
+            "lastseen": 1766008954,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -378,8 +474,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765716550,
-            "rating": -0.4,
+            "lastseen": 1766009987,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -390,8 +486,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720190,
-            "rating": -0.4,
+            "lastseen": 1766008954,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -402,8 +498,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765719653,
-            "rating": -0.4,
+            "lastseen": 1766007249,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -414,8 +510,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765718262,
-            "rating": 0.0,
+            "lastseen": 1766008026,
+            "rating": -0.4,
             "self": false
         }
     },
@@ -426,8 +522,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720190,
-            "rating": -0.1,
+            "lastseen": 1766009987,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -438,8 +534,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765719653,
-            "rating": -0.1,
+            "lastseen": 1766009674,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -450,8 +546,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720150,
-            "rating": 0.0,
+            "lastseen": 1766008940,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -462,8 +558,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765717957,
-            "rating": -0.4,
+            "lastseen": 1766008780,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -474,8 +570,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765718616,
-            "rating": -0.4,
+            "lastseen": 1766009674,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -486,8 +582,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765719653,
-            "rating": 0.0,
+            "lastseen": 1766008940,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -498,8 +594,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765718161,
-            "rating": -0.1,
+            "lastseen": 1766009987,
+            "rating": -0.8,
             "self": false
         }
     },
@@ -510,8 +606,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765718616,
-            "rating": -0.4,
+            "lastseen": 1766008749,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -522,8 +618,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720312,
-            "rating": 0.1,
+            "lastseen": 1766008780,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -534,8 +630,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720285,
-            "rating": -0.4,
+            "lastseen": 1766009987,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -546,8 +642,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720270,
-            "rating": 0.0,
+            "lastseen": 1766005876,
+            "rating": -0.3,
             "self": false
         }
     },
@@ -558,8 +654,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720190,
-            "rating": -0.3,
+            "lastseen": 1766008780,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -570,8 +666,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720190,
-            "rating": 0.0,
+            "lastseen": 1766008780,
+            "rating": -0.3,
             "self": false
         }
     },
@@ -582,8 +678,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765719057,
-            "rating": -0.8,
+            "lastseen": 1766009987,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -594,8 +690,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720270,
-            "rating": -0.4,
+            "lastseen": 1766009987,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -606,8 +702,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765719057,
-            "rating": -0.4,
+            "lastseen": 1766007396,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -618,8 +714,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765718616,
-            "rating": 0.0,
+            "lastseen": 1766008954,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -630,20 +726,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765719653,
-            "rating": -0.4,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "36.255.169.74",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1765718010,
-            "rating": -0.4,
+            "lastseen": 1766007396,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -654,20 +738,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765717075,
-            "rating": -0.1,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "82.203.153.207",
-            "port": 65519
-        },
-        "info": {
-            "lastseen": 1765714718,
-            "rating": 0.0,
+            "lastseen": 1766007396,
+            "rating": -0.8,
             "self": false
         }
     },
@@ -678,8 +750,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765712304,
-            "rating": 0.0,
+            "lastseen": 1766007396,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -690,8 +762,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720309,
-            "rating": 0.0,
+            "lastseen": 1766010311,
+            "rating": 0.8,
             "self": false
         }
     },
@@ -702,8 +774,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765717075,
-            "rating": 0.0,
+            "lastseen": 1765727620,
+            "rating": -0.2,
             "self": false
         }
     },
@@ -714,8 +786,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720187,
-            "rating": 0.0,
+            "lastseen": 1765736005,
+            "rating": -0.6,
             "self": false
         }
     },
@@ -726,8 +798,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765719353,
-            "rating": 0.0,
+            "lastseen": 1766005403,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -738,8 +810,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765719500,
-            "rating": 0.0,
+            "lastseen": 1765738780,
+            "rating": -0.4,
             "self": false
         }
     },
@@ -750,8 +822,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720195,
-            "rating": 0.0,
+            "lastseen": 1766005818,
+            "rating": -0.5,
             "self": false
         }
     },
@@ -762,8 +834,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765713504,
-            "rating": 0.0,
+            "lastseen": 1765734040,
+            "rating": -0.6,
             "self": false
         }
     },
@@ -774,20 +846,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765713593,
-            "rating": -0.4,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "190.246.29.115",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1765717980,
-            "rating": 0.0,
+            "lastseen": 1766007270,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -798,8 +858,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720318,
-            "rating": 0.1,
+            "lastseen": 1766009987,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -810,8 +870,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765713822,
-            "rating": -0.4,
+            "lastseen": 1766007854,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -822,8 +882,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765714762,
-            "rating": 0.0,
+            "lastseen": 1765726778,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -834,8 +894,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765717890,
-            "rating": 0.0,
+            "lastseen": 1765731319,
+            "rating": -0.5,
             "self": false
         }
     },
@@ -846,8 +906,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765719067,
-            "rating": -0.1,
+            "lastseen": 1765736005,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -858,20 +918,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765718262,
-            "rating": -0.1,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "45.177.118.29",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1765718442,
-            "rating": 0.0,
+            "lastseen": 1765736125,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -882,8 +930,8 @@
             "port": 2841
         },
         "info": {
-            "lastseen": 1765720318,
-            "rating": 0.1,
+            "lastseen": 1766008780,
+            "rating": -0.3,
             "self": false
         }
     },
@@ -894,8 +942,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765713479,
-            "rating": 0.0,
+            "lastseen": 1765736587,
+            "rating": -0.5,
             "self": false
         }
     },
@@ -906,8 +954,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720231,
-            "rating": 0.0,
+            "lastseen": 1766009022,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -919,7 +967,7 @@
         },
         "info": {
             "lastseen": 1765718862,
-            "rating": 0.0,
+            "rating": -0.5,
             "self": false
         }
     },
@@ -930,8 +978,8 @@
             "port": 8080
         },
         "info": {
-            "lastseen": 1765720302,
-            "rating": 0.0,
+            "lastseen": 1766010130,
+            "rating": 0.7,
             "self": false
         }
     },
@@ -942,44 +990,8 @@
             "port": 12858
         },
         "info": {
-            "lastseen": 1765715673,
-            "rating": 0.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "198.167.207.174",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1765720190,
-            "rating": 0.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "82.203.153.207",
-            "port": 65528
-        },
-        "info": {
-            "lastseen": 1765718068,
-            "rating": 0.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "112.140.191.244",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1765718068,
-            "rating": -0.4,
+            "lastseen": 1765731646,
+            "rating": -0.9,
             "self": false
         }
     },
@@ -990,8 +1002,8 @@
             "port": 8111
         },
         "info": {
-            "lastseen": 1765710329,
-            "rating": 0.0,
+            "lastseen": 1766008780,
+            "rating": -0.6,
             "self": false
         }
     },
@@ -1002,20 +1014,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765710329,
-            "rating": 0.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "84.72.169.87",
-            "port": 65517
-        },
-        "info": {
-            "lastseen": 1765720190,
-            "rating": 0.0,
+            "lastseen": 1766005876,
+            "rating": -0.5,
             "self": false
         }
     },
@@ -1027,7 +1027,7 @@
         },
         "info": {
             "lastseen": 1765711074,
-            "rating": 0.0,
+            "rating": -0.6,
             "self": false
         }
     },
@@ -1039,7 +1039,7 @@
         },
         "info": {
             "lastseen": 1765719057,
-            "rating": -0.1,
+            "rating": -0.6,
             "self": false
         }
     },
@@ -1050,8 +1050,8 @@
             "port": 63433
         },
         "info": {
-            "lastseen": 1765720229,
-            "rating": 0.0,
+            "lastseen": 1766009987,
+            "rating": -0.3,
             "self": false
         }
     },
@@ -1062,8 +1062,8 @@
             "port": 2841
         },
         "info": {
-            "lastseen": 1765719067,
-            "rating": 0.0,
+            "lastseen": 1766009201,
+            "rating": -0.5,
             "self": false
         }
     },
@@ -1075,19 +1075,7 @@
         },
         "info": {
             "lastseen": 1765709872,
-            "rating": 0.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "185.129.62.64",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1765718616,
-            "rating": 0.0,
+            "rating": -0.6,
             "self": false
         }
     },
@@ -1098,20 +1086,8 @@
             "port": 65520
         },
         "info": {
-            "lastseen": 1765718068,
-            "rating": 0.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "187.208.35.115",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1765716347,
-            "rating": -0.4,
+            "lastseen": 1766005784,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -1123,19 +1099,7 @@
         },
         "info": {
             "lastseen": 1765716559,
-            "rating": 0.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "2.180.31.172",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1765716159,
-            "rating": -0.4,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -1146,8 +1110,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765713559,
-            "rating": 0.0,
+            "lastseen": 1765731705,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1158,8 +1122,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765717776,
-            "rating": 0.0,
+            "lastseen": 1766005876,
+            "rating": -0.3,
             "self": false
         }
     },
@@ -1170,8 +1134,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720144,
-            "rating": 0.0,
+            "lastseen": 1766009243,
+            "rating": -0.1,
             "self": false
         }
     },
@@ -1182,32 +1146,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720190,
-            "rating": 0.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "14.161.21.105",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1765709823,
-            "rating": 0.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "103.199.211.120",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1765711058,
-            "rating": -0.4,
+            "lastseen": 1765730413,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -1218,8 +1158,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765718763,
-            "rating": 0.0,
+            "lastseen": 1765735197,
+            "rating": -0.5,
             "self": false
         }
     },
@@ -1231,7 +1171,7 @@
         },
         "info": {
             "lastseen": 1765709612,
-            "rating": 0.0,
+            "rating": -0.8,
             "self": false
         }
     },
@@ -1242,8 +1182,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765716550,
-            "rating": 0.0,
+            "lastseen": 1766005086,
+            "rating": -0.6,
             "self": false
         }
     },
@@ -1254,8 +1194,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765710872,
-            "rating": 0.0,
+            "lastseen": 1765735006,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1267,7 +1207,7 @@
         },
         "info": {
             "lastseen": 1765720190,
-            "rating": 0.0,
+            "rating": -0.4,
             "self": false
         }
     },
@@ -1278,8 +1218,8 @@
             "port": 65523
         },
         "info": {
-            "lastseen": 1765720115,
-            "rating": 0.0,
+            "lastseen": 1766004813,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1290,8 +1230,8 @@
             "port": 65527
         },
         "info": {
-            "lastseen": 1765709872,
-            "rating": 0.0,
+            "lastseen": 1766001397,
+            "rating": -0.9,
             "self": false
         }
     },
@@ -1302,8 +1242,8 @@
             "port": 65527
         },
         "info": {
-            "lastseen": 1765711576,
-            "rating": -0.1,
+            "lastseen": 1766005518,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1314,32 +1254,8 @@
             "port": 65522
         },
         "info": {
-            "lastseen": 1765713270,
-            "rating": 0.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "154.183.239.81",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1765717776,
-            "rating": -0.1,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "169.150.203.53",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1765720190,
-            "rating": 0.0,
+            "lastseen": 1765734424,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -1350,8 +1266,8 @@
             "port": 8080
         },
         "info": {
-            "lastseen": 1765720144,
-            "rating": 0.0,
+            "lastseen": 1766009022,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1363,7 +1279,7 @@
         },
         "info": {
             "lastseen": 1765713547,
-            "rating": 0.0,
+            "rating": -0.9,
             "self": false
         }
     },
@@ -1375,7 +1291,7 @@
         },
         "info": {
             "lastseen": 1765710364,
-            "rating": 0.0,
+            "rating": -0.8,
             "self": false
         }
     },
@@ -1386,20 +1302,8 @@
             "port": 65525
         },
         "info": {
-            "lastseen": 1765712397,
-            "rating": -0.1,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "2q5nf5vgabvtfake.onion",
-            "port": 65520
-        },
-        "info": {
-            "lastseen": 1765719266,
-            "rating": -0.4,
+            "lastseen": 1766008749,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -1410,8 +1314,8 @@
             "port": 8080
         },
         "info": {
-            "lastseen": 1765710329,
-            "rating": 0.0,
+            "lastseen": 1766005863,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -1422,8 +1326,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765718978,
-            "rating": -0.4,
+            "lastseen": 1765729600,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1434,8 +1338,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720231,
-            "rating": 0.0,
+            "lastseen": 1766009987,
+            "rating": -0.3,
             "self": false
         }
     },
@@ -1446,8 +1350,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765719057,
-            "rating": 0.0,
+            "lastseen": 1765731705,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -1459,7 +1363,7 @@
         },
         "info": {
             "lastseen": 1765717958,
-            "rating": 0.0,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1470,8 +1374,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765717890,
-            "rating": 0.0,
+            "lastseen": 1765732660,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -1482,8 +1386,8 @@
             "port": 65522
         },
         "info": {
-            "lastseen": 1765714932,
-            "rating": 0.0,
+            "lastseen": 1766009201,
+            "rating": -0.5,
             "self": false
         }
     },
@@ -1495,7 +1399,7 @@
         },
         "info": {
             "lastseen": 1765713494,
-            "rating": 0.0,
+            "rating": -0.9,
             "self": false
         }
     },
@@ -1507,19 +1411,7 @@
         },
         "info": {
             "lastseen": 1765715311,
-            "rating": 0.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "::dfff:5448:a957",
-            "port": 65517
-        },
-        "info": {
-            "lastseen": 1765713599,
-            "rating": -0.2,
+            "rating": -0.9,
             "self": false
         }
     },
@@ -1530,8 +1422,8 @@
             "port": 8484
         },
         "info": {
-            "lastseen": 1765719594,
-            "rating": -0.1,
+            "lastseen": 1766002930,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -1542,20 +1434,8 @@
             "port": 65530
         },
         "info": {
-            "lastseen": 1765718839,
-            "rating": 0.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "217.199.148.228",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1765714663,
-            "rating": 0.0,
+            "lastseen": 1766005438,
+            "rating": -0.8,
             "self": false
         }
     },
@@ -1567,19 +1447,7 @@
         },
         "info": {
             "lastseen": 1765716550,
-            "rating": -0.1,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "1.174.209.125",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1765718863,
-            "rating": 0.0,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -1591,7 +1459,7 @@
         },
         "info": {
             "lastseen": 1765713303,
-            "rating": 0.0,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1602,8 +1470,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765716058,
-            "rating": 0.0,
+            "lastseen": 1766002348,
+            "rating": -0.5,
             "self": false
         }
     },
@@ -1614,8 +1482,8 @@
             "port": 65529
         },
         "info": {
-            "lastseen": 1765714663,
-            "rating": 0.0,
+            "lastseen": 1766001397,
+            "rating": -0.4,
             "self": false
         }
     },
@@ -1627,7 +1495,7 @@
         },
         "info": {
             "lastseen": 1765715673,
-            "rating": 0.0,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1638,20 +1506,8 @@
             "port": 2841
         },
         "info": {
-            "lastseen": 1765720190,
-            "rating": 0.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "190.219.63.161",
-            "port": 65535
-        },
-        "info": {
-            "lastseen": 1765720190,
-            "rating": 0.0,
+            "lastseen": 1766005518,
+            "rating": -0.6,
             "self": false
         }
     },
@@ -1662,8 +1518,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765712964,
-            "rating": 0.0,
+            "lastseen": 1765732786,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1674,8 +1530,8 @@
             "port": 65519
         },
         "info": {
-            "lastseen": 1765713895,
-            "rating": 0.0,
+            "lastseen": 1765735528,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1686,8 +1542,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765715311,
-            "rating": 0.0,
+            "lastseen": 1766003259,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1699,7 +1555,7 @@
         },
         "info": {
             "lastseen": 1765718763,
-            "rating": 0.0,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1710,8 +1566,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720144,
-            "rating": 0.0,
+            "lastseen": 1766009022,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -1722,8 +1578,8 @@
             "port": 8080
         },
         "info": {
-            "lastseen": 1765720190,
-            "rating": -0.1,
+            "lastseen": 1766006240,
+            "rating": -0.5,
             "self": false
         }
     },
@@ -1734,8 +1590,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720190,
-            "rating": 0.0,
+            "lastseen": 1766008026,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -1746,8 +1602,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765718161,
-            "rating": 0.0,
+            "lastseen": 1765734348,
+            "rating": -0.9,
             "self": false
         }
     },
@@ -1758,8 +1614,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765719057,
-            "rating": 0.0,
+            "lastseen": 1766007982,
+            "rating": -0.1,
             "self": false
         }
     },
@@ -1770,8 +1626,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720190,
-            "rating": 0.0,
+            "lastseen": 1766007090,
+            "rating": -0.4,
             "self": false
         }
     },
@@ -1782,8 +1638,8 @@
             "port": 65521
         },
         "info": {
-            "lastseen": 1765714686,
-            "rating": 0.0,
+            "lastseen": 1765736585,
+            "rating": -0.8,
             "self": false
         }
     },
@@ -1794,8 +1650,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765710808,
-            "rating": 0.0,
+            "lastseen": 1766005186,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1806,8 +1662,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765718262,
-            "rating": -0.1,
+            "lastseen": 1766009987,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1818,8 +1674,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765714762,
-            "rating": 0.0,
+            "lastseen": 1765735531,
+            "rating": -0.6,
             "self": false
         }
     },
@@ -1830,8 +1686,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765714663,
-            "rating": 0.0,
+            "lastseen": 1766002084,
+            "rating": -0.5,
             "self": false
         }
     },
@@ -1842,8 +1698,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765713506,
-            "rating": 0.0,
+            "lastseen": 1766009201,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1854,8 +1710,8 @@
             "port": 65535
         },
         "info": {
-            "lastseen": 1765709612,
-            "rating": 0.0,
+            "lastseen": 1765728721,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -1866,8 +1722,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765709641,
-            "rating": 0.0,
+            "lastseen": 1765737388,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1878,8 +1734,8 @@
             "port": 1195
         },
         "info": {
-            "lastseen": 1765710329,
-            "rating": 0.0,
+            "lastseen": 1766006636,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -1890,8 +1746,8 @@
             "port": 65522
         },
         "info": {
-            "lastseen": 1765718955,
-            "rating": 0.0,
+            "lastseen": 1765736585,
+            "rating": -0.9,
             "self": false
         }
     },
@@ -1902,20 +1758,8 @@
             "port": 65516
         },
         "info": {
-            "lastseen": 1765712481,
-            "rating": 0.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "::dfff:68ee:acfe",
-            "port": 65525
-        },
-        "info": {
-            "lastseen": 1765715662,
-            "rating": 0.0,
+            "lastseen": 1766006443,
+            "rating": -0.4,
             "self": false
         }
     },
@@ -1926,8 +1770,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765715673,
-            "rating": 0.0,
+            "lastseen": 1765734548,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -1939,7 +1783,7 @@
         },
         "info": {
             "lastseen": 1765709872,
-            "rating": 0.0,
+            "rating": -0.5,
             "self": false
         }
     },
@@ -1950,8 +1794,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765711576,
-            "rating": 0.0,
+            "lastseen": 1765734359,
+            "rating": -0.8,
             "self": false
         }
     },
@@ -1962,20 +1806,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765713559,
-            "rating": 0.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "31.44.238.25",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1765710364,
-            "rating": 0.0,
+            "lastseen": 1766004780,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1987,7 +1819,7 @@
         },
         "info": {
             "lastseen": 1765718863,
-            "rating": 0.0,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -1998,32 +1830,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765710329,
-            "rating": 0.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "154.247.169.220",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1765717956,
-            "rating": 0.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "90.151.249.252",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1765720190,
-            "rating": -0.4,
+            "lastseen": 1766006240,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -2035,7 +1843,7 @@
         },
         "info": {
             "lastseen": 1765720190,
-            "rating": 0.0,
+            "rating": -0.5,
             "self": false
         }
     },
@@ -2046,8 +1854,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765711493,
-            "rating": 0.0,
+            "lastseen": 1765997070,
+            "rating": -0.6,
             "self": false
         }
     },
@@ -2058,8 +1866,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765716465,
-            "rating": 0.0,
+            "lastseen": 1765997120,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -2071,7 +1879,7 @@
         },
         "info": {
             "lastseen": 1765720115,
-            "rating": 0.0,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -2082,8 +1890,8 @@
             "port": 65530
         },
         "info": {
-            "lastseen": 1765713895,
-            "rating": -0.1,
+            "lastseen": 1766005070,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -2095,19 +1903,7 @@
         },
         "info": {
             "lastseen": 1765720190,
-            "rating": 0.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "23.129.64.136",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1765714643,
-            "rating": 0.0,
+            "rating": -0.8,
             "self": false
         }
     },
@@ -2118,8 +1914,8 @@
             "port": 8448
         },
         "info": {
-            "lastseen": 1765710329,
-            "rating": 0.0,
+            "lastseen": 1766007249,
+            "rating": -0.5,
             "self": false
         }
     },
@@ -2130,8 +1926,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765715241,
-            "rating": -0.1,
+            "lastseen": 1766007982,
+            "rating": -0.4,
             "self": false
         }
     },
@@ -2142,8 +1938,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765710329,
-            "rating": 0.0,
+            "lastseen": 1766008749,
+            "rating": -0.5,
             "self": false
         }
     },
@@ -2154,20 +1950,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765718792,
-            "rating": 0.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "75.167.159.54",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1765710329,
-            "rating": -0.1,
+            "lastseen": 1765737737,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -2179,7 +1963,7 @@
         },
         "info": {
             "lastseen": 1765710325,
-            "rating": 0.0,
+            "rating": -0.6,
             "self": false
         }
     },
@@ -2190,44 +1974,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765717993,
-            "rating": 0.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "84.72.169.87",
-            "port": 65524
-        },
-        "info": {
-            "lastseen": 1765710872,
-            "rating": -0.1,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "2q5nf5vgabvtfake.onion",
-            "port": 65534
-        },
-        "info": {
-            "lastseen": 1765718139,
-            "rating": 0.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "82.203.153.207",
-            "port": 65525
-        },
-        "info": {
-            "lastseen": 1765720264,
-            "rating": 0.0,
+            "lastseen": 1766005518,
+            "rating": -0.6,
             "self": false
         }
     },
@@ -2238,7 +1986,2155 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720264,
+            "lastseen": 1765737388,
+            "rating": -0.9,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "195.122.229.174",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765735933,
+            "rating": -0.9,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.216.252.165",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765734435,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "114.94.207.90",
+            "port": 65534
+        },
+        "info": {
+            "lastseen": 1765735528,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "175.158.211.141",
+            "port": 65516
+        },
+        "info": {
+            "lastseen": 1765734978,
+            "rating": -0.7,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "179.144.51.63",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007827,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "84.72.169.87",
+            "port": 65519
+        },
+        "info": {
+            "lastseen": 1766007090,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.139.101.196",
+            "port": 65519
+        },
+        "info": {
+            "lastseen": 1765736754,
+            "rating": -0.9,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.203.153.207",
+            "port": 65518
+        },
+        "info": {
+            "lastseen": 1766002979,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "84.72.169.87",
+            "port": 65534
+        },
+        "info": {
+            "lastseen": 1766005519,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.152.161.133",
+            "port": 65519
+        },
+        "info": {
+            "lastseen": 1766002032,
+            "rating": -0.7,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "78.1.155.147",
+            "port": 65519
+        },
+        "info": {
+            "lastseen": 1765740367,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "175.158.211.141",
+            "port": 65519
+        },
+        "info": {
+            "lastseen": 1765735245,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "78.1.155.147",
+            "port": 65520
+        },
+        "info": {
+            "lastseen": 1765732831,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "194.58.180.95",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005506,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "114.94.207.90",
+            "port": 65533
+        },
+        "info": {
+            "lastseen": 1765735006,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "::7e:eb43:ec3a:90aa:a489:bee1",
+            "port": 9477
+        },
+        "info": {
+            "lastseen": 1766005070,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "87.227.26.220",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765735947,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "45.84.107.55",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765736779,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "27.27.159.29",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765737388,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "212.162.152.157",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "190.219.63.161",
+            "port": 65528
+        },
+        "info": {
+            "lastseen": 1766008749,
+            "rating": -0.9,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.203.153.207",
+            "port": 65516
+        },
+        "info": {
+            "lastseen": 1765737388,
+            "rating": -0.9,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "104.238.172.254",
+            "port": 65520
+        },
+        "info": {
+            "lastseen": 1765737388,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "61.43.187.251",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007982,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "78.1.155.147",
+            "port": 65530
+        },
+        "info": {
+            "lastseen": 1765737388,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "192.168.8.199",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765740414,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.152.161.133",
+            "port": 65534
+        },
+        "info": {
+            "lastseen": 1765732272,
+            "rating": -0.9,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "84.72.169.87",
+            "port": 65518
+        },
+        "info": {
+            "lastseen": 1766009201,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "84.72.169.87",
+            "port": 65528
+        },
+        "info": {
+            "lastseen": 1765736592,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "170.84.48.19",
+            "port": 65524
+        },
+        "info": {
+            "lastseen": 1766008780,
+            "rating": -0.9,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "72.181.71.185",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765732272,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "114.94.207.90",
+            "port": 65531
+        },
+        "info": {
+            "lastseen": 1765731255,
+            "rating": -0.7,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "175.158.211.141",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765727694,
+            "rating": -0.7,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "170.84.48.19",
+            "port": 65526
+        },
+        "info": {
+            "lastseen": 1765733117,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "104.238.172.254",
+            "port": 65516
+        },
+        "info": {
+            "lastseen": 1765733117,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "175.158.211.141",
+            "port": 65525
+        },
+        "info": {
+            "lastseen": 1765737737,
+            "rating": -0.9,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.203.153.207",
+            "port": 65522
+        },
+        "info": {
+            "lastseen": 1765737737,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.216.252.165",
+            "port": 65523
+        },
+        "info": {
+            "lastseen": 1765737602,
+            "rating": -0.9,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.203.153.207",
+            "port": 65521
+        },
+        "info": {
+            "lastseen": 1766001064,
+            "rating": -0.7,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "193.32.127.187",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765733251,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "175.158.211.141",
+            "port": 65535
+        },
+        "info": {
+            "lastseen": 1765731452,
+            "rating": -0.9,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "92.60.40.231",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765732319,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "170.84.48.19",
+            "port": 65516
+        },
+        "info": {
+            "lastseen": 1765732330,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "37.138.92.208",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766002744,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "105.96.16.92",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765735232,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "154.242.36.170",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765727894,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "175.0.120.65",
+            "port": 2820
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "78.1.155.147",
+            "port": 65521
+        },
+        "info": {
+            "lastseen": 1765735060,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "78.1.155.147",
+            "port": 65525
+        },
+        "info": {
+            "lastseen": 1765735245,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.216.252.165",
+            "port": 65522
+        },
+        "info": {
+            "lastseen": 1766002032,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "78.1.155.147",
+            "port": 65518
+        },
+        "info": {
+            "lastseen": 1765732502,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "107.189.30.69",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766003702,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "190.219.63.161",
+            "port": 65529
+        },
+        "info": {
+            "lastseen": 1765735006,
+            "rating": -0.9,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "175.158.211.141",
+            "port": 65521
+        },
+        "info": {
+            "lastseen": 1765733723,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "143.0.68.62",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765733989,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "78.1.155.147",
+            "port": 65535
+        },
+        "info": {
+            "lastseen": 1765735982,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "114.94.207.90",
+            "port": 65519
+        },
+        "info": {
+            "lastseen": 1765737737,
+            "rating": -0.7,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "185.220.100.249",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765732272,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "114.94.207.90",
+            "port": 65520
+        },
+        "info": {
+            "lastseen": 1766007380,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "209.64.42.91",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765731475,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.152.161.133",
+            "port": 65532
+        },
+        "info": {
+            "lastseen": 1765732227,
+            "rating": -0.7,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "175.158.211.141",
+            "port": 65534
+        },
+        "info": {
+            "lastseen": 1766004813,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.152.161.133",
+            "port": 65527
+        },
+        "info": {
+            "lastseen": 1766008780,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "190.40.228.232",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765740367,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "186.84.89.71",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009022,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "169.150.198.76",
+            "port": 8392
+        },
+        "info": {
+            "lastseen": 1765738656,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "175.158.211.141",
+            "port": 65528
+        },
+        "info": {
+            "lastseen": 1766002926,
+            "rating": -0.7,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.216.252.165",
+            "port": 65526
+        },
+        "info": {
+            "lastseen": 1765732238,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "193.106.99.34",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007982,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "186.77.56.78",
+            "port": 18275
+        },
+        "info": {
+            "lastseen": 1765728721,
+            "rating": -0.7,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "195.18.18.204",
+            "port": 55156
+        },
+        "info": {
+            "lastseen": 1765735528,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "84.72.169.87",
+            "port": 65532
+        },
+        "info": {
+            "lastseen": 1766008695,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "183.217.163.73",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765732272,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "104.238.172.254",
+            "port": 65527
+        },
+        "info": {
+            "lastseen": 1766001650,
+            "rating": -0.9,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "170.84.48.19",
+            "port": 65525
+        },
+        "info": {
+            "lastseen": 1765735743,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.216.252.165",
+            "port": 65535
+        },
+        "info": {
+            "lastseen": 1766005468,
+            "rating": -0.9,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "88.80.26.3",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765732786,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "175.0.122.139",
+            "port": 2841
+        },
+        "info": {
+            "lastseen": 1766009201,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "109.197.35.170",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765738780,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "78.1.155.147",
+            "port": 65516
+        },
+        "info": {
+            "lastseen": 1765738780,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "175.158.211.141",
+            "port": 65522
+        },
+        "info": {
+            "lastseen": 1765738780,
+            "rating": -0.7,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "2q5nf5vgabvtfake.onion",
+            "port": 65521
+        },
+        "info": {
+            "lastseen": 1765738780,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "102.129.152.120",
+            "port": 8446
+        },
+        "info": {
+            "lastseen": 1766008529,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "86.127.234.76",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765728818,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "201.108.169.203",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005519,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "157.131.203.183",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765731440,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "2607:5300:201:3000::57ae",
+            "port": 8080
+        },
+        "info": {
+            "lastseen": 1766008026,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "170.84.48.19",
+            "port": 65520
+        },
+        "info": {
+            "lastseen": 1766005519,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "190.242.112.225",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766006636,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "198.13.46.160",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766001397,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "175.158.211.141",
+            "port": 65529
+        },
+        "info": {
+            "lastseen": 1766007090,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "95.161.180.206",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765734263,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "118.250.130.16",
+            "port": 2820
+        },
+        "info": {
+            "lastseen": 1765732205,
+            "rating": -0.7,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "90.240.161.93",
+            "port": 8080
+        },
+        "info": {
+            "lastseen": 1766008749,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "102.129.152.120",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005403,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "158.222.217.190",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009201,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "78.55.217.23",
+            "port": 8844
+        },
+        "info": {
+            "lastseen": 1766005518,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "41.109.65.0",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765730413,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "74.244.146.7",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766003335,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "191.156.177.37",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765740367,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "45.76.138.146",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005518,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "178.142.8.111",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765735245,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "185.153.177.96",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765728135,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "103.69.200.142",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005519,
+            "rating": -0.7,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "154.246.77.154",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005506,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "201.108.176.120",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765737717,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "46.229.109.156",
+            "port": 55156
+        },
+        "info": {
+            "lastseen": 1766005518,
+            "rating": -0.9,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "190.111.101.168",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765729483,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.139.101.196",
+            "port": 65516
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "147.236.153.233",
+            "port": 3222
+        },
+        "info": {
+            "lastseen": 1765733949,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.139.101.196",
+            "port": 65518
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.152.161.133",
+            "port": 65521
+        },
+        "info": {
+            "lastseen": 1765731277,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "104.238.172.254",
+            "port": 65528
+        },
+        "info": {
+            "lastseen": 1765735245,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.10.174.236",
+            "port": 65518
+        },
+        "info": {
+            "lastseen": 1766009201,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.10.174.236",
+            "port": 65520
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.139.101.196",
+            "port": 65524
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "175.158.211.141",
+            "port": 65530
+        },
+        "info": {
+            "lastseen": 1765732272,
+            "rating": -0.9,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.233.213.84",
+            "port": 65532
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.233.213.84",
+            "port": 65519
+        },
+        "info": {
+            "lastseen": 1766008729,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "187.208.35.115",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007539,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.233.213.84",
+            "port": 65533
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.9,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.139.101.196",
+            "port": 65517
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.7,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "0:1::1:fd87:d87e",
+            "port": 60227
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.10.174.236",
+            "port": 65522
+        },
+        "info": {
+            "lastseen": 1766009987,
+            "rating": -0.7,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.233.213.84",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008666,
+            "rating": -0.7,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.139.101.196",
+            "port": 65526
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.139.101.196",
+            "port": 65528
+        },
+        "info": {
+            "lastseen": 1766008729,
+            "rating": -0.7,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.216.252.165",
+            "port": 65525
+        },
+        "info": {
+            "lastseen": 1765732572,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "95.178.149.124",
+            "port": 55156
+        },
+        "info": {
+            "lastseen": 1765732239,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "::24:2efb:24aa:81ca",
+            "port": 55930
+        },
+        "info": {
+            "lastseen": 1765731293,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "::ea:f035:c8c2:7d86",
+            "port": 22824
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.233.213.84",
+            "port": 65521
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.9,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.233.213.84",
+            "port": 65520
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.139.101.196",
+            "port": 65527
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.9,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "0.0.0.0",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.7,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "170.84.48.19",
+            "port": 65533
+        },
+        "info": {
+            "lastseen": 1765735533,
+            "rating": -0.7,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.233.213.84",
+            "port": 65531
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.233.213.84",
+            "port": 65526
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.10.174.236",
+            "port": 65517
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.7,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "170.84.48.19",
+            "port": 65518
+        },
+        "info": {
+            "lastseen": 1766005468,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.139.101.196",
+            "port": 65530
+        },
+        "info": {
+            "lastseen": 1766009987,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.139.101.196",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008729,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.233.213.84",
+            "port": 65534
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "104.238.172.254",
+            "port": 65517
+        },
+        "info": {
+            "lastseen": 1765732305,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.233.213.84",
+            "port": 65524
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.233.213.84",
+            "port": 65522
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "114.94.207.90",
+            "port": 65535
+        },
+        "info": {
+            "lastseen": 1765740367,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "83.26.243.25",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766001658,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "170.84.48.19",
+            "port": 65523
+        },
+        "info": {
+            "lastseen": 1765740367,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.216.252.165",
+            "port": 65516
+        },
+        "info": {
+            "lastseen": 1766007090,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "190.219.63.161",
+            "port": 65530
+        },
+        "info": {
+            "lastseen": 1765740280,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "2q5nf5vgabvtb7kw.onion",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765740280,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "198.167.207.174",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009201,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "185.159.157.25",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007249,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "61.43.187.250",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007297,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "89.36.218.202",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005944,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "114.94.207.90",
+            "port": 65526
+        },
+        "info": {
+            "lastseen": 1766005377,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "181.97.138.185",
+            "port": 17600
+        },
+        "info": {
+            "lastseen": 1765732786,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "175.0.120.154",
+            "port": 2841
+        },
+        "info": {
+            "lastseen": 1766005818,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "194.44.30.145",
+            "port": 8446
+        },
+        "info": {
+            "lastseen": 1766007396,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "179.146.17.133",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005468,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "185.246.188.74",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008923,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "102.209.111.118",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765739332,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "189.197.68.4",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765739608,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "89.39.107.197",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765737717,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "92.78.49.39",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008780,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "154.243.9.232",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765735054,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "141.95.47.146",
+            "port": 8448
+        },
+        "info": {
+            "lastseen": 1766005398,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.216.252.165",
+            "port": 65524
+        },
+        "info": {
+            "lastseen": 1765739608,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "114.94.207.90",
+            "port": 65528
+        },
+        "info": {
+            "lastseen": 1766005495,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "181.59.3.251",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009168,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "154.241.31.24",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766006421,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "27.58.101.153",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766001853,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "201.27.57.172",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005519,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "134.35.2.155",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766001842,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "170.84.48.19",
+            "port": 65527
+        },
+        "info": {
+            "lastseen": 1766001397,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "178.205.55.86",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005876,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "154.242.249.79",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009987,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "91.161.201.83",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008730,
             "rating": 0.0,
             "self": false
         }
@@ -2246,49 +4142,3073 @@
     {
         "stream": 1,
         "peer": {
-            "host": "znp7g4ws4cx5fhwtlyctfvpwb7kbfod2yttl47pb7kpnbnru5nclsvad.onion",
+            "host": "213.87.161.201",
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720349,
-            "rating": 0.0,
-            "self": null
+            "lastseen": 1766005504,
+            "rating": -0.8,
+            "self": false
         }
     },
     {
         "stream": 1,
         "peer": {
-            "host": "7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion",
-            "port": 8444
+            "host": "104.238.172.254",
+            "port": 65525
         },
         "info": {
-            "lastseen": 1765720379,
-            "rating": 0.0,
-            "self": null
+            "lastseen": 1766005495,
+            "rating": -0.6,
+            "self": false
         }
     },
     {
         "stream": 1,
         "peer": {
-            "host": "cv5qihf5cbcp7ojie2oegr7m2dhmyply7ljdgmo65nfiowkrzcnhz6yd.onion",
-            "port": 2967
+            "host": "154.242.181.13",
+            "port": 8444
         },
         "info": {
-            "lastseen": 1765720405,
-            "rating": 0.0,
-            "self": null
+            "lastseen": 1766005671,
+            "rating": -0.4,
+            "self": false
         }
     },
     {
         "stream": 1,
         "peer": {
-            "host": "yj5hresiseclmf5tm2gj6nmyfw7mr26gqwwjmwg6ah2ulqlsiur7jaad.onion",
+            "host": "154.241.99.201",
             "port": 8444
         },
         "info": {
-            "lastseen": 1765720428,
+            "lastseen": 1766005571,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "84.251.3.178",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008214,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "190.219.63.161",
+            "port": 65525
+        },
+        "info": {
+            "lastseen": 1765997245,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "192.42.116.211",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007252,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "196.250.76.74",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005818,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "31.173.123.226",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008648,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "5.232.177.26",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009699,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "185.220.100.241",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007257,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "78.1.155.147",
+            "port": 65529
+        },
+        "info": {
+            "lastseen": 1766001689,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "45.167.140.46",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007437,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "179.32.50.3",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005818,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "81.43.118.175",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766001049,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "190.219.63.161",
+            "port": 65535
+        },
+        "info": {
+            "lastseen": 1765997245,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "118.250.129.174",
+            "port": 2841
+        },
+        "info": {
+            "lastseen": 1766010277,
             "rating": 0.0,
-            "self": null
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.216.252.165",
+            "port": 65518
+        },
+        "info": {
+            "lastseen": 1766001664,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "190.219.63.161",
+            "port": 65532
+        },
+        "info": {
+            "lastseen": 1766001853,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.216.252.165",
+            "port": 65528
+        },
+        "info": {
+            "lastseen": 1766000389,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "185.220.101.43",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005519,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "189.47.236.136",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005403,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "154.241.99.212",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766002573,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "45.84.107.172",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766006627,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.203.153.207",
+            "port": 65533
+        },
+        "info": {
+            "lastseen": 1766009201,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.203.153.207",
+            "port": 65532
+        },
+        "info": {
+            "lastseen": 1766002032,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "41.223.74.170",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008225,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "143.105.99.165",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765998301,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "45.84.107.198",
+            "port": 46200
+        },
+        "info": {
+            "lastseen": 1766004816,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "154.242.40.209",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005403,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "95.217.110.231",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766001168,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "177.221.182.82",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007610,
+            "rating": -0.9,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "190.219.63.161",
+            "port": 65526
+        },
+        "info": {
+            "lastseen": 1766001664,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "62.224.23.73",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005438,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "103.250.147.202",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766003699,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "191.19.69.227",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008749,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.216.252.165",
+            "port": 65519
+        },
+        "info": {
+            "lastseen": 1766001689,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "190.219.63.161",
+            "port": 65518
+        },
+        "info": {
+            "lastseen": 1766005495,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "112.133.200.244",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766001950,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "78.1.155.147",
+            "port": 65522
+        },
+        "info": {
+            "lastseen": 1766005070,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "14.10.98.131",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766001956,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "168.228.159.108",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005422,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "104.238.172.254",
+            "port": 65518
+        },
+        "info": {
+            "lastseen": 1766005518,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "114.94.207.90",
+            "port": 65516
+        },
+        "info": {
+            "lastseen": 1766001064,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "113.162.84.65",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005518,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "122.52.247.68",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765996729,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "154.241.99.236",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008169,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "187.208.239.38",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007074,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "45.84.107.128",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009987,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "185.220.101.135",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766001853,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "109.53.202.103",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766006014,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "177.18.156.137",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007257,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "95.223.76.49",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005422,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "84.72.169.87",
+            "port": 65531
+        },
+        "info": {
+            "lastseen": 1766001650,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "154.242.246.97",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008749,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "189.224.28.180",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007636,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "36.255.169.74",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008225,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "154.242.66.147",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009987,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "202.170.204.108",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009201,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "84.34.237.138",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008529,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "202.191.1.70",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766003702,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "185.231.33.38",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005061,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "159.26.96.59",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009987,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "70.60.183.118",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766006112,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "185.65.134.227",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005394,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "216.249.66.69",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007352,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "151.234.202.80",
+            "port": 61140
+        },
+        "info": {
+            "lastseen": 1766007216,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "185.220.101.160",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007090,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "148.222.199.201",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009201,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "69.132.18.229",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007090,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "154.242.75.26",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009201,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "154.242.18.102",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007090,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "45.84.107.101",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007090,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "45.84.107.47",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766001098,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "95.223.76.52",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766001956,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "103.199.210.64",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1765999943,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "196.191.144.20",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766004120,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "2.184.53.69",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009133,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.203.153.207",
+            "port": 65528
+        },
+        "info": {
+            "lastseen": 1766005377,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "78.46.249.13",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005944,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "191.205.194.109",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007396,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "195.208.35.97",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005088,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "79.236.138.141",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008749,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "170.84.48.19",
+            "port": 65532
+        },
+        "info": {
+            "lastseen": 1766008749,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "154.241.29.78",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008749,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "104.238.172.254",
+            "port": 65533
+        },
+        "info": {
+            "lastseen": 1766008749,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "1.161.68.144",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008749,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "79.20.236.138",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "187.189.146.93",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008749,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "154.242.165.103",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008749,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "179.95.28.40",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008749,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "185.220.101.138",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007878,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.203.153.207",
+            "port": 65530
+        },
+        "info": {
+            "lastseen": 1766007252,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "84.72.169.87",
+            "port": 65530
+        },
+        "info": {
+            "lastseen": 1766007496,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.203.153.207",
+            "port": 65525
+        },
+        "info": {
+            "lastseen": 1766002926,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "178.142.18.131",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009200,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "175.158.211.141",
+            "port": 65533
+        },
+        "info": {
+            "lastseen": 1766006443,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "114.94.207.90",
+            "port": 65527
+        },
+        "info": {
+            "lastseen": 1766007518,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "170.84.16.19",
+            "port": 65533
+        },
+        "info": {
+            "lastseen": 1766005438,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "45.144.113.4",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007562,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "8.8.8.127",
+            "port": 18275
+        },
+        "info": {
+            "lastseen": 1766005376,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "179.228.144.112",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005518,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "104.238.172.254",
+            "port": 65521
+        },
+        "info": {
+            "lastseen": 1766007518,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "175.158.211.141",
+            "port": 65520
+        },
+        "info": {
+            "lastseen": 1766005438,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "192.76.153.253",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766000242,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "45.84.107.74",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007396,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.203.153.207",
+            "port": 65524
+        },
+        "info": {
+            "lastseen": 1766005403,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "104.238.172.254",
+            "port": 65534
+        },
+        "info": {
+            "lastseen": 1765999915,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "79.236.129.193",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007396,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "122.117.204.18",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009987,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "185.220.101.166",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007257,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "45.84.107.222",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005519,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.152.161.133",
+            "port": 65535
+        },
+        "info": {
+            "lastseen": 1766005070,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.152.161.133",
+            "port": 65533
+        },
+        "info": {
+            "lastseen": 1766005070,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.152.161.133",
+            "port": 65517
+        },
+        "info": {
+            "lastseen": 1766009201,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "197.200.66.138",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009987,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "2q5nf5vgabvtfake.onion",
+            "port": 65533
+        },
+        "info": {
+            "lastseen": 1766009201,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "189.161.197.209",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009201,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "177.76.210.20",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009987,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "84.72.169.87",
+            "port": 65526
+        },
+        "info": {
+            "lastseen": 1766007825,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "201.71.138.126",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008780,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "191.33.180.15",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007982,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "36.88.105.194",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008496,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "84.72.169.87",
+            "port": 65533
+        },
+        "info": {
+            "lastseen": 1766007496,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "114.94.207.90",
+            "port": 65529
+        },
+        "info": {
+            "lastseen": 1766007496,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "175.158.211.141",
+            "port": 65524
+        },
+        "info": {
+            "lastseen": 1766002926,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "5.255.100.26",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766004190,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "178.62.154.250",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005376,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "154.243.44.224",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005818,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "14.224.214.195",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005438,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "217.149.172.132",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766002573,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "104.238.172.254",
+            "port": 65529
+        },
+        "info": {
+            "lastseen": 1766006240,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "194.37.81.176",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766003699,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "121.190.69.231",
+            "port": 42861
+        },
+        "info": {
+            "lastseen": 1766003439,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "190.89.31.44",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766002871,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "113.161.176.88",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766003138,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "49.145.162.16",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005519,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "183.83.189.152",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005186,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "76.90.213.253",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766002871,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "187.116.73.59",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005403,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "84.155.63.188",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005818,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "95.153.31.119",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005519,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.190.76.11",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005283,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "78.1.155.147",
+            "port": 65528
+        },
+        "info": {
+            "lastseen": 1766005438,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "78.1.155.147",
+            "port": 65526
+        },
+        "info": {
+            "lastseen": 1766005784,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "197.200.11.152",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005283,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "192.42.116.179",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005014,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "114.94.207.90",
+            "port": 65521
+        },
+        "info": {
+            "lastseen": 1766005468,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "84.72.169.87",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005014,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "154.253.102.149",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008780,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "148.222.199.36",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005506,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "46.0.160.46",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766003699,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "148.222.199.211",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766004853,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "179.244.56.169",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766002926,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "217.196.161.68",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766002744,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "175.158.211.141",
+            "port": 65517
+        },
+        "info": {
+            "lastseen": 1766002979,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "190.242.112.230",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007877,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.87.139.64",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005504,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.87.150.13",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005086,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "129.222.203.57",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005519,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "223.160.131.252",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766002283,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "189.250.38.43",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766002348,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "87.62.113.118",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766002573,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "185.220.101.37",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005519,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "189.141.184.223",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766004853,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "104.28.211.55",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005518,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "89.64.12.45",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005519,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "2.180.31.172",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005518,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "151.0.18.35",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008026,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "114.33.136.15",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008780,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "185.220.101.172",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766004853,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "103.217.111.87",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007396,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "183.81.87.78",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005518,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "94.54.27.85",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008646,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "104.36.80.7",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005227,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "185.220.101.41",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766002371,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "185.220.101.133",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766002032,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "49.204.158.71",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008780,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "190.148.112.226",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766002371,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "191.205.216.56",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766006636,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "91.93.199.192",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766007448,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "24.41.99.148",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005504,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "181.229.233.186",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766002062,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "177.159.151.203",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005186,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "74.244.146.123",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009046,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "89.46.10.62",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766003702,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "143.105.99.159",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005186,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "87.132.206.35",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766002151,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "154.241.211.155",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009122,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "162.212.157.160",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009130,
+            "rating": -0.8,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "134.35.23.168",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766002237,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "181.69.73.12",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766003702,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "195.34.67.173",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766002433,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "187.153.16.226",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766003259,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "78.186.136.159",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766002084,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "185.220.100.246",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005519,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "190.246.29.115",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005716,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "132.255.74.228",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009194,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "187.72.144.91",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766003272,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "89.84.24.72",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766002536,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "116.96.88.118",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008657,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "84.155.63.188",
+            "port": 8446
+        },
+        "info": {
+            "lastseen": 1766005438,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "154.242.173.207",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005518,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "123.28.57.134",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005438,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "75.167.159.54",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005944,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "159.0.196.10",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008680,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "154.242.74.227",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005504,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "90.151.249.252",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009987,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "84.203.54.57",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766005818,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "109.241.231.117",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "176.109.230.154",
+            "port": 55156
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.10.174.236",
+            "port": 65526
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.139.101.196",
+            "port": 65533
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.10.174.236",
+            "port": 65535
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.233.213.84",
+            "port": 65517
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.10.174.236",
+            "port": 65532
+        },
+        "info": {
+            "lastseen": 1766008729,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.139.101.196",
+            "port": 65521
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.139.101.196",
+            "port": 65529
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "2604:8b40:f9:0:1::",
+            "port": 1
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.233.213.84",
+            "port": 65525
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "122.4.12.5",
+            "port": 54005
+        },
+        "info": {
+            "lastseen": 1766008729,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.10.174.236",
+            "port": 65529
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.139.101.196",
+            "port": 65535
+        },
+        "info": {
+            "lastseen": 1766008666,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.139.101.196",
+            "port": 65532
+        },
+        "info": {
+            "lastseen": 1766008729,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.10.174.236",
+            "port": 65533
+        },
+        "info": {
+            "lastseen": 1766008666,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.10.174.236",
+            "port": 65530
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.233.213.84",
+            "port": 65516
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.10.174.236",
+            "port": 65519
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.10.174.236",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766008729,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.10.174.236",
+            "port": 65525
+        },
+        "info": {
+            "lastseen": 1766008666,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.139.101.196",
+            "port": 65523
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.10.174.236",
+            "port": 65516
+        },
+        "info": {
+            "lastseen": 1766008729,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.139.101.196",
+            "port": 65534
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.10.174.236",
+            "port": 65523
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.10.174.236",
+            "port": 65524
+        },
+        "info": {
+            "lastseen": 1766008729,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.233.213.84",
+            "port": 65518
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.233.213.84",
+            "port": 65529
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.139.101.196",
+            "port": 65520
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "2604:8b40:1:3:1::",
+            "port": 8446
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.10.174.236",
+            "port": 65531
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.233.213.84",
+            "port": 65527
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.10.174.236",
+            "port": 65521
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.139.101.196",
+            "port": 65522
+        },
+        "info": {
+            "lastseen": 1766008729,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "24.74.58.33",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.10.174.236",
+            "port": 65528
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.139.101.196",
+            "port": 65525
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.233.213.84",
+            "port": 65535
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.233.213.84",
+            "port": 65528
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.233.213.84",
+            "port": 65523
+        },
+        "info": {
+            "lastseen": 1766008729,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.10.174.236",
+            "port": 65527
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.233.213.84",
+            "port": 65530
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.10.174.236",
+            "port": 65534
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.139.69.196",
+            "port": 65516
+        },
+        "info": {
+            "lastseen": 1766009198,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "64.139.101.196",
+            "port": 65531
+        },
+        "info": {
+            "lastseen": 1766008729,
+            "rating": 0.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "2q5nf5vgabvtfake.onion",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009987,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "189.139.78.19",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766009222,
+            "rating": -0.4,
+            "self": false
         }
     }
 ]

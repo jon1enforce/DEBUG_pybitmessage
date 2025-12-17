@@ -1,48 +1,81 @@
-"""Helper Inbox performs inbox messages related operations"""
+"""
+Insert values into sent table
+"""
 
+import time
+import uuid
 import sqlite3
-
-import queues
+from addresses import decodeAddress
+from bmconfigparser import config
+from helper_ackPayload import genAckPayload
 from helper_sql import sqlExecute, sqlQuery
 from dbcompat import dbstr
 
 
-def insert(t):
-    """Perform an insert into the "inbox" table"""
-    u = [sqlite3.Binary(t[0]), dbstr(t[1]), dbstr(t[2]), dbstr(t[3]), dbstr(t[4]), dbstr(t[5]), dbstr(t[6]), t[7], t[8], sqlite3.Binary(t[9])]
-    sqlExecute('''INSERT INTO inbox VALUES (?,?,?,?,?,?,?,?,?,?)''', *u)
-    # shouldn't emit changedInboxUnread and displayNewInboxMessage
-    # at the same time
-    # queues.UISignalQueue.put(('changedInboxUnread', None))
+# pylint: disable=too-many-arguments
+def insert(msgid=None, toAddress='[Broadcast subscribers]', fromAddress=None, subject=None,
+           message=None, status='msgqueued', ripe=None, ackdata=None, sentTime=None,
+           lastActionTime=None, sleeptill=0, retryNumber=0, encoding=2, ttl=None, folder='sent'):
+    """Perform an insert into the `sent` table"""
+    # pylint: disable=unused-variable
+    # pylint: disable-msg=too-many-locals
 
+    valid_addr = True
+    if not ripe or not ackdata:
+        addr = fromAddress if toAddress == '[Broadcast subscribers]' else toAddress
+        new_status, addressVersionNumber, streamNumber, new_ripe = decodeAddress(addr)
+        valid_addr = True if new_status == 'success' else False
+        if not ripe:
+            ripe = new_ripe
 
-def trash(msgid):
-    """Mark a message in the `inbox` as `trash`"""
-    rowcount = sqlExecute('''UPDATE inbox SET folder='trash' WHERE msgid=?''', sqlite3.Binary(msgid))
-    if rowcount < 1:
-        sqlExecute('''UPDATE inbox SET folder='trash' WHERE msgid=CAST(? AS TEXT)''', msgid)
-    queues.UISignalQueue.put(('removeInboxRowByMsgid', msgid))
+        if not ackdata:
+            stealthLevel = config.safeGetInt(
+                'bitmessagesettings', 'ackstealthlevel')
+            new_ackdata = genAckPayload(streamNumber, stealthLevel)
+            ackdata = new_ackdata
+    if valid_addr:
+        msgid = msgid if msgid else uuid.uuid4().bytes
+        sentTime = sentTime if sentTime else int(time.time())  # sentTime (this doesn't change)
+        lastActionTime = lastActionTime if lastActionTime else int(time.time())
+
+        ttl = ttl if ttl else config.getint('bitmessagesettings', 'ttl')
+
+        t = (sqlite3.Binary(msgid), dbstr(toAddress), sqlite3.Binary(ripe), dbstr(fromAddress), dbstr(subject), dbstr(message), sqlite3.Binary(ackdata),
+             sentTime, lastActionTime, sleeptill, dbstr(status), retryNumber, dbstr(folder),
+             encoding, ttl)
+
+        sqlExecute('''INSERT INTO sent VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', *t)
+        return ackdata
+    else:
+        return None
 
 
 def delete(ack_data):
-    """Permanent delete message from trash"""
-    rowcount = sqlExecute("DELETE FROM inbox WHERE msgid = ?", sqlite3.Binary(ack_data))
+    """Perform Delete query"""
+    rowcount = sqlExecute("DELETE FROM sent WHERE ackdata = ?", sqlite3.Binary(ack_data))
     if rowcount < 1:
-        sqlExecute("DELETE FROM inbox WHERE msgid = CAST(? AS TEXT)", ack_data)
+        sqlExecute("DELETE FROM sent WHERE ackdata = CAST(? AS TEXT)", ack_data)
 
 
-def undeleteMessage(msgid):
-    """Undelte the message"""
-    rowcount = sqlExecute('''UPDATE inbox SET folder='inbox' WHERE msgid=?''', sqlite3.Binary(msgid))
+def retrieve_message_details(ack_data):
+    """Retrieving Message details"""
+    data = sqlQuery(
+        "select toaddress, fromaddress, subject, message, received from inbox where msgid = ?", sqlite3.Binary(ack_data)
+    )
+    if len(data) < 1:
+        data = sqlQuery(
+            "select toaddress, fromaddress, subject, message, received from inbox where msgid = CAST(? AS TEXT)", ack_data
+        )
+    return data
+
+
+def trash(ackdata):
+    """Mark a message in the `sent` as `trash`"""
+    rowcount = sqlExecute(
+        '''UPDATE sent SET folder='trash' WHERE ackdata=?''', sqlite3.Binary(ackdata)
+    )
     if rowcount < 1:
-        sqlExecute('''UPDATE inbox SET folder='inbox' WHERE msgid=CAST(? AS TEXT)''', msgid)
-
-
-def isMessageAlreadyInInbox(sigHash):
-    """Check for previous instances of this message"""
-    queryReturn = sqlQuery(
-        '''SELECT COUNT(*) FROM inbox WHERE sighash=?''', sqlite3.Binary(sigHash))
-    if len(queryReturn) < 1:
-        queryReturn = sqlQuery(
-            '''SELECT COUNT(*) FROM inbox WHERE sighash=CAST(? AS TEXT)''', sigHash)
-    return queryReturn[0][0] != 0
+        rowcount = sqlExecute(
+            '''UPDATE sent SET folder='trash' WHERE ackdata=CAST(? AS TEXT)''', ackdata
+        )
+    return rowcount

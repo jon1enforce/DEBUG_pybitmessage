@@ -75,10 +75,20 @@ maxsize = 1048576
 
 [BM-2cVPgFmwGwcKXMuKntG7cT8yPhJUAkBrmT]
 label = 
-enabled = true
+enabled = false
 decoy = false
 noncetrialsperbyte = 5000
 payloadlengthextrabytes = 10000
 privsigningkey = 5KY1Ba3jtVg7fFK7hyexcGV89W8WQxbFRd76zszimNVcBHaog8b
 privencryptionkey = 5KNZfA1hpv8RN5Rmrrx2BtnTu5YwychWPMSZWQTPBdPofGkibVK
+
+[BM-2cWUk1YMrwLgLCyqdT4vnsrzjDqZBJKGud]
+label = 
+enabled = true
+decoy = false
+noncetrialsperbyte = 5000
+payloadlengthextrabytes = 10000
+privsigningkey = 5Hr3a3bq3MQaxwKQdMzkyBzBLYoaLR8hxwpArZ5kzZ6jM9JVmi3
+privencryptionkey = 5J4Yc5CiJZnecngimZquWU5ra1stnZ17SmPZMrTULiLQRo8ebUf
+lastpubkeysendtime = 1765737768
 
