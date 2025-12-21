@@ -84,11 +84,21 @@ privencryptionkey = 5KNZfA1hpv8RN5Rmrrx2BtnTu5YwychWPMSZWQTPBdPofGkibVK
 
 [BM-2cWUk1YMrwLgLCyqdT4vnsrzjDqZBJKGud]
 label = 
-enabled = true
+enabled = false
 decoy = false
 noncetrialsperbyte = 5000
 payloadlengthextrabytes = 10000
 privsigningkey = 5Hr3a3bq3MQaxwKQdMzkyBzBLYoaLR8hxwpArZ5kzZ6jM9JVmi3
 privencryptionkey = 5J4Yc5CiJZnecngimZquWU5ra1stnZ17SmPZMrTULiLQRo8ebUf
 lastpubkeysendtime = 1765737768
+
+[BM-2cT1BvREwkAHe1Jt5AFKXPwNrGNmco8Dqg]
+label = 
+enabled = true
+decoy = false
+noncetrialsperbyte = 5000
+payloadlengthextrabytes = 10000
+privsigningkey = 5KJfUJMq2BuWQfYk2GZeVTyE8YHANs5ueVKRpQtdtstVagXzp6s
+privencryptionkey = 5K5RQGb5Z3rCdbTKDcrJe32E8aeuy1Rfedx7NGAdGqWmwNPRP32
+lastpubkeysendtime = 1766342776
 

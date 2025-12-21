@@ -24,7 +24,7 @@ if six.PY3:
 from unqstr import ustr, unic
 from dbcompat import dbstr
 from qtpy import QtCore, QtGui, QtWidgets, QtNetwork
-
+from PyQt5.QtCore import Qt
 import shared
 import state
 from debug import logger
@@ -2434,43 +2434,23 @@ class MyForm(settingsmixin.SMainWindow):
         self.rerenderTabTreeSubscriptions()
         self.rerenderTabTreeChans()
 
-    def findInboxUnreadCount(self, count=None):
-        """Count unread inbox messages"""
-        if count is None:
-            queryreturn = sqlQuery('''SELECT count(*) from inbox WHERE folder='inbox' and read=0''')
-            cnt = 0
-            for row in queryreturn:
-                cnt, = row
-            
-            # Sicherstellen, dass cnt eine gültige Zahl ist
-            try:
-                # Wenn cnt ein Byte-String ist, zuerst dekodieren
-                if isinstance(cnt, bytes):
-                    # Versuchen, den Byte-String in einen String zu dekodieren
-                    try:
-                        cnt_str = cnt.decode('utf-8', errors='ignore')
-                    except:
-                        cnt_str = str(cnt)
-                    # Nur numerische Zeichen behalten
-                    cnt_str = ''.join(c for c in cnt_str if c.isdigit() or c == '.')
-                    if cnt_str:
-                        self.unreadCount = int(float(cnt_str))
-                    else:
-                        self.unreadCount = 0
+    def findInboxUnreadCount(self):
+        """Find the number of unread messages in the inbox"""
+        try:
+            queryreturn = sqlQuery('''SELECT COUNT(*) FROM inbox WHERE read=0''')
+            if queryreturn and len(queryreturn) > 0:
+                row = queryreturn[0]
+                # Statt cnt, = row verwenden wir:
+                if len(row) == 1:
+                    cnt = row[0]
+                    return cnt
                 else:
-                    # Direkte Konvertierung für andere Typen
-                    self.unreadCount = int(cnt)
-            except (ValueError, TypeError) as e:
-                print(f"DEBUG: Error converting count to int: {e}, cnt type: {type(cnt)}, cnt value: {cnt}")
-                self.unreadCount = 0
-        else:
-            # Wenn count direkt übergeben wurde
-            try:
-                self.unreadCount = int(count)
-            except (ValueError, TypeError):
-                print(f"DEBUG: Invalid count parameter: {count}")
-                self.unreadCount = 0
-        return self.unreadCount
+                    logger.error("Unexpected row format in findInboxUnreadCount: %s", row)
+                    return 0
+            return 0
+        except Exception as e:
+            logger.error("Error in findInboxUnreadCount: %s", e)
+            return 0
 
     def initTrayIcon(self, iconFileName, app):
         self.currentTrayIconFileName = iconFileName
@@ -2525,6 +2505,21 @@ class MyForm(settingsmixin.SMainWindow):
                         sent.item(i, 3).setText(textToDisplay)
 
     def updateSentItemStatusByAckdata(self, ackdata, textToDisplay):
+        
+        def get_item_data(item):
+            """Get data from QTableWidgetItem with PyQt5/PyQt6 compatibility"""
+            if item is None:
+                return None
+            try:
+                # Try PyQt6 style with role parameter
+                return item.data(Qt.DisplayRole)
+            except TypeError:
+                try:
+                    # Try PyQt5 style without parameter
+                    return item.data()
+                except:
+                    return None
+        
         for sent in (
             self.ui.tableWidgetInbox,
             self.ui.tableWidgetInboxSubscriptions,
@@ -2534,12 +2529,17 @@ class MyForm(settingsmixin.SMainWindow):
             if self.getCurrentFolder(treeWidget) != "sent":
                 continue
             for i in range(sent.rowCount()):
-                # toAddress = sent.item(i, 0).data(QtCore.Qt.UserRole)
-                tableAckdata = as_msgid(sent.item(i, 3).data())
-                # status, addressVersionNumber, streamNumber, ripe = decodeAddress(
-                #     toAddress)
+                # Get the item and its data with compatibility wrapper
+                item = sent.item(i, 3)
+                if item is None:
+                    continue
+                    
+                # Use the compatibility function
+                tableAckdata_raw = get_item_data(item)
+                tableAckdata = as_msgid(tableAckdata_raw)
+                
                 if ackdata == tableAckdata:
-                    sent.item(i, 3).setToolTip(textToDisplay)
+                    item.setToolTip(textToDisplay)
                     try:
                         newlinePosition = textToDisplay.find('\n')
                     # If someone misses adding a "_translate" to a string
@@ -2550,7 +2550,7 @@ class MyForm(settingsmixin.SMainWindow):
                     if newlinePosition > 1:
                         textToDisplay = textToDisplay[:newlinePosition]
 
-                    sent.item(i, 3).setText(textToDisplay)
+                    item.setText(textToDisplay)
 
     def removeInboxRowByMsgid(self, msgid):
         # msgid and inventoryHash are the same thing

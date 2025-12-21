@@ -1301,6 +1301,8 @@ class singleWorker(StoppableThread):
                             "MainWindow",
                             "Doing work necessary to send message."))
                 ))
+                # Setze pubkeyPayload auf None für den Fall, dass später darauf zugegriffen wird
+                pubkeyPayload = None
 
             # Now we can start to assemble our message.
             payload = encodeVarint(fromAddressVersionNumber)

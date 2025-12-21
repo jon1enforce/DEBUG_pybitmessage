@@ -96,8 +96,6 @@ class sqlThread(threading.Thread):
                     helper_sql.sql_available = False
                     return
 
-            # ... (keep all the database upgrade logic from lines 55-400 unchanged) ...
-
             # If the settings version is equal to 2 or 3 then the
             # sqlThread will modify the pubkeys table and change
             # the settings version to 4.
@@ -617,10 +615,58 @@ class sqlThread(threading.Thread):
                         rowcount = 0
                         queryresult = []
                         
+                        # DEBUG: Logge die SQL-Abfrage
+                        logger.debug("SQL EXECUTE: %s", item)
+                        logger.debug("SQL PARAMS: %s", repr(parameters)[:200])
+                        
                         try:
                             self.cur.execute(item, parameters)
                             rowcount = self.cur.rowcount
+                            
+                            # DEBUG: Prüfe erwartete Spalten
+                            if "SELECT" in str(item).upper() and hasattr(self.cur, 'description') and self.cur.description:
+                                expected_columns = len(self.cur.description)
+                                logger.debug("SQL EXPECTED COLUMNS: %d", expected_columns)
+                                logger.debug("SQL COLUMN NAMES: %s", [col[0] for col in self.cur.description])
+                            
                             queryresult = self.cur.fetchall()
+                            
+                            # DEBUG: Prüfe tatsächliche Spalten
+                            if queryresult:
+                                first_row = queryresult[0]
+                                actual_columns = len(first_row)
+                                logger.debug("SQL ACTUAL COLUMNS RETURNED: %d", actual_columns)
+                                
+                                # Wenn Spaltenanzahl nicht übereinstimmt
+                                if hasattr(self.cur, 'description') and self.cur.description:
+                                    expected_columns = len(self.cur.description)
+                                    if actual_columns != expected_columns:
+                                        logger.error("SQL COLUMN MISMATCH: Expected %d, got %d", 
+                                                    expected_columns, actual_columns)
+                                        logger.error("SQL QUERY: %s", str(item)[:500])
+                                        logger.error("SQL PARAMS: %s", str(repr(parameters))[:500])
+                                        logger.error("FIRST ROW: %s", str(first_row)[:500])
+                                        
+                                        # Versuche zu korrigieren
+                                        if "SELECT" in str(item).upper():
+                                            logger.warning("Attempting to fix column mismatch...")
+                                            # Prüfe Tabellenstruktur
+                                            try:
+                                                if "FROM inbox" in str(item).upper():
+                                                    self.cur.execute("PRAGMA table_info(inbox)")
+                                                    inbox_info = self.cur.fetchall()
+                                                    logger.error("Current inbox columns: %d", len(inbox_info))
+                                                    for col in inbox_info:
+                                                        logger.error("  %s: %s", col[1], col[2])
+                                                elif "FROM sent" in str(item).upper():
+                                                    self.cur.execute("PRAGMA table_info(sent)")
+                                                    sent_info = self.cur.fetchall()
+                                                    logger.error("Current sent columns: %d", len(sent_info))
+                                                    for col in sent_info:
+                                                        logger.error("  %s: %s", col[1], col[2])
+                                            except Exception as debug_err:
+                                                logger.error("Debug error: %s", debug_err)
+                            
                         except Exception as err:
                             if str(err) == 'database or disk is full':
                                 logger.fatal(
@@ -639,13 +685,36 @@ class sqlThread(threading.Thread):
                                 return
                             else:
                                 logger.error(
-                                    'SQL error occurred when trying to execute a SQL statement.'
-                                    ' Statement: "%s" Parameters: %s Error: %s',
-                                    str(item)[:100],
-                                    str(repr(parameters))[:200],
-                                    str(err))
-                                # WICHTIG: Kein os._exit(0) hier!
-                                # Stattdessen: Leeres Ergebnis zurückgeben und weiter machen
+                                    'SQL ERROR DETAILS:')
+                                logger.error('  Query: %s', str(item)[:500])
+                                logger.error('  Params: %s', str(repr(parameters))[:500])
+                                logger.error('  Error: %s', str(err))
+                                
+                                # Versuche, die erwartete Spaltenanzahl zu ermitteln
+                                if hasattr(self.cur, 'description') and self.cur.description:
+                                    expected_cols = len(self.cur.description)
+                                    logger.error('  Expected columns: %d', expected_cols)
+                                
+                                # Falls es eine SELECT-Abfrage war, versuche die aktuelle Struktur zu prüfen
+                                if "SELECT" in str(item).upper():
+                                    table_name = None
+                                    if "FROM inbox" in str(item).upper():
+                                        table_name = "inbox"
+                                    elif "FROM sent" in str(item).upper():
+                                        table_name = "sent"
+                                    elif "FROM pubkeys" in str(item).upper():
+                                        table_name = "pubkeys"
+                                    
+                                    if table_name:
+                                        try:
+                                            self.cur.execute(f"PRAGMA table_info({table_name})")
+                                            actual_cols = self.cur.fetchall()
+                                            logger.error('  Actual %s columns: %d', table_name, len(actual_cols))
+                                            for col in actual_cols:
+                                                logger.error('    %s: %s', col[1], col[2])
+                                        except Exception as debug_err:
+                                            logger.error('  Debug error checking table: %s', debug_err)
+                                
                                 queryresult = []
                                 rowcount = 0
                                 # Versuche, die Datenbank-Verbindung wiederherzustellen
