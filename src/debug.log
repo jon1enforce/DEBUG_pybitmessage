@@ -17943,3 +17943,51 @@ TypeError: the JSON object must be str, bytes or bytearray, not NoneType
 2025-12-17 23:22:20,568 - CRITICAL - BUG: Why are we requesting the pubkey for BM-GtovgYdgs7qXPkoYaRgrLFuFKz1SFpsw if there are no messages in the sent folder to that address?
 2025-12-17 23:22:28,740 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
 2025-12-17 23:25:23,091 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-17 23:26:36,750 - WARNING - Using default logger configuration
+2025-12-17 23:26:37,377 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 362, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-17 23:26:37,382 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-17 23:26:37,382 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 165, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 224, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-17 23:26:37,383 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-17 23:26:37,417 - WARNING - No indicator plugin found
+2025-12-17 23:26:37,437 - WARNING - No notification.message plugin found
+2025-12-17 23:27:13,626 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-21 00:23:46,568 - WARNING - Using default logger configuration
+2025-12-21 00:23:47,953 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 362, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-21 00:23:47,959 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-21 00:23:47,959 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 165, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 224, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-21 00:23:47,960 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-21 00:23:48,019 - WARNING - No indicator plugin found
+2025-12-21 00:23:48,041 - WARNING - No notification.message plugin found
+2025-12-21 00:23:57,615 - ERROR - ERROR: Simple test query failed!
+2025-12-21 00:32:29,556 - WARNING - ECDSA verify failed (within processpubkey)
+2025-12-21 01:44:16,669 - WARNING - ⚠️ GUI still running, forcing exit
