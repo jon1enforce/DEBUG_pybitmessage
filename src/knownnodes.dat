@@ -2,43 +2,7 @@
     {
         "stream": 1,
         "peer": {
-            "host": "7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1766436759,
-            "rating": -1.0,
-            "self": null
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
             "host": "tc5qzopb7asgcll2y2k23c2y62vqlalpnkaoaj3ozdappc2vr2jsaoad.onion",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1766436759,
-            "rating": -1.0,
-            "self": null
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "bmessageo7emidr5tt5myvlx4leu2v2jjwwnmfw45ogdtotqdplgkzid.onion",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1766436759,
-            "rating": -1.0,
-            "self": null
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "deadbeefgrqt53bn.onion",
             "port": 8444
         },
         "info": {
@@ -62,31 +26,7 @@
     {
         "stream": 1,
         "peer": {
-            "host": "tz3pklhmhzcrhtd73z3memrrj5luzzq7xf7gf7mefzbxj7jkmuhuplad.onion",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1766436759,
-            "rating": -1.0,
-            "self": null
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "cv5qihf5cbcp7ojie2oegr7m2dhmyply7ljdgmo65nfiowkrzcnhz6yd.onion",
-            "port": 2967
-        },
-        "info": {
-            "lastseen": 1766436759,
-            "rating": -1.0,
-            "self": null
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "b7ywt3zjdnd2uzjqfalco3fdv47igi3obwexcc5ulxntacw65tgz27ad.onion",
+            "host": "7fz2x5bzm2esntfazyvec3t2kulembs2kdr4zhkmg7x6ykyspgfx4oyd.onion",
             "port": 8444
         },
         "info": {
@@ -110,19 +50,7 @@
     {
         "stream": 1,
         "peer": {
-            "host": "r54e3ocm2olhueqebxc6cgnbdkog6th3cxa5xo6ikwgpkawtc6vjmlqd.onion",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1766440189,
-            "rating": -1.0,
-            "self": null
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "i5ruc2kucorhpbgz.onion",
+            "host": "bmessageo7emidr5tt5myvlx4leu2v2jjwwnmfw45ogdtotqdplgkzid.onion",
             "port": 8444
         },
         "info": {
@@ -134,11 +62,107 @@
     {
         "stream": 1,
         "peer": {
-            "host": "27ibkhabkjlw7jxswwslij23jpi3bfjdiwmqfyrpkm7ivlwjttabmxqd.onion",
-            "port": 18444
+            "host": "msyh6wf5zqkdiiyooj4cuporh7hvfvmdqmbduk2ceo37ji4dc4tfb5id.onion",
+            "port": 8444
         },
         "info": {
-            "lastseen": 1766435448,
+            "lastseen": 1766436759,
+            "rating": -1.0,
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "tz3pklhmhzcrhtd73z3memrrj5luzzq7xf7gf7mefzbxj7jkmuhuplad.onion",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766436759,
+            "rating": -1.0,
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "23anonyma3o7ieoqlxjp2nu2o4vp772u2joagumbe5eephojby6ubrqd.onion",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766436759,
+            "rating": -1.0,
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "b7ywt3zjdnd2uzjqfalco3fdv47igi3obwexcc5ulxntacw65tgz27ad.onion",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766436759,
+            "rating": -1.0,
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "dedaflwboukvxzil24smiev2elrrh5oyet5iastfqizaav75k2jjbdid.onion",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766436759,
+            "rating": -1.0,
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "kyuxhkpsyc2gbvexjj4uxtwwwdqhyau33gfkivjolznkuza7nxzwslad.onion",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766436759,
+            "rating": -1.0,
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "cv5qihf5cbcp7ojie2oegr7m2dhmyply7ljdgmo65nfiowkrzcnhz6yd.onion",
+            "port": 2967
+        },
+        "info": {
+            "lastseen": 1766436759,
+            "rating": -1.0,
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "yj5hresiseclmf5tm2gj6nmyfw7mr26gqwwjmwg6ah2ulqlsiur7jaad.onion",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766438361,
+            "rating": -1.0,
+            "self": null
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "r54e3ocm2olhueqebxc6cgnbdkog6th3cxa5xo6ikwgpkawtc6vjmlqd.onion",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766440189,
             "rating": -1.0,
             "self": null
         }
@@ -170,7 +194,7 @@
     {
         "stream": 1,
         "peer": {
-            "host": "msyh6wf5zqkdiiyooj4cuporh7hvfvmdqmbduk2ceo37ji4dc4tfb5id.onion",
+            "host": "deadbeefgrqt53bn.onion",
             "port": 8444
         },
         "info": {
@@ -182,7 +206,7 @@
     {
         "stream": 1,
         "peer": {
-            "host": "dedaflwboukvxzil24smiev2elrrh5oyet5iastfqizaav75k2jjbdid.onion",
+            "host": "i5ruc2kucorhpbgz.onion",
             "port": 8444
         },
         "info": {
@@ -194,35 +218,11 @@
     {
         "stream": 1,
         "peer": {
-            "host": "yj5hresiseclmf5tm2gj6nmyfw7mr26gqwwjmwg6ah2ulqlsiur7jaad.onion",
-            "port": 8444
+            "host": "27ibkhabkjlw7jxswwslij23jpi3bfjdiwmqfyrpkm7ivlwjttabmxqd.onion",
+            "port": 18444
         },
         "info": {
-            "lastseen": 1766438361,
-            "rating": -1.0,
-            "self": null
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "23anonyma3o7ieoqlxjp2nu2o4vp772u2joagumbe5eephojby6ubrqd.onion",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1766436759,
-            "rating": -1.0,
-            "self": null
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "kyuxhkpsyc2gbvexjj4uxtwwwdqhyau33gfkivjolznkuza7nxzwslad.onion",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1766436759,
+            "lastseen": 1766435448,
             "rating": -1.0,
             "self": null
         }
@@ -234,8 +234,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443188,
-            "rating": -0.6,
+            "lastseen": 1766445828,
+            "rating": -0.2,
             "self": false
         }
     },
@@ -246,7 +246,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443396,
+            "lastseen": 1766445658,
             "rating": -1.0,
             "self": false
         }
@@ -258,7 +258,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443261,
+            "lastseen": 1766445372,
             "rating": -1.0,
             "self": false
         }
@@ -270,7 +270,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443282,
+            "lastseen": 1766445033,
             "rating": -1.0,
             "self": false
         }
@@ -282,7 +282,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443054,
+            "lastseen": 1766444667,
             "rating": -1.0,
             "self": false
         }
@@ -294,7 +294,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443282,
+            "lastseen": 1766443737,
             "rating": -1.0,
             "self": false
         }
@@ -306,7 +306,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441958,
+            "lastseen": 1766445033,
             "rating": -1.0,
             "self": false
         }
@@ -318,7 +318,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442412,
+            "lastseen": 1766445446,
             "rating": -1.0,
             "self": false
         }
@@ -330,7 +330,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442289,
+            "lastseen": 1766445434,
             "rating": -0.8,
             "self": false
         }
@@ -342,7 +342,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442289,
+            "lastseen": 1766445446,
             "rating": -1.0,
             "self": false
         }
@@ -354,7 +354,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443282,
+            "lastseen": 1766445238,
             "rating": -1.0,
             "self": false
         }
@@ -366,8 +366,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766437721,
-            "rating": -0.2,
+            "lastseen": 1766445033,
+            "rating": -0.3,
             "self": false
         }
     },
@@ -378,7 +378,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442196,
+            "lastseen": 1766444953,
             "rating": -1.0,
             "self": false
         }
@@ -390,7 +390,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443236,
+            "lastseen": 1766444154,
             "rating": -1.0,
             "self": false
         }
@@ -402,8 +402,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443397,
-            "rating": -0.8,
+            "lastseen": 1766445658,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -414,7 +414,7 @@
             "port": 2841
         },
         "info": {
-            "lastseen": 1766442517,
+            "lastseen": 1766445027,
             "rating": -1.0,
             "self": false
         }
@@ -426,7 +426,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443396,
+            "lastseen": 1766445777,
             "rating": -1.0,
             "self": false
         }
@@ -438,8 +438,8 @@
             "port": 8080
         },
         "info": {
-            "lastseen": 1766443396,
-            "rating": 1.0,
+            "lastseen": 1766445772,
+            "rating": -0.3,
             "self": false
         }
     },
@@ -450,7 +450,7 @@
             "port": 63433
         },
         "info": {
-            "lastseen": 1766443396,
+            "lastseen": 1766445658,
             "rating": -1.0,
             "self": false
         }
@@ -462,8 +462,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442494,
-            "rating": -0.8,
+            "lastseen": 1766444530,
+            "rating": -0.9,
             "self": false
         }
     },
@@ -474,8 +474,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443404,
-            "rating": -0.9,
+            "lastseen": 1766445584,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -486,8 +486,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442440,
-            "rating": -0.7,
+            "lastseen": 1766445085,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -498,7 +498,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443396,
+            "lastseen": 1766444825,
             "rating": -1.0,
             "self": false
         }
@@ -510,7 +510,7 @@
             "port": 2841
         },
         "info": {
-            "lastseen": 1766439978,
+            "lastseen": 1766445027,
             "rating": -1.0,
             "self": false
         }
@@ -522,7 +522,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441926,
+            "lastseen": 1766443522,
             "rating": -1.0,
             "self": false
         }
@@ -546,8 +546,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441958,
-            "rating": -0.6,
+            "lastseen": 1766445015,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -558,7 +558,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766438850,
+            "lastseen": 1766443890,
             "rating": -1.0,
             "self": false
         }
@@ -570,20 +570,8 @@
             "port": 2841
         },
         "info": {
-            "lastseen": 1766443396,
+            "lastseen": 1766445085,
             "rating": -1.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "154.242.40.209",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1766005403,
-            "rating": -0.6,
             "self": false
         }
     },
@@ -594,7 +582,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442571,
+            "lastseen": 1766444825,
             "rating": -1.0,
             "self": false
         }
@@ -606,8 +594,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442037,
-            "rating": -0.6,
+            "lastseen": 1766444530,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -618,8 +606,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442572,
-            "rating": -0.5,
+            "lastseen": 1766445446,
+            "rating": -0.6,
             "self": false
         }
     },
@@ -630,7 +618,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441914,
+            "lastseen": 1766443498,
             "rating": -1.0,
             "self": false
         }
@@ -642,8 +630,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442440,
-            "rating": -0.7,
+            "lastseen": 1766444825,
+            "rating": -0.8,
             "self": false
         }
     },
@@ -654,7 +642,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442297,
+            "lastseen": 1766445033,
             "rating": -1.0,
             "self": false
         }
@@ -666,7 +654,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442812,
+            "lastseen": 1766445150,
             "rating": -1.0,
             "self": false
         }
@@ -678,7 +666,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442440,
+            "lastseen": 1766445446,
             "rating": -1.0,
             "self": false
         }
@@ -690,7 +678,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443282,
+            "lastseen": 1766443941,
             "rating": -0.7,
             "self": false
         }
@@ -702,7 +690,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443282,
+            "lastseen": 1766445658,
             "rating": -1.0,
             "self": false
         }
@@ -726,7 +714,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443282,
+            "lastseen": 1766443931,
             "rating": -1.0,
             "self": false
         }
@@ -738,7 +726,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443054,
+            "lastseen": 1766444973,
             "rating": -1.0,
             "self": false
         }
@@ -750,8 +738,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442812,
-            "rating": -0.5,
+            "lastseen": 1766445027,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -762,7 +750,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442494,
+            "lastseen": 1766444143,
             "rating": -1.0,
             "self": false
         }
@@ -774,8 +762,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443282,
-            "rating": -0.6,
+            "lastseen": 1766445378,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -786,7 +774,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443396,
+            "lastseen": 1766445027,
             "rating": -0.2,
             "self": false
         }
@@ -798,7 +786,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442812,
+            "lastseen": 1766445033,
             "rating": -1.0,
             "self": false
         }
@@ -810,8 +798,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766440924,
-            "rating": -0.9,
+            "lastseen": 1766445027,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -834,7 +822,7 @@
             "port": 2841
         },
         "info": {
-            "lastseen": 1766441300,
+            "lastseen": 1766445085,
             "rating": -1.0,
             "self": false
         }
@@ -846,8 +834,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442412,
-            "rating": -0.7,
+            "lastseen": 1766445658,
+            "rating": -0.8,
             "self": false
         }
     },
@@ -858,7 +846,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442517,
+            "lastseen": 1766445042,
             "rating": -1.0,
             "self": false
         }
@@ -870,8 +858,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443396,
-            "rating": -0.7,
+            "lastseen": 1766445015,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -882,20 +870,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441958,
+            "lastseen": 1766445238,
             "rating": -1.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "154.241.116.218",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1766272012,
-            "rating": -0.7,
             "self": false
         }
     },
@@ -906,7 +882,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442189,
+            "lastseen": 1766445417,
             "rating": -1.0,
             "self": false
         }
@@ -918,7 +894,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442179,
+            "lastseen": 1766443966,
             "rating": -1.0,
             "self": false
         }
@@ -930,7 +906,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443054,
+            "lastseen": 1766445658,
             "rating": -1.0,
             "self": false
         }
@@ -942,7 +918,7 @@
             "port": 2841
         },
         "info": {
-            "lastseen": 1766442572,
+            "lastseen": 1766445658,
             "rating": -1.0,
             "self": false
         }
@@ -954,8 +930,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442325,
-            "rating": -0.8,
+            "lastseen": 1766445658,
+            "rating": -0.9,
             "self": false
         }
     },
@@ -978,7 +954,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442738,
+            "lastseen": 1766445389,
             "rating": -1.0,
             "self": false
         }
@@ -1015,19 +991,7 @@
         },
         "info": {
             "lastseen": 1766442572,
-            "rating": -0.4,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "190.219.63.161",
-            "port": 65529
-        },
-        "info": {
-            "lastseen": 1766431416,
-            "rating": -1.0,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -1050,7 +1014,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441642,
+            "lastseen": 1766445378,
             "rating": -1.0,
             "self": false
         }
@@ -1074,7 +1038,7 @@
             "port": 8080
         },
         "info": {
-            "lastseen": 1766441235,
+            "lastseen": 1766445085,
             "rating": -1.0,
             "self": false
         }
@@ -1086,7 +1050,7 @@
             "port": 49770
         },
         "info": {
-            "lastseen": 1766442812,
+            "lastseen": 1766445434,
             "rating": -1.0,
             "self": false
         }
@@ -1098,8 +1062,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443079,
-            "rating": -0.6,
+            "lastseen": 1766445675,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -1122,7 +1086,7 @@
             "port": 65518
         },
         "info": {
-            "lastseen": 1766443396,
+            "lastseen": 1766443569,
             "rating": -1.0,
             "self": false
         }
@@ -1134,7 +1098,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441642,
+            "lastseen": 1766445394,
             "rating": -1.0,
             "self": false
         }
@@ -1146,7 +1110,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441914,
+            "lastseen": 1766445042,
             "rating": -1.0,
             "self": false
         }
@@ -1158,7 +1122,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442517,
+            "lastseen": 1766443990,
             "rating": -1.0,
             "self": false
         }
@@ -1182,8 +1146,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442572,
-            "rating": -0.7,
+            "lastseen": 1766445015,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1194,7 +1158,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442812,
+            "lastseen": 1766445033,
             "rating": -1.0,
             "self": false
         }
@@ -1206,7 +1170,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766439074,
+            "lastseen": 1766444046,
             "rating": -1.0,
             "self": false
         }
@@ -1218,7 +1182,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443282,
+            "lastseen": 1766445042,
             "rating": -1.0,
             "self": false
         }
@@ -1230,8 +1194,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443396,
-            "rating": -0.8,
+            "lastseen": 1766445434,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1242,7 +1206,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442572,
+            "lastseen": 1766445378,
             "rating": -1.0,
             "self": false
         }
@@ -1254,7 +1218,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442572,
+            "lastseen": 1766445150,
             "rating": -1.0,
             "self": false
         }
@@ -1266,7 +1230,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443396,
+            "lastseen": 1766445446,
             "rating": -1.0,
             "self": false
         }
@@ -1278,7 +1242,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443054,
+            "lastseen": 1766445378,
             "rating": -1.0,
             "self": false
         }
@@ -1290,7 +1254,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442475,
+            "lastseen": 1766443680,
             "rating": -1.0,
             "self": false
         }
@@ -1302,7 +1266,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442494,
+            "lastseen": 1766445150,
             "rating": -1.0,
             "self": false
         }
@@ -1314,8 +1278,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441654,
-            "rating": -0.7,
+            "lastseen": 1766443990,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1326,7 +1290,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442812,
+            "lastseen": 1766445658,
             "rating": -1.0,
             "self": false
         }
@@ -1338,7 +1302,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442494,
+            "lastseen": 1766443676,
             "rating": -1.0,
             "self": false
         }
@@ -1350,7 +1314,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443396,
+            "lastseen": 1766445434,
             "rating": -1.0,
             "self": false
         }
@@ -1362,7 +1326,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442494,
+            "lastseen": 1766445042,
             "rating": -1.0,
             "self": false
         }
@@ -1374,7 +1338,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441857,
+            "lastseen": 1766445658,
             "rating": -1.0,
             "self": false
         }
@@ -1386,7 +1350,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443054,
+            "lastseen": 1766443862,
             "rating": -1.0,
             "self": false
         }
@@ -1398,7 +1362,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443396,
+            "lastseen": 1766445658,
             "rating": -1.0,
             "self": false
         }
@@ -1410,7 +1374,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441674,
+            "lastseen": 1766444530,
             "rating": -1.0,
             "self": false
         }
@@ -1422,7 +1386,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442440,
+            "lastseen": 1766444984,
             "rating": -1.0,
             "self": false
         }
@@ -1434,8 +1398,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443014,
-            "rating": -0.9,
+            "lastseen": 1766445238,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1446,7 +1410,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441302,
+            "lastseen": 1766444667,
             "rating": -1.0,
             "self": false
         }
@@ -1458,7 +1422,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443396,
+            "lastseen": 1766443522,
             "rating": -1.0,
             "self": false
         }
@@ -1470,7 +1434,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442008,
+            "lastseen": 1766443480,
             "rating": -1.0,
             "self": false
         }
@@ -1482,7 +1446,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442438,
+            "lastseen": 1766445434,
             "rating": -1.0,
             "self": false
         }
@@ -1494,7 +1458,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442884,
+            "lastseen": 1766445350,
             "rating": -1.0,
             "self": false
         }
@@ -1506,8 +1470,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443396,
-            "rating": -0.9,
+            "lastseen": 1766444485,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1518,7 +1482,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443282,
+            "lastseen": 1766444667,
             "rating": -1.0,
             "self": false
         }
@@ -1530,7 +1494,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443282,
+            "lastseen": 1766445150,
             "rating": -1.0,
             "self": false
         }
@@ -1542,7 +1506,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442008,
+            "lastseen": 1766444825,
             "rating": -1.0,
             "self": false
         }
@@ -1554,7 +1518,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442037,
+            "lastseen": 1766445042,
             "rating": -1.0,
             "self": false
         }
@@ -1566,7 +1530,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442517,
+            "lastseen": 1766443941,
             "rating": -1.0,
             "self": false
         }
@@ -1578,7 +1542,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766439978,
+            "lastseen": 1766444530,
             "rating": -1.0,
             "self": false
         }
@@ -1602,7 +1566,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441654,
+            "lastseen": 1766445658,
             "rating": -1.0,
             "self": false
         }
@@ -1614,7 +1578,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443054,
+            "lastseen": 1766445434,
             "rating": -1.0,
             "self": false
         }
@@ -1626,7 +1590,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766439953,
+            "lastseen": 1766445150,
             "rating": -1.0,
             "self": false
         }
@@ -1638,7 +1602,7 @@
             "port": 1195
         },
         "info": {
-            "lastseen": 1766438546,
+            "lastseen": 1766445658,
             "rating": -1.0,
             "self": false
         }
@@ -1650,7 +1614,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442412,
+            "lastseen": 1766443787,
             "rating": -1.0,
             "self": false
         }
@@ -1663,7 +1627,7 @@
         },
         "info": {
             "lastseen": 1766350402,
-            "rating": -0.4,
+            "rating": -0.5,
             "self": false
         }
     },
@@ -1686,7 +1650,7 @@
             "port": 8844
         },
         "info": {
-            "lastseen": 1766438935,
+            "lastseen": 1766445658,
             "rating": -1.0,
             "self": false
         }
@@ -1710,7 +1674,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441037,
+            "lastseen": 1766444637,
             "rating": -1.0,
             "self": false
         }
@@ -1722,8 +1686,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442494,
-            "rating": -0.3,
+            "lastseen": 1766445033,
+            "rating": -0.4,
             "self": false
         }
     },
@@ -1734,8 +1698,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441235,
-            "rating": -0.6,
+            "lastseen": 1766444984,
+            "rating": -0.9,
             "self": false
         }
     },
@@ -1746,7 +1710,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441958,
+            "lastseen": 1766443480,
             "rating": -1.0,
             "self": false
         }
@@ -1758,8 +1722,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442297,
-            "rating": -0.6,
+            "lastseen": 1766445378,
+            "rating": -0.9,
             "self": false
         }
     },
@@ -1782,7 +1746,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443396,
+            "lastseen": 1766444143,
             "rating": -1.0,
             "self": false
         }
@@ -1794,7 +1758,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766436579,
+            "lastseen": 1766439634,
             "rating": -1.0,
             "self": false
         }
@@ -1806,7 +1770,7 @@
             "port": 2841
         },
         "info": {
-            "lastseen": 1766441914,
+            "lastseen": 1766445085,
             "rating": -1.0,
             "self": false
         }
@@ -1830,7 +1794,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441926,
+            "lastseen": 1766444530,
             "rating": -1.0,
             "self": false
         }
@@ -1842,7 +1806,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441791,
+            "lastseen": 1766445150,
             "rating": -1.0,
             "self": false
         }
@@ -1854,8 +1818,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442572,
-            "rating": -0.8,
+            "lastseen": 1766445027,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -1866,7 +1830,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443282,
+            "lastseen": 1766444046,
             "rating": -1.0,
             "self": false
         }
@@ -1878,7 +1842,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766440714,
+            "lastseen": 1766445085,
             "rating": -1.0,
             "self": false
         }
@@ -1890,7 +1854,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766434714,
+            "lastseen": 1766444024,
             "rating": -1.0,
             "self": false
         }
@@ -1902,7 +1866,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442572,
+            "lastseen": 1766445434,
             "rating": -1.0,
             "self": false
         }
@@ -1914,7 +1878,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441217,
+            "lastseen": 1766444046,
             "rating": -1.0,
             "self": false
         }
@@ -1926,7 +1890,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443282,
+            "lastseen": 1766445446,
             "rating": -1.0,
             "self": false
         }
@@ -1974,7 +1938,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441692,
+            "lastseen": 1766445378,
             "rating": -1.0,
             "self": false
         }
@@ -1986,7 +1950,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442812,
+            "lastseen": 1766443407,
             "rating": -1.0,
             "self": false
         }
@@ -1998,7 +1962,7 @@
             "port": 8111
         },
         "info": {
-            "lastseen": 1766441235,
+            "lastseen": 1766445434,
             "rating": -1.0,
             "self": false
         }
@@ -2010,7 +1974,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442701,
+            "lastseen": 1766445309,
             "rating": -1.0,
             "self": false
         }
@@ -2022,7 +1986,7 @@
             "port": 8448
         },
         "info": {
-            "lastseen": 1766441674,
+            "lastseen": 1766443676,
             "rating": -1.0,
             "self": false
         }
@@ -2034,8 +1998,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442440,
-            "rating": -0.3,
+            "lastseen": 1766445027,
+            "rating": -0.5,
             "self": false
         }
     },
@@ -2046,7 +2010,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443282,
+            "lastseen": 1766443564,
             "rating": -1.0,
             "self": false
         }
@@ -2058,7 +2022,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442325,
+            "lastseen": 1766443564,
             "rating": -1.0,
             "self": false
         }
@@ -2082,7 +2046,7 @@
             "port": 8080
         },
         "info": {
-            "lastseen": 1766443168,
+            "lastseen": 1766445502,
             "rating": -1.0,
             "self": false
         }
@@ -2094,8 +2058,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443054,
-            "rating": -0.9,
+            "lastseen": 1766443462,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -2106,7 +2070,7 @@
             "port": 2841
         },
         "info": {
-            "lastseen": 1766442517,
+            "lastseen": 1766445027,
             "rating": -1.0,
             "self": false
         }
@@ -2130,7 +2094,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766439074,
+            "lastseen": 1766444825,
             "rating": -1.0,
             "self": false
         }
@@ -2154,7 +2118,7 @@
             "port": 8446
         },
         "info": {
-            "lastseen": 1766442289,
+            "lastseen": 1766443522,
             "rating": -1.0,
             "self": false
         }
@@ -2166,7 +2130,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443168,
+            "lastseen": 1766445658,
             "rating": -1.0,
             "self": false
         }
@@ -2178,7 +2142,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443396,
+            "lastseen": 1766445378,
             "rating": -1.0,
             "self": false
         }
@@ -2190,7 +2154,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441791,
+            "lastseen": 1766444282,
             "rating": -1.0,
             "self": false
         }
@@ -2214,7 +2178,7 @@
             "port": 2841
         },
         "info": {
-            "lastseen": 1766442517,
+            "lastseen": 1766445150,
             "rating": -1.0,
             "self": false
         }
@@ -2238,7 +2202,7 @@
             "port": 55156
         },
         "info": {
-            "lastseen": 1766443054,
+            "lastseen": 1766445446,
             "rating": -1.0,
             "self": false
         }
@@ -2250,7 +2214,7 @@
             "port": 8080
         },
         "info": {
-            "lastseen": 1766443282,
+            "lastseen": 1766445446,
             "rating": -1.0,
             "self": false
         }
@@ -2274,7 +2238,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442289,
+            "lastseen": 1766444825,
             "rating": -1.0,
             "self": false
         }
@@ -2286,7 +2250,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766440698,
+            "lastseen": 1766444984,
             "rating": -1.0,
             "self": false
         }
@@ -2298,7 +2262,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766436942,
+            "lastseen": 1766443692,
             "rating": -1.0,
             "self": false
         }
@@ -2310,7 +2274,7 @@
             "port": 65519
         },
         "info": {
-            "lastseen": 1766434751,
+            "lastseen": 1766445378,
             "rating": -1.0,
             "self": false
         }
@@ -2323,18 +2287,6 @@
         },
         "info": {
             "lastseen": 1766439313,
-            "rating": -1.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "175.158.211.141",
-            "port": 65520
-        },
-        "info": {
-            "lastseen": 1766433009,
             "rating": -1.0,
             "self": false
         }
@@ -2358,7 +2310,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441692,
+            "lastseen": 1766443611,
             "rating": -1.0,
             "self": false
         }
@@ -2370,7 +2322,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766438429,
+            "lastseen": 1766444986,
             "rating": -1.0,
             "self": false
         }
@@ -2394,7 +2346,7 @@
             "port": 8446
         },
         "info": {
-            "lastseen": 1766442412,
+            "lastseen": 1766444046,
             "rating": -1.0,
             "self": false
         }
@@ -2406,7 +2358,7 @@
             "port": 8484
         },
         "info": {
-            "lastseen": 1766440714,
+            "lastseen": 1766443522,
             "rating": -1.0,
             "self": false
         }
@@ -2418,7 +2370,7 @@
             "port": 65517
         },
         "info": {
-            "lastseen": 1766438131,
+            "lastseen": 1766444984,
             "rating": -1.0,
             "self": false
         }
@@ -2430,7 +2382,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766440037,
+            "lastseen": 1766443308,
             "rating": -1.0,
             "self": false
         }
@@ -2443,18 +2395,6 @@
         },
         "info": {
             "lastseen": 1766442812,
-            "rating": -1.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
-            "host": "104.238.172.254",
-            "port": 65522
-        },
-        "info": {
-            "lastseen": 1766431009,
             "rating": -1.0,
             "self": false
         }
@@ -2478,7 +2418,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766438975,
+            "lastseen": 1766442037,
             "rating": -1.0,
             "self": false
         }
@@ -2502,7 +2442,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766440813,
+            "lastseen": 1766444530,
             "rating": -1.0,
             "self": false
         }
@@ -2526,7 +2466,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443054,
+            "lastseen": 1766444986,
             "rating": -1.0,
             "self": false
         }
@@ -2550,7 +2490,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766440110,
+            "lastseen": 1766442475,
             "rating": -1.0,
             "self": false
         }
@@ -2598,7 +2538,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766436942,
+            "lastseen": 1766442475,
             "rating": -1.0,
             "self": false
         }
@@ -2610,7 +2550,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441642,
+            "lastseen": 1766445310,
             "rating": -1.0,
             "self": false
         }
@@ -2623,7 +2563,7 @@
         },
         "info": {
             "lastseen": 1766443054,
-            "rating": -0.8,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -2634,7 +2574,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766440552,
+            "lastseen": 1766445008,
             "rating": -1.0,
             "self": false
         }
@@ -2646,7 +2586,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766439001,
+            "lastseen": 1766444143,
             "rating": -1.0,
             "self": false
         }
@@ -2658,7 +2598,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766439413,
+            "lastseen": 1766445378,
             "rating": -1.0,
             "self": false
         }
@@ -2670,8 +2610,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766440698,
-            "rating": -0.2,
+            "lastseen": 1766445033,
+            "rating": -0.8,
             "self": false
         }
     },
@@ -2683,7 +2623,7 @@
         },
         "info": {
             "lastseen": 1766441642,
-            "rating": -0.4,
+            "rating": -0.6,
             "self": false
         }
     },
@@ -2694,7 +2634,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442440,
+            "lastseen": 1766444812,
             "rating": -1.0,
             "self": false
         }
@@ -2707,7 +2647,7 @@
         },
         "info": {
             "lastseen": 1766439727,
-            "rating": -0.8,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -2718,7 +2658,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766440784,
+            "lastseen": 1766441217,
             "rating": -1.0,
             "self": false
         }
@@ -2730,7 +2670,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766439641,
+            "lastseen": 1766443569,
             "rating": -1.0,
             "self": false
         }
@@ -2742,7 +2682,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441692,
+            "lastseen": 1766444400,
             "rating": -1.0,
             "self": false
         }
@@ -2754,7 +2694,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443396,
+            "lastseen": 1766443522,
             "rating": -1.0,
             "self": false
         }
@@ -2766,7 +2706,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766439001,
+            "lastseen": 1766443340,
             "rating": -1.0,
             "self": false
         }
@@ -2778,7 +2718,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766440707,
+            "lastseen": 1766441857,
             "rating": -1.0,
             "self": false
         }
@@ -2790,7 +2730,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442496,
+            "lastseen": 1766443907,
             "rating": -1.0,
             "self": false
         }
@@ -2802,7 +2742,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766439671,
+            "lastseen": 1766445150,
             "rating": -1.0,
             "self": false
         }
@@ -2826,7 +2766,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441300,
+            "lastseen": 1766442466,
             "rating": -1.0,
             "self": false
         }
@@ -2839,7 +2779,7 @@
         },
         "info": {
             "lastseen": 1766442494,
-            "rating": -0.2,
+            "rating": -0.8,
             "self": false
         }
     },
@@ -2858,23 +2798,11 @@
     {
         "stream": 1,
         "peer": {
-            "host": "200.61.40.99",
-            "port": 8444
-        },
-        "info": {
-            "lastseen": 1766432054,
-            "rating": -1.0,
-            "self": false
-        }
-    },
-    {
-        "stream": 1,
-        "peer": {
             "host": "175.0.121.90",
             "port": 2841
         },
         "info": {
-            "lastseen": 1766443396,
+            "lastseen": 1766445701,
             "rating": -1.0,
             "self": false
         }
@@ -2910,7 +2838,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443408,
+            "lastseen": 1766445913,
             "rating": 1.0,
             "self": false
         }
@@ -2922,8 +2850,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766439640,
-            "rating": -0.8,
+            "lastseen": 1766445027,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -2946,7 +2874,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766438695,
+            "lastseen": 1766445378,
             "rating": -1.0,
             "self": false
         }
@@ -2958,7 +2886,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766437292,
+            "lastseen": 1766445150,
             "rating": -1.0,
             "self": false
         }
@@ -2982,7 +2910,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441674,
+            "lastseen": 1766445446,
             "rating": -1.0,
             "self": false
         }
@@ -2994,8 +2922,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443054,
-            "rating": -0.4,
+            "lastseen": 1766445434,
+            "rating": -0.8,
             "self": false
         }
     },
@@ -3006,8 +2934,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766439629,
-            "rating": -0.5,
+            "lastseen": 1766443480,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -3018,7 +2946,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766438531,
+            "lastseen": 1766443676,
             "rating": -1.0,
             "self": false
         }
@@ -3030,8 +2958,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766438531,
-            "rating": -0.9,
+            "lastseen": 1766439641,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -3054,7 +2982,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766439806,
+            "lastseen": 1766445658,
             "rating": -1.0,
             "self": false
         }
@@ -3066,7 +2994,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441967,
+            "lastseen": 1766445658,
             "rating": -1.0,
             "self": false
         }
@@ -3078,7 +3006,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766437225,
+            "lastseen": 1766444953,
             "rating": -1.0,
             "self": false
         }
@@ -3090,8 +3018,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443234,
-            "rating": -1.0,
+            "lastseen": 1766445772,
+            "rating": -0.8,
             "self": false
         }
     },
@@ -3102,7 +3030,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766439806,
+            "lastseen": 1766444530,
             "rating": -1.0,
             "self": false
         }
@@ -3126,7 +3054,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443396,
+            "lastseen": 1766445683,
             "rating": -1.0,
             "self": false
         }
@@ -3138,8 +3066,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766431802,
-            "rating": -0.4,
+            "lastseen": 1766443569,
+            "rating": -0.8,
             "self": false
         }
     },
@@ -3150,7 +3078,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766438850,
+            "lastseen": 1766445150,
             "rating": -1.0,
             "self": false
         }
@@ -3162,7 +3090,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443396,
+            "lastseen": 1766445361,
             "rating": -1.0,
             "self": false
         }
@@ -3186,7 +3114,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442812,
+            "lastseen": 1766443611,
             "rating": -1.0,
             "self": false
         }
@@ -3198,7 +3126,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441479,
+            "lastseen": 1766444986,
             "rating": -1.0,
             "self": false
         }
@@ -3210,7 +3138,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766434099,
+            "lastseen": 1766443941,
             "rating": -1.0,
             "self": false
         }
@@ -3222,7 +3150,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443396,
+            "lastseen": 1766443569,
             "rating": -1.0,
             "self": false
         }
@@ -3246,7 +3174,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766436468,
+            "lastseen": 1766445015,
             "rating": -1.0,
             "self": false
         }
@@ -3270,7 +3198,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766438176,
+            "lastseen": 1766445378,
             "rating": -1.0,
             "self": false
         }
@@ -3294,7 +3222,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766439978,
+            "lastseen": 1766443676,
             "rating": -1.0,
             "self": false
         }
@@ -3306,7 +3234,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442572,
+            "lastseen": 1766444825,
             "rating": -1.0,
             "self": false
         }
@@ -3318,7 +3246,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766436450,
+            "lastseen": 1766444984,
             "rating": -1.0,
             "self": false
         }
@@ -3330,7 +3258,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442440,
+            "lastseen": 1766445658,
             "rating": -1.0,
             "self": false
         }
@@ -3354,7 +3282,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766438850,
+            "lastseen": 1766443481,
             "rating": -1.0,
             "self": false
         }
@@ -3378,8 +3306,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442315,
-            "rating": -0.8,
+            "lastseen": 1766445662,
+            "rating": -0.7,
             "self": false
         }
     },
@@ -3402,8 +3330,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442594,
-            "rating": -0.9,
+            "lastseen": 1766444986,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -3414,7 +3342,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442646,
+            "lastseen": 1766444024,
             "rating": -1.0,
             "self": false
         }
@@ -3426,7 +3354,7 @@
             "port": 65533
         },
         "info": {
-            "lastseen": 1766440714,
+            "lastseen": 1766445150,
             "rating": -1.0,
             "self": false
         }
@@ -3438,7 +3366,7 @@
             "port": 65535
         },
         "info": {
-            "lastseen": 1766434766,
+            "lastseen": 1766443798,
             "rating": -1.0,
             "self": false
         }
@@ -3474,7 +3402,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766439365,
+            "lastseen": 1766443462,
             "rating": -1.0,
             "self": false
         }
@@ -3486,7 +3414,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766440698,
+            "lastseen": 1766444143,
             "rating": -1.0,
             "self": false
         }
@@ -3522,7 +3450,7 @@
             "port": 65528
         },
         "info": {
-            "lastseen": 1766436599,
+            "lastseen": 1766444825,
             "rating": -1.0,
             "self": false
         }
@@ -3535,7 +3463,7 @@
         },
         "info": {
             "lastseen": 1766443282,
-            "rating": -0.9,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -3558,7 +3486,7 @@
             "port": 65528
         },
         "info": {
-            "lastseen": 1766442440,
+            "lastseen": 1766445378,
             "rating": -1.0,
             "self": false
         }
@@ -3582,7 +3510,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441791,
+            "lastseen": 1766444046,
             "rating": -1.0,
             "self": false
         }
@@ -3606,7 +3534,7 @@
             "port": 65528
         },
         "info": {
-            "lastseen": 1766436392,
+            "lastseen": 1766445150,
             "rating": -1.0,
             "self": false
         }
@@ -3642,7 +3570,7 @@
             "port": 65525
         },
         "info": {
-            "lastseen": 1766437178,
+            "lastseen": 1766444825,
             "rating": -1.0,
             "self": false
         }
@@ -3666,7 +3594,7 @@
             "port": 65535
         },
         "info": {
-            "lastseen": 1766441883,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -3702,7 +3630,7 @@
             "port": 65519
         },
         "info": {
-            "lastseen": 1766441883,
+            "lastseen": 1766444825,
             "rating": -1.0,
             "self": false
         }
@@ -3714,8 +3642,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442572,
-            "rating": -0.9,
+            "lastseen": 1766445658,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -3751,7 +3679,7 @@
         },
         "info": {
             "lastseen": 1766438235,
-            "rating": -0.5,
+            "rating": -0.6,
             "self": false
         }
     },
@@ -3786,7 +3714,7 @@
             "port": 65517
         },
         "info": {
-            "lastseen": 1766441300,
+            "lastseen": 1766443676,
             "rating": -1.0,
             "self": false
         }
@@ -3810,7 +3738,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766445150,
             "rating": -1.0,
             "self": false
         }
@@ -3822,7 +3750,7 @@
             "port": 65518
         },
         "info": {
-            "lastseen": 1766438131,
+            "lastseen": 1766443498,
             "rating": -1.0,
             "self": false
         }
@@ -3834,7 +3762,7 @@
             "port": 65520
         },
         "info": {
-            "lastseen": 1766442325,
+            "lastseen": 1766443462,
             "rating": -1.0,
             "self": false
         }
@@ -3895,7 +3823,7 @@
         },
         "info": {
             "lastseen": 1766438531,
-            "rating": -0.9,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -3906,7 +3834,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443054,
+            "lastseen": 1766443564,
             "rating": -1.0,
             "self": false
         }
@@ -3918,8 +3846,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443054,
-            "rating": -0.7,
+            "lastseen": 1766445446,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -3930,7 +3858,7 @@
             "port": 65535
         },
         "info": {
-            "lastseen": 1766438531,
+            "lastseen": 1766444825,
             "rating": -1.0,
             "self": false
         }
@@ -3943,7 +3871,7 @@
         },
         "info": {
             "lastseen": 1766438531,
-            "rating": -0.9,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -3954,7 +3882,7 @@
             "port": 2820
         },
         "info": {
-            "lastseen": 1766438531,
+            "lastseen": 1766444984,
             "rating": -1.0,
             "self": false
         }
@@ -3966,7 +3894,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442773,
+            "lastseen": 1766445015,
             "rating": -1.0,
             "self": false
         }
@@ -4002,7 +3930,7 @@
             "port": 65517
         },
         "info": {
-            "lastseen": 1766438706,
+            "lastseen": 1766444825,
             "rating": -1.0,
             "self": false
         }
@@ -4014,7 +3942,7 @@
             "port": 65532
         },
         "info": {
-            "lastseen": 1766438935,
+            "lastseen": 1766443498,
             "rating": -1.0,
             "self": false
         }
@@ -4026,7 +3954,7 @@
             "port": 65527
         },
         "info": {
-            "lastseen": 1766438706,
+            "lastseen": 1766443692,
             "rating": -1.0,
             "self": false
         }
@@ -4039,7 +3967,7 @@
         },
         "info": {
             "lastseen": 1766438261,
-            "rating": -0.8,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -4050,8 +3978,8 @@
             "port": 65529
         },
         "info": {
-            "lastseen": 1766438261,
-            "rating": -0.9,
+            "lastseen": 1766443862,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -4086,7 +4014,7 @@
             "port": 65522
         },
         "info": {
-            "lastseen": 1766438935,
+            "lastseen": 1766443798,
             "rating": -1.0,
             "self": false
         }
@@ -4134,7 +4062,7 @@
             "port": 65522
         },
         "info": {
-            "lastseen": 1766443282,
+            "lastseen": 1766445378,
             "rating": -1.0,
             "self": false
         }
@@ -4182,7 +4110,7 @@
             "port": 65523
         },
         "info": {
-            "lastseen": 1766438261,
+            "lastseen": 1766443862,
             "rating": -1.0,
             "self": false
         }
@@ -4206,7 +4134,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766439899,
+            "lastseen": 1766443862,
             "rating": -1.0,
             "self": false
         }
@@ -4218,7 +4146,7 @@
             "port": 65521
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4230,7 +4158,7 @@
             "port": 65525
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4242,7 +4170,7 @@
             "port": 65535
         },
         "info": {
-            "lastseen": 1766441432,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4254,7 +4182,7 @@
             "port": 65529
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4266,7 +4194,7 @@
             "port": 65535
         },
         "info": {
-            "lastseen": 1766441883,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4278,7 +4206,7 @@
             "port": 54005
         },
         "info": {
-            "lastseen": 1766441914,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4290,7 +4218,7 @@
             "port": 65517
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766444984,
             "rating": -1.0,
             "self": false
         }
@@ -4302,7 +4230,7 @@
             "port": 55156
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766444024,
             "rating": -1.0,
             "self": false
         }
@@ -4326,7 +4254,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4338,7 +4266,7 @@
             "port": 65518
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4362,7 +4290,7 @@
             "port": 65516
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4386,7 +4314,7 @@
             "port": 65528
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4398,7 +4326,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4410,7 +4338,7 @@
             "port": 65517
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4422,7 +4350,7 @@
             "port": 65525
         },
         "info": {
-            "lastseen": 1766441883,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4434,7 +4362,7 @@
             "port": 65520
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443676,
             "rating": -1.0,
             "self": false
         }
@@ -4446,7 +4374,7 @@
             "port": 65526
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766445378,
             "rating": -1.0,
             "self": false
         }
@@ -4482,7 +4410,7 @@
             "port": 8446
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4494,7 +4422,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4506,7 +4434,7 @@
             "port": 65527
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4530,7 +4458,7 @@
             "port": 65530
         },
         "info": {
-            "lastseen": 1766442572,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4542,7 +4470,7 @@
             "port": 65534
         },
         "info": {
-            "lastseen": 1766441914,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4554,7 +4482,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4566,7 +4494,7 @@
             "port": 65528
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4578,8 +4506,8 @@
             "port": 65516
         },
         "info": {
-            "lastseen": 1766442131,
-            "rating": -0.1,
+            "lastseen": 1766443473,
+            "rating": -0.6,
             "self": false
         }
     },
@@ -4590,7 +4518,7 @@
             "port": 65524
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4602,7 +4530,7 @@
             "port": 65533
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766444984,
             "rating": -1.0,
             "self": false
         }
@@ -4626,7 +4554,7 @@
             "port": 65516
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4638,7 +4566,7 @@
             "port": 65516
         },
         "info": {
-            "lastseen": 1766441883,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4650,7 +4578,7 @@
             "port": 65526
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4662,8 +4590,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442131,
-            "rating": -0.9,
+            "lastseen": 1766443473,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -4674,7 +4602,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766444984,
             "rating": -1.0,
             "self": false
         }
@@ -4686,7 +4614,7 @@
             "port": 65527
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443239,
             "rating": -1.0,
             "self": false
         }
@@ -4698,7 +4626,7 @@
             "port": 55156
         },
         "info": {
-            "lastseen": 1766442440,
+            "lastseen": 1766445378,
             "rating": -1.0,
             "self": false
         }
@@ -4710,7 +4638,7 @@
             "port": 65532
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4722,7 +4650,7 @@
             "port": 65522
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443473,
             "rating": -1.0,
             "self": false
         }
@@ -4734,7 +4662,7 @@
             "port": 65531
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766444984,
             "rating": -1.0,
             "self": false
         }
@@ -4746,7 +4674,7 @@
             "port": 65527
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443473,
             "rating": -1.0,
             "self": false
         }
@@ -4758,8 +4686,8 @@
             "port": 65518
         },
         "info": {
-            "lastseen": 1766435921,
-            "rating": -0.8,
+            "lastseen": 1766443798,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -4770,7 +4698,7 @@
             "port": 65531
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4794,7 +4722,7 @@
             "port": 65532
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443473,
             "rating": -1.0,
             "self": false
         }
@@ -4806,7 +4734,7 @@
             "port": 65524
         },
         "info": {
-            "lastseen": 1766441883,
+            "lastseen": 1766444024,
             "rating": -1.0,
             "self": false
         }
@@ -4818,7 +4746,7 @@
             "port": 65533
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4830,7 +4758,7 @@
             "port": 65523
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4854,8 +4782,8 @@
             "port": 65531
         },
         "info": {
-            "lastseen": 1766432729,
-            "rating": -0.9,
+            "lastseen": 1766443692,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -4866,7 +4794,7 @@
             "port": 65529
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4878,8 +4806,8 @@
             "port": 2820
         },
         "info": {
-            "lastseen": 1766442131,
-            "rating": -0.9,
+            "lastseen": 1766443928,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -4890,7 +4818,7 @@
             "port": 65518
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4902,7 +4830,7 @@
             "port": 65523
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4914,7 +4842,7 @@
             "port": 65522
         },
         "info": {
-            "lastseen": 1766441883,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -4926,8 +4854,8 @@
             "port": 65517
         },
         "info": {
-            "lastseen": 1766442131,
-            "rating": -0.9,
+            "lastseen": 1766443928,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -4938,8 +4866,8 @@
             "port": 65518
         },
         "info": {
-            "lastseen": 1766442131,
-            "rating": -0.8,
+            "lastseen": 1766445658,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -4974,8 +4902,8 @@
             "port": 65533
         },
         "info": {
-            "lastseen": 1766442131,
-            "rating": -0.8,
+            "lastseen": 1766443928,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -4986,7 +4914,7 @@
             "port": 65520
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -5010,7 +4938,7 @@
             "port": 65524
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443473,
             "rating": -1.0,
             "self": false
         }
@@ -5022,7 +4950,7 @@
             "port": 65526
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443676,
             "rating": -1.0,
             "self": false
         }
@@ -5034,7 +4962,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -5046,7 +4974,7 @@
             "port": 65532
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -5058,7 +4986,7 @@
             "port": 65520
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -5070,7 +4998,7 @@
             "port": 65534
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -5106,7 +5034,7 @@
             "port": 65529
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -5118,7 +5046,7 @@
             "port": 65521
         },
         "info": {
-            "lastseen": 1766439313,
+            "lastseen": 1766445658,
             "rating": -1.0,
             "self": false
         }
@@ -5131,7 +5059,7 @@
         },
         "info": {
             "lastseen": 1766439978,
-            "rating": -0.9,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5190,8 +5118,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441970,
-            "rating": -0.8,
+            "lastseen": 1766444955,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5239,7 +5167,7 @@
         },
         "info": {
             "lastseen": 1766434428,
-            "rating": -0.9,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5262,7 +5190,7 @@
             "port": 1
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443473,
             "rating": -1.0,
             "self": false
         }
@@ -5275,7 +5203,7 @@
         },
         "info": {
             "lastseen": 1766440956,
-            "rating": -0.9,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5287,7 +5215,7 @@
         },
         "info": {
             "lastseen": 1766440956,
-            "rating": -0.9,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5310,7 +5238,7 @@
             "port": 65528
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -5346,8 +5274,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766437564,
-            "rating": -0.7,
+            "lastseen": 1766445378,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5359,7 +5287,7 @@
         },
         "info": {
             "lastseen": 1766441300,
-            "rating": -0.8,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5370,8 +5298,8 @@
             "port": 65519
         },
         "info": {
-            "lastseen": 1766441194,
-            "rating": -0.9,
+            "lastseen": 1766445150,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5383,7 +5311,7 @@
         },
         "info": {
             "lastseen": 1766441220,
-            "rating": -0.9,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5407,7 +5335,7 @@
         },
         "info": {
             "lastseen": 1766439684,
-            "rating": -0.9,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5419,7 +5347,7 @@
         },
         "info": {
             "lastseen": 1766442572,
-            "rating": -0.8,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5430,7 +5358,7 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766438218,
+            "lastseen": 1766443692,
             "rating": -1.0,
             "self": false
         }
@@ -5442,7 +5370,7 @@
             "port": 9477
         },
         "info": {
-            "lastseen": 1766441207,
+            "lastseen": 1766443676,
             "rating": -1.0,
             "self": false
         }
@@ -5467,7 +5395,7 @@
         },
         "info": {
             "lastseen": 1766441692,
-            "rating": -0.7,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5478,7 +5406,7 @@
             "port": 65519
         },
         "info": {
-            "lastseen": 1766441692,
+            "lastseen": 1766443660,
             "rating": -1.0,
             "self": false
         }
@@ -5490,8 +5418,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441914,
-            "rating": -0.6,
+            "lastseen": 1766443569,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5502,8 +5430,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442524,
-            "rating": -0.8,
+            "lastseen": 1766445027,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5515,7 +5443,7 @@
         },
         "info": {
             "lastseen": 1766441904,
-            "rating": -0.5,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5526,7 +5454,7 @@
             "port": 65516
         },
         "info": {
-            "lastseen": 1766442325,
+            "lastseen": 1766442594,
             "rating": -1.0,
             "self": false
         }
@@ -5538,7 +5466,7 @@
             "port": 65523
         },
         "info": {
-            "lastseen": 1766442325,
+            "lastseen": 1766443462,
             "rating": -1.0,
             "self": false
         }
@@ -5574,8 +5502,8 @@
             "port": 65521
         },
         "info": {
-            "lastseen": 1766442440,
-            "rating": -0.8,
+            "lastseen": 1766444985,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5586,8 +5514,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443054,
-            "rating": -0.6,
+            "lastseen": 1766444927,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5598,8 +5526,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442437,
-            "rating": -0.5,
+            "lastseen": 1766445085,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5611,7 +5539,7 @@
         },
         "info": {
             "lastseen": 1766441207,
-            "rating": -0.5,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5623,7 +5551,7 @@
         },
         "info": {
             "lastseen": 1766441970,
-            "rating": -0.7,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5634,8 +5562,8 @@
             "port": 65526
         },
         "info": {
-            "lastseen": 1766441830,
-            "rating": -0.8,
+            "lastseen": 1766445150,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5646,8 +5574,8 @@
             "port": 65523
         },
         "info": {
-            "lastseen": 1766441528,
-            "rating": -0.4,
+            "lastseen": 1766443798,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5659,7 +5587,7 @@
         },
         "info": {
             "lastseen": 1766441528,
-            "rating": -0.5,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5671,7 +5599,7 @@
         },
         "info": {
             "lastseen": 1766441528,
-            "rating": -0.4,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5683,7 +5611,7 @@
         },
         "info": {
             "lastseen": 1766437680,
-            "rating": -0.3,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5707,7 +5635,7 @@
         },
         "info": {
             "lastseen": 1766436599,
-            "rating": -0.3,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5719,7 +5647,7 @@
         },
         "info": {
             "lastseen": 1766435921,
-            "rating": -0.6,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5730,8 +5658,8 @@
             "port": 65516
         },
         "info": {
-            "lastseen": 1766443396,
-            "rating": -0.3,
+            "lastseen": 1766445658,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5742,8 +5670,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766441432,
-            "rating": -0.4,
+            "lastseen": 1766444024,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5754,8 +5682,8 @@
             "port": 65521
         },
         "info": {
-            "lastseen": 1766441432,
-            "rating": -0.7,
+            "lastseen": 1766443928,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5766,8 +5694,8 @@
             "port": 65530
         },
         "info": {
-            "lastseen": 1766442131,
-            "rating": -0.6,
+            "lastseen": 1766443928,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5778,8 +5706,8 @@
             "port": 65519
         },
         "info": {
-            "lastseen": 1766441883,
-            "rating": -0.6,
+            "lastseen": 1766443928,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5790,8 +5718,8 @@
             "port": 65523
         },
         "info": {
-            "lastseen": 1766442131,
-            "rating": -0.7,
+            "lastseen": 1766443928,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5802,8 +5730,8 @@
             "port": 65521
         },
         "info": {
-            "lastseen": 1766442131,
-            "rating": -0.3,
+            "lastseen": 1766443928,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5814,8 +5742,8 @@
             "port": 65525
         },
         "info": {
-            "lastseen": 1766442131,
-            "rating": -0.6,
+            "lastseen": 1766443928,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5826,7 +5754,7 @@
             "port": 60227
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -5838,8 +5766,8 @@
             "port": 65530
         },
         "info": {
-            "lastseen": 1766442131,
-            "rating": -0.8,
+            "lastseen": 1766443928,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5850,8 +5778,8 @@
             "port": 65534
         },
         "info": {
-            "lastseen": 1766443054,
-            "rating": -0.7,
+            "lastseen": 1766443928,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5862,8 +5790,8 @@
             "port": 65531
         },
         "info": {
-            "lastseen": 1766442131,
-            "rating": -0.7,
+            "lastseen": 1766443928,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5874,7 +5802,7 @@
             "port": 22824
         },
         "info": {
-            "lastseen": 1766442131,
+            "lastseen": 1766443928,
             "rating": -1.0,
             "self": false
         }
@@ -5887,7 +5815,7 @@
         },
         "info": {
             "lastseen": 1766442572,
-            "rating": -0.7,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5899,7 +5827,7 @@
         },
         "info": {
             "lastseen": 1766441977,
-            "rating": -0.6,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5911,7 +5839,7 @@
         },
         "info": {
             "lastseen": 1766442538,
-            "rating": -0.5,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5923,7 +5851,7 @@
         },
         "info": {
             "lastseen": 1766441830,
-            "rating": -0.1,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5934,8 +5862,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766442671,
-            "rating": 0.0,
+            "lastseen": 1766443498,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5946,8 +5874,8 @@
             "port": 8444
         },
         "info": {
-            "lastseen": 1766443396,
-            "rating": 0.0,
+            "lastseen": 1766443737,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5959,7 +5887,7 @@
         },
         "info": {
             "lastseen": 1766443396,
-            "rating": 0.0,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5971,7 +5899,7 @@
         },
         "info": {
             "lastseen": 1766443396,
-            "rating": 0.0,
+            "rating": -1.0,
             "self": false
         }
     },
@@ -5983,7 +5911,535 @@
         },
         "info": {
             "lastseen": 1766443396,
-            "rating": 0.0,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.216.252.165",
+            "port": 65524
+        },
+        "info": {
+            "lastseen": 1766443611,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "114.94.207.90",
+            "port": 65530
+        },
+        "info": {
+            "lastseen": 1766443462,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "104.238.172.254",
+            "port": 65529
+        },
+        "info": {
+            "lastseen": 1766443462,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "84.72.169.87",
+            "port": 65530
+        },
+        "info": {
+            "lastseen": 1766443798,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "104.238.172.254",
+            "port": 65523
+        },
+        "info": {
+            "lastseen": 1766441650,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.203.153.147",
+            "port": 24577
+        },
+        "info": {
+            "lastseen": 1766441857,
+            "rating": -0.7,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "78.1.155.147",
+            "port": 65531
+        },
+        "info": {
+            "lastseen": 1766443569,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "104.238.172.254",
+            "port": 65527
+        },
+        "info": {
+            "lastseen": 1766443737,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "104.238.172.254",
+            "port": 65532
+        },
+        "info": {
+            "lastseen": 1766443569,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "170.84.48.19",
+            "port": 65526
+        },
+        "info": {
+            "lastseen": 1766443611,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "2q5nf5vgabvtfake.onion",
+            "port": 65517
+        },
+        "info": {
+            "lastseen": 1766443611,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "104.238.172.254",
+            "port": 65533
+        },
+        "info": {
+            "lastseen": 1766443611,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "170.84.48.19",
+            "port": 65528
+        },
+        "info": {
+            "lastseen": 1766443692,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "2q5nf5vgabvtfake.onion",
+            "port": 65527
+        },
+        "info": {
+            "lastseen": 1766443692,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "78.1.155.147",
+            "port": 65524
+        },
+        "info": {
+            "lastseen": 1766445658,
+            "rating": -0.9,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "84.72.169.87",
+            "port": 65535
+        },
+        "info": {
+            "lastseen": 1766443737,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "190.219.63.161",
+            "port": 65534
+        },
+        "info": {
+            "lastseen": 1766443660,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "114.94.207.90",
+            "port": 65521
+        },
+        "info": {
+            "lastseen": 1766443629,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.152.161.133",
+            "port": 65528
+        },
+        "info": {
+            "lastseen": 1766443629,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.152.161.133",
+            "port": 65532
+        },
+        "info": {
+            "lastseen": 1766443737,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.152.161.133",
+            "port": 65517
+        },
+        "info": {
+            "lastseen": 1766443498,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "114.94.207.90",
+            "port": 65523
+        },
+        "info": {
+            "lastseen": 1766443737,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "78.1.155.147",
+            "port": 65521
+        },
+        "info": {
+            "lastseen": 1766443737,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.152.161.133",
+            "port": 65534
+        },
+        "info": {
+            "lastseen": 1766443737,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "84.72.169.87",
+            "port": 65534
+        },
+        "info": {
+            "lastseen": 1766443862,
+            "rating": -0.9,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "95.223.78.189",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766445153,
+            "rating": -1.0,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "175.158.211.141",
+            "port": 65533
+        },
+        "info": {
+            "lastseen": 1766444984,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "190.219.63.161",
+            "port": 65516
+        },
+        "info": {
+            "lastseen": 1766444350,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "190.219.63.161",
+            "port": 65530
+        },
+        "info": {
+            "lastseen": 1766444350,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "84.72.169.87",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766445594,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "255.0.0.0",
+            "port": 18275
+        },
+        "info": {
+            "lastseen": 1766444024,
+            "rating": -0.7,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.203.153.207",
+            "port": 65524
+        },
+        "info": {
+            "lastseen": 1766444024,
+            "rating": -0.5,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.216.252.165",
+            "port": 65528
+        },
+        "info": {
+            "lastseen": 1766444865,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "114.94.207.90",
+            "port": 65527
+        },
+        "info": {
+            "lastseen": 1766444865,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "190.219.63.161",
+            "port": 65529
+        },
+        "info": {
+            "lastseen": 1766444350,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "82.203.153.207",
+            "port": 65517
+        },
+        "info": {
+            "lastseen": 1766444953,
+            "rating": -0.6,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "170.84.16.19",
+            "port": 65533
+        },
+        "info": {
+            "lastseen": 1766443990,
+            "rating": -0.1,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "190.219.63.161",
+            "port": 65533
+        },
+        "info": {
+            "lastseen": 1766441830,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "78.1.155.147",
+            "port": 65529
+        },
+        "info": {
+            "lastseen": 1766444952,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "213.216.252.165",
+            "port": 65516
+        },
+        "info": {
+            "lastseen": 1766442509,
+            "rating": -0.2,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "190.219.63.161",
+            "port": 65535
+        },
+        "info": {
+            "lastseen": 1766445658,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "200.61.40.99",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766443479,
+            "rating": -0.3,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "185.220.100.244",
+            "port": 8444
+        },
+        "info": {
+            "lastseen": 1766445819,
+            "rating": -0.4,
+            "self": false
+        }
+    },
+    {
+        "stream": 1,
+        "peer": {
+            "host": "175.158.211.141",
+            "port": 65526
+        },
+        "info": {
+            "lastseen": 1766445594,
+            "rating": -0.1,
             "self": false
         }
     }
