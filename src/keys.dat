@@ -104,7 +104,7 @@ lastpubkeysendtime = 1766342776
 
 [BM-2cVQA7htDEaMr7SbuPtGHbsJTTErYke5xs]
 label = 
-enabled = true
+enabled = false
 decoy = false
 noncetrialsperbyte = 5000
 payloadlengthextrabytes = 10000
@@ -114,11 +114,21 @@ lastpubkeysendtime = 1766354633
 
 [BM-2cWcapgwJCUv8jR6FRiiYXvuZUT6FvCwZZ]
 label = 
-enabled = true
+enabled = false
 decoy = false
 noncetrialsperbyte = 5000
 payloadlengthextrabytes = 10000
 privsigningkey = 5JEAa9tymMaPTA6iyReySrRNo6AxpqxhW8fLx6hPUCAoSBSmpPk
 privencryptionkey = 5J3SXVjZSo9UmrMT6T6CcTi7jbJX2aumd4P7ZdTcXukZHYrkWWK
 lastpubkeysendtime = 1766363801
+
+[BM-2cW13SjafrmEEBywn4822PrJSN9KPhjr14]
+label = 
+enabled = true
+decoy = false
+noncetrialsperbyte = 5000
+payloadlengthextrabytes = 10000
+privsigningkey = 5KBCrpH8Rt4QhnV25bePMLKxAbGbmyR1QK5NwEZcrspuLbWnBgm
+privencryptionkey = 5KbpuxMLv6vDtsDrLJiCBZGZmDB59YXwiSt9jF72kimsik5rof4
+lastpubkeysendtime = 1766364711
 

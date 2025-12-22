@@ -50,7 +50,7 @@ def insert(msgid=None, toAddress='[Broadcast subscribers]', fromAddress=None, su
         # KORREKTUR: status ohne dbstr() - muss als String gespeichert werden
         t = (sqlite3.Binary(msgid), dbstr(toAddress), sqlite3.Binary(ripe), dbstr(fromAddress), 
              dbstr(subject), dbstr(message), sqlite3.Binary(ackdata),
-             sentTime, lastActionTime, sleeptill, status, retryNumber, dbstr(folder),  # status statt dbstr(status)
+             sentTime, lastActionTime, sleeptill, dbstr(status), retryNumber, dbstr(folder),  # JETZT mit dbstr()
              encoding, ttl)
 
         sqlExecute('''INSERT INTO sent VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', *t)
