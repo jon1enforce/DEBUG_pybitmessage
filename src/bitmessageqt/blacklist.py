@@ -14,6 +14,7 @@ from .retranslateui import RetranslateMixin
 from tr import _translate
 from .uisignaler import UISignaler
 from .utils import avatarize
+from helper_sql import safe_decode
 
 # Set up basic logging configuration
 logging.basicConfig(
@@ -233,8 +234,8 @@ class Blacklist(QtWidgets.QWidget, RetranslateMixin):
         self.tableWidgetBlacklist.setSortingEnabled(False)
         for row in queryreturn:
             label, address, enabled = row
-            label = label.decode("utf-8", "replace")
-            address = address.decode("utf-8", "replace")
+            label = safe_decode(label, "utf-8", "replace")
+            address = safe_decode(address, "utf-8", "replace")
             logger.debug("Processing entry - label: %s, address: %s, enabled: %s", 
                        label, address, enabled)
             

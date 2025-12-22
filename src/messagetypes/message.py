@@ -1,4 +1,5 @@
 import logging
+from helper_sql import safe_decode
 
 logger = logging.getLogger('default')
 
@@ -19,12 +20,12 @@ class Message(MsgBase):
         subject = data.get("subject", "")
         body = data.get("body", "")
         try:
-            data["subject"] = subject.decode('utf-8', 'replace')
+            data["subject"] = safe_decode(subject, "utf-8", "replace")
         except:
             data["subject"] = ''
 
         try:
-            data["body"] = body.decode('utf-8', 'replace')
+            data["body"] = safe_decode(body, "utf-8", "replace")
         except:
             data["body"] = ''
 

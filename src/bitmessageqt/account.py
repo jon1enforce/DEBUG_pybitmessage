@@ -20,6 +20,7 @@ from helper_sql import sqlQuery, sqlExecute
 from .foldertree import AccountMixin
 from .utils import str_broadcast_subscribers
 from tr import _translate
+from helper_sql import safe_decode
 
 
 def getSortedSubscriptions(count=False):
@@ -36,8 +37,8 @@ def getSortedSubscriptions(count=False):
         ' ORDER BY label COLLATE NOCASE ASC')
     ret = {}
     for label, address, enabled in queryreturn:
-        label = label.decode("utf-8", "replace")
-        address = address.decode("utf-8", "replace")
+        label = safe_decode(label, "utf-8", "replace")
+        address = safe_decode(address, "utf-8", "replace")
         ret[address] = {'inbox': {}}
         ret[address]['inbox'].update(label=label, enabled=enabled, count=0)
     if count:
@@ -48,8 +49,8 @@ def getSortedSubscriptions(count=False):
             ' AND toaddress = ? GROUP BY inbox.fromaddress, folder',
             dbstr(str_broadcast_subscribers))
         for address, folder, cnt in queryreturn:
-            address = address.decode("utf-8", "replace")
-            folder = folder.decode("utf-8", "replace")
+            address = safe_decode(address, "utf-8", "replace")
+            folder = safe_decode(folder, "utf-8", "replace")
             if folder not in ret[address]:
                 ret[address][folder] = {
                     'label': ret[address]['inbox']['label'],

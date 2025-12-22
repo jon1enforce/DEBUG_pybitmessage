@@ -32,6 +32,7 @@ from distutils import version
 import subprocess  # nosec B404
 
 from importlib import import_module
+from helper_sql import safe_decode
 
 debug_print("Basic imports completed successfully")
 
@@ -377,7 +378,7 @@ def check_openssl():
                 ' ECDH, and ECDSA enabled.')
             debug_print("OpenSSL version too old")
             return False
-        matches = cflags_regex.findall(openssl_cflags.decode('utf-8', "ignore"))
+        matches = cflags_regex.findall(safe_decode(openssl_cflags, "utf-8", "ignore"))
         if matches:
             logger.error(
                 'This OpenSSL library is missing the following required'
@@ -434,8 +435,8 @@ def check_curses():
     # The pythondialog author does not like Python2 str, so we have to use
     # unicode for just the version otherwise we get the repr form which
     # includes the module and class names along with the actual version.
-    logger.info('dialog Utility Version %s', dialog_util_version.decode('utf-8'))
-    debug_print(f"dialog utility version: {dialog_util_version.decode('utf-8')}")
+    logger.info('dialog Utility Version %s', safe_decode(dialog_util_version, "utf-8"))
+    debug_print(f"dialog utility version: {safe_decode(dialog_util_version, "utf-8")}")
     return True
 
 def check_pyqt():

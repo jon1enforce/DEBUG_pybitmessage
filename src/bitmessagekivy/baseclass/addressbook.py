@@ -30,6 +30,7 @@ from pybitmessage.bitmessagekivy.baseclass.popup import SavedAddressDetailPopup
 from pybitmessage.bitmessagekivy.baseclass.addressbook_widgets import HelperAddressBook
 from pybitmessage.helper_sql import sqlExecute
 from dbcompat import dbstr
+from helper_sql import safe_decode
 
 logger = logging.getLogger('default')
 
@@ -147,8 +148,8 @@ class AddressBook(Screen, HelperAddressBook):
         add_dict = {}
         for row in address_list:
             label, address = row
-            label = label.decode("utf-8", "replace")
-            address = address.decode("utf-8", "replace")
+            label = safe_decode(label, "utf-8", "replace")
+            address = safe_decode(address, "utf-8", "replace")
             add_dict[label] = address
         label = str(self.addbook_popup.content_cls.ids.add_label.text)
         if label in stored_labels and self.address == add_dict[label]:

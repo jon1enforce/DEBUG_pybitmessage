@@ -21,6 +21,7 @@ from pybitmessage.bitmessagekivy.get_platform import platform
 from pybitmessage.bitmessagekivy.baseclass.common import toast
 
 from pybitmessage.addresses import decodeAddress
+from helper_sql import safe_decode
 
 logger = logging.getLogger('default')
 
@@ -129,8 +130,8 @@ class SavedAddressDetailPopup(BoxLayout):
         add_dict = {}
         for row in address_list:
             label, address = row
-            label = label.decode("utf-8", "replace")
-            address = address.decode("utf-8", "replace")
+            label = safe_decode(label, "utf-8", "replace")
+            address = safe_decode(address, "utf-8", "replace")
             add_dict[label] = address
         if self.address and entered_label in addr_labels \
                 and self.address != add_dict[entered_label]:

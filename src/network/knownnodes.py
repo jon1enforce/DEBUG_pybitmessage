@@ -15,6 +15,7 @@ import six
 import state
 from bmconfigparser import config
 from network.node import Peer
+from helper_sql import safe_decode
 
 state.Peer = Peer
 
@@ -27,13 +28,13 @@ knownNodesTrimAmount = 2000
 """trim stream knownnodes dict to this length"""
 
 knownNodesForgetRating = -0.5
-"""forget a node after rating is this low"""
+"""forget a node after rating is low"""
 
 knownNodesActual = False
 
 logger = logging.getLogger('default')
 
-# Optimierte DEFAULT_NODES
+# Optimized DEFAULT_NODES
 DEFAULT_NODES = (
     Peer('bm-node01.duckdns.org', 443),
     Peer('bitmessage.es', 443),
@@ -50,6 +51,7 @@ DEFAULT_NODES = (
 def json_serialize_knownnodes(output):
     """
     Reorganize knownnodes dict and write it as JSON to output
+    Handles bytes hostnames by converting them to strings
     """
     logger.debug("Starting json_serialize_knownnodes")
     _serialized = []
@@ -62,11 +64,16 @@ def json_serialize_knownnodes(output):
             
             for peer, info in peers_snapshot:
                 try:
+                    # Convert host to string if it's bytes
+                    host = peer.host
+                    if isinstance(host, bytes):
+                        host = safe_decode(host, 'utf-8', 'ignore')
+                    
                     info_copy = info.copy()
                     info_copy.update(rating=round(info_copy.get('rating', 0), 2))
                     _serialized.append({
                         'stream': stream, 
-                        'peer': peer._asdict(), 
+                        'peer': {'host': host, 'port': peer.port}, 
                         'info': info_copy
                     })
                 except Exception as e:
@@ -79,6 +86,7 @@ def json_serialize_knownnodes(output):
 def json_deserialize_knownnodes(source):
     """
     Read JSON from source and make knownnodes dict
+    Handles string hostnames (may have been bytes before)
     """
     global knownNodesActual
     logger.debug("Starting json_deserialize_knownnodes")
@@ -94,7 +102,15 @@ def json_deserialize_knownnodes(source):
             try:
                 peer_data = node['peer']
                 info = node['info']
-                peer = Peer(str(peer_data['host']), peer_data.get('port', 8444))
+                
+                # Get host and ensure it's string
+                host = peer_data['host']
+                if isinstance(host, bytes):
+                    host = safe_decode(host, 'utf-8', 'ignore')
+                elif not isinstance(host, str):
+                    host = str(host)
+                
+                peer = Peer(host, peer_data.get('port', 8444))
                 stream = node['stream']
                 
                 if stream not in knownNodes:
@@ -114,10 +130,10 @@ def json_deserialize_knownnodes(source):
 
 def pickle_deserialize_old_knownnodes(source):
     """
-    DEAKTIVIERT - pickle wurde aus Sicherheitsgründen entfernt
+    DEACTIVATED - pickle removed for security reasons
     """
-    logger.error("🚨 SICHERHEITSMAßNAHME: pickle Deserialisierung wurde deaktiviert")
-    logger.error("Alte knownnodes.dat Formate werden nicht mehr unterstützt")
+    logger.error("🚨 SECURITY MEASURE: pickle deserialization has been deactivated")
+    logger.error("Old knownnodes.dat formats are no longer supported")
     
     with knownNodesLock:
         knownNodes.clear()
@@ -159,12 +175,13 @@ def addKnownNode(stream, peer, lastseen=None, is_self=False):
     """
     logger.debug("Starting addKnownNode for peer %s:%d", peer.host, peer.port)
     
-    # Validate peer host
-    if not isinstance(peer.host, str):
+    # Validate peer host - ensure it's not bytes
+    if isinstance(peer.host, bytes):
         try:
-            peer = Peer(peer.host.decode("ascii"), peer.port)
+            host_str = safe_decode(peer.host, 'utf-8', 'ignore')
+            peer = Peer(host_str, peer.port)
         except (UnicodeDecodeError, AttributeError) as err:
-            logger.warning("Invalid host: %s", err)
+            logger.warning("Invalid host bytes: %s", err)
             return False
     
     # Handle multiple streams

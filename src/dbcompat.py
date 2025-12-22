@@ -1,5 +1,6 @@
 import logging
 import six
+from helper_sql import safe_decode
 
 logger = logging.getLogger("default")
 
@@ -8,7 +9,7 @@ def dbstr(v):
         if isinstance(v, str):
             return v
         elif isinstance(v, bytes):
-            return v.decode("utf-8", "replace")
+            return safe_decode(v, "utf-8", "replace")
         logger.debug("unexpected type in dbstr(): {}".format(type(v)))
         return v  # hope this never happens..
     else:  # assume six.PY2

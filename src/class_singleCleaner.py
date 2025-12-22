@@ -32,6 +32,7 @@ from helper_sql import sqlExecute, sqlQuery
 from network import connectionpool, knownnodes, StoppableThread
 from tr import _translate
 from dbcompat import dbstr
+from helper_sql import safe_decode
 
 
 #: Equals 4 weeks. You could make this longer if you want
@@ -112,8 +113,8 @@ class singleCleaner(StoppableThread):
                 )
                 print(f"DEBUG: Found {len(queryreturn)} messages to potentially resend")
                 for toAddress, ackData, status in queryreturn:
-                    toAddress = toAddress.decode("utf-8", "replace")
-                    status = status.decode("utf-8", "replace")
+                    toAddress = safe_decode(toAddress, "utf-8", "replace")
+                    status = safe_decode(status, "utf-8", "replace")
                     print(f"DEBUG: Processing message - toAddress: {toAddress}, status: {status}")
                     if status == 'awaitingpubkey':
                         print("DEBUG: Resending pubkey request")

@@ -163,6 +163,26 @@ def reloadMyAddressHashes():
     else:
         logger.debug("Keyfile permissions are secure")
 
+# In shared.py oder helper_generic.py
+def safe_decode(value, encoding='utf-8', errors='ignore'):
+    """
+    Safely decode bytes to string. If it's already a string, return it.
+    """
+    if value is None:
+        return ''
+    elif isinstance(value, bytes):
+        try:
+            return value.decode(encoding, errors)
+        except:
+            # Fallback
+            try:
+                return value.decode('latin-1', errors)
+            except:
+                return str(value)[:100]
+    elif isinstance(value, str):
+        return value
+    else:
+        return str(value)
 def reloadBroadcastSendersForWhichImWatching():
     """Reload broadcast senders with detailed debugging"""
     logger.debug("Reloading broadcast senders")
@@ -175,8 +195,14 @@ def reloadBroadcastSendersForWhichImWatching():
     logger.debug("Found %d enabled subscriptions", len(queryreturn))
     
     for row in queryreturn:
-        address, = row
-        address = address.decode("utf-8", "replace")
+        if len(row) == 1:
+            address = row[0]
+        else:
+            # Debug-Ausgabe um zu sehen, was wirklich zurückkommt
+            logger.error("Unexpected row format in reloadBroadcastSendersForWhichImWatching: %s", row)
+            continue  # oder handle es anders
+        
+        address = safe_decode(address, "utf-8", "replace")
         logger.debug("Processing subscription: %s", address)
         
         try:
@@ -214,13 +240,13 @@ def fixPotentiallyInvalidUTF8Data(text):
     """Sanitize UTF-8 data with debug logging"""
     logger.debug("Checking text for valid UTF-8 encoding")
     try:
-        text.decode('utf-8')
+        safe_decode(text, "utf-8")
         logger.debug("Text is valid UTF-8")
         return text
     except UnicodeDecodeError:
         logger.debug("Text contains invalid UTF-8, applying replacement")
         return 'Part of the message is corrupt. The message cannot be' \
-            ' displayed the normal way.\n\n' + text.decode("utf-8", "replace")
+            ' displayed the normal way.\n\n' + safe_decode(text, "utf-8", "replace")
 
 def checkSensitiveFilePermissions(filename):
     """Check file permissions with debug logging"""
@@ -304,6 +330,7 @@ def safe_sql_query(template, *params):
 # SECURITY PATCH: Safe file operations
 import os
 from pathlib import Path
+from helper_sql import safe_decode
 
 def safe_open(filepath, mode='r', *args, **kwargs):
     """Safely open files with path traversal protection"""

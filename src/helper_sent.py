@@ -10,6 +10,7 @@ from bmconfigparser import config
 from helper_ackPayload import genAckPayload
 from helper_sql import sqlExecute, sqlQuery
 from dbcompat import dbstr
+from helper_sql import safe_decode
 
 
 # pylint: disable=too-many-arguments
@@ -42,7 +43,7 @@ def insert(msgid=None, toAddress='[Broadcast subscribers]', fromAddress=None, su
 
         # KORREKTUR: Sicherstellen, dass status ein String ist, nicht Bytes
         if isinstance(status, bytes):
-            status = status.decode('utf-8')
+            status = safe_decode(status, "utf-8")
         elif not isinstance(status, str):
             status = str(status)
 

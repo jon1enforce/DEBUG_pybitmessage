@@ -35,6 +35,7 @@ import six
 from dbcompat import dbstr
 from tr import _translate
 
+
 def sizeof_fmt(num, suffix='h/s'):
     """Format hashes per seconds nicely (SI prefix)"""
 
@@ -47,136 +48,6 @@ def sizeof_fmt(num, suffix='h/s'):
 
 class singleWorker(StoppableThread):
     """Thread for performing PoW"""
-
-    # Python 3 compatibility helper functions
-    def safe_decode(self, value, default=""):
-        """Safely decode bytes to string."""
-        if value is None:
-            return default
-        elif isinstance(value, bytes):
-            try:
-                return value.decode("utf-8", errors="replace")
-            except UnicodeDecodeError:
-                try:
-                    return value.decode("latin-1", errors="replace")
-                except:
-                    return repr(value)[:100]
-        elif isinstance(value, str):
-            return value
-        else:
-            return str(value)
-
-    def safe_int(self, value, default=0):
-        """Safely convert to int."""
-        if value is None:
-            return default
-        elif isinstance(value, (int, float)):
-            return int(value)
-        elif isinstance(value, (str, bytes)):
-            try:
-                if isinstance(value, bytes):
-                    value = self.safe_decode(value)
-                return int(value)
-            except:
-                return default
-        else:
-            try:
-                return int(value)
-            except:
-                return default
-
-    def safe_bytes(self, value, encoding="utf-8"):
-        """Safely convert to bytes."""
-        if value is None:
-            return b""
-        elif isinstance(value, bytes):
-            return value
-        elif isinstance(value, str):
-            return value.encode(encoding, errors="replace")
-        else:
-            return str(value).encode(encoding, errors="replace")
-    def safe_sql_query(self, query, *args):
-        """Safe SQL query wrapper."""
-        try:
-            import sqlite3
-            from helper_sql import sqlQuery
-            
-            safe_args = []
-            for arg in args:
-                if isinstance(arg, bytes):
-                    safe_args.append(sqlite3.Binary(arg))
-                elif isinstance(arg, str):
-                    safe_args.append(arg)
-                else:
-                    safe_args.append(arg)
-            
-            result = sqlQuery(query, *safe_args)
-            
-            # Konvertiere bytes zu strings
-            if result:
-                converted = []
-                for row in result:
-                    if isinstance(row, (tuple, list)):
-                        conv_row = []
-                        for item in row:
-                            if isinstance(item, bytes):
-                                conv_row.append(self.safe_decode(item))
-                            else:
-                                conv_row.append(item)
-                        converted.append(tuple(conv_row))
-                    else:
-                        if isinstance(row, bytes):
-                            converted.append(self.safe_decode(row))
-                        else:
-                            converted.append(row)
-                return converted
-            
-            return result
-            
-        except Exception as e:
-            self.logger.error(f"safe_sql_query failed: {e}")
-            return []
-    
-    def safe_sql_execute(self, query, *args):
-        """Safe SQL execute wrapper."""
-        try:
-            import sqlite3
-            from helper_sql import sqlExecute
-            
-            safe_args = []
-            for arg in args:
-                if isinstance(arg, bytes):
-                    safe_args.append(sqlite3.Binary(arg))
-                elif isinstance(arg, str):
-                    safe_args.append(arg)
-                else:
-                    safe_args.append(arg)
-            
-            return sqlExecute(query, *safe_args)
-            
-        except Exception as e:
-            self.logger.error(f"safe_sql_execute failed: {e}")
-            return 0
-
-
-        """Safely convert to bytes."""
-
-        if value is None:
-
-            return b""
-
-        elif isinstance(value, bytes):
-
-            return value
-
-        elif isinstance(value, str):
-
-            return value.encode(encoding, errors="replace")
-
-        else:
-
-            return str(value).encode(encoding, errors="replace")
-
 
     def __init__(self):
         super(singleWorker, self).__init__(name="singleWorker")
@@ -821,14 +692,14 @@ class singleWorker(StoppableThread):
                     return default
         
         # Teste eine einfache Query zuerst
-        test_query = self.safe_sql_query("SELECT 1")
+        test_query = sqlQuery("SELECT 1")
         if not test_query:
             self.logger.error("ERROR: Simple test query failed!")
             return
         
         # Überprüfe die Tabellenstruktur
         try:
-            table_info = self.safe_sql_query("PRAGMA table_info(sent)")
+            table_info = sqlQuery("PRAGMA table_info(sent)")
             self.logger.debug(f"Sent table has {len(table_info)} columns")
             for i, col in enumerate(table_info):
                 if isinstance(col, (tuple, list)) and len(col) > 1:
@@ -1119,7 +990,7 @@ class singleWorker(StoppableThread):
                 rowcount = sqlExecute(
                     '''UPDATE sent SET msgid=?, status=?, lastactiontime=? '''
                     ''' WHERE ackdata=? AND folder='sent' ''',
-                    sqlite3.Binary(inventoryHash), self.safe_decode('broadcastsent'), int(time.time()), sqlite3.Binary(ackdata_bytes)
+                    sqlite3.Binary(inventoryHash), dbstr('broadcastsent'), int(time.time()), sqlite3.Binary(ackdata_bytes)
                 )
                 if rowcount < 1:
                     sqlExecute(
@@ -1279,7 +1150,7 @@ class singleWorker(StoppableThread):
                     if not sqlExecute(
                         '''UPDATE sent SET status='doingmsgpow' '''
                         ''' WHERE toaddress=? AND status='msgqueued' AND folder='sent' ''',
-                        self.safe_decode(toaddress)
+                        dbstr(toaddress)
                     ):
                         continue
                     status = 'doingmsgpow'
@@ -1287,7 +1158,7 @@ class singleWorker(StoppableThread):
                     # Let's see if we already have the pubkey in our pubkeys table
                     queryreturn_inner = sqlQuery(
                         '''SELECT address FROM pubkeys WHERE address=?''',
-                        self.safe_decode(toaddress)
+                        dbstr(toaddress)
                     )
                     # If we have the needed pubkey in the pubkey table already,
                     if queryreturn_inner != []:
@@ -1295,7 +1166,7 @@ class singleWorker(StoppableThread):
                         if not sqlExecute(
                             '''UPDATE sent SET status='doingmsgpow' '''
                             ''' WHERE toaddress=? AND status='msgqueued' AND folder='sent' ''',
-                            self.safe_decode(toaddress)
+                            dbstr(toaddress)
                         ):
                             continue
                         status = 'doingmsgpow'
@@ -1307,7 +1178,7 @@ class singleWorker(StoppableThread):
                         sqlExecute(
                             '''UPDATE pubkeys SET usedpersonally='yes' '''
                             ''' WHERE address=?''',
-                            self.safe_decode(toaddress)
+                            dbstr(toaddress)
                         )
                     # We don't have the needed pubkey in the pubkeys table already.
                     else:
@@ -1327,7 +1198,7 @@ class singleWorker(StoppableThread):
                                 ''' sleeptill=? WHERE toaddress=? '''
                                 ''' AND status='msgqueued' ''',
                                 int(time.time()) + 2.5 * 24 * 60 * 60,
-                                self.safe_decode(toaddress)
+                                dbstr(toaddress)
                             )
                             queues.UISignalQueue.put((
                                 'updateSentItemStatusByToAddress', (
@@ -1383,7 +1254,7 @@ class singleWorker(StoppableThread):
                                             ''' status='awaitingpubkey' or '''
                                             ''' status='doingpubkeypow') AND '''
                                             ''' folder='sent' ''',
-                                            self.safe_decode(toaddress))
+                                            dbstr(toaddress))
                                         del state.neededPubkeys[tag_bytes]
                                         break
                                     # else:
@@ -1400,7 +1271,7 @@ class singleWorker(StoppableThread):
                                     '''UPDATE sent SET '''
                                     ''' status='doingpubkeypow' WHERE '''
                                     ''' toaddress=? AND status='msgqueued' AND folder='sent' ''',
-                                    self.safe_decode(toaddress)
+                                    dbstr(toaddress)
                                 )
                                 queues.UISignalQueue.put((
                                     'updateSentItemStatusByToAddress', (
@@ -1450,7 +1321,7 @@ class singleWorker(StoppableThread):
                     # is too hard then we'll abort.
                     queryreturn_pubkey = sqlQuery(
                         'SELECT transmitdata FROM pubkeys WHERE address=?',
-                        self.safe_decode(toaddress))
+                        dbstr(toaddress))
                     
                     if not queryreturn_pubkey:
                         self.logger.error(f"No pubkey found for {toaddress}")
@@ -1894,7 +1765,7 @@ class singleWorker(StoppableThread):
                 rowcount = sqlExecute(
                     '''UPDATE sent SET msgid=?, status=?, retrynumber=?, '''
                     ''' sleeptill=?, lastactiontime=? WHERE ackdata=? AND folder='sent' ''',
-                    sqlite3.Binary(inventoryHash), self.safe_decode(newStatus), retryNumber + 1,
+                    sqlite3.Binary(inventoryHash), dbstr(newStatus), retryNumber + 1,
                     sleepTill, int(time.time()), sqlite3.Binary(ackdata)
                 )
                 if rowcount < 1:
@@ -1989,7 +1860,7 @@ class singleWorker(StoppableThread):
             '''SELECT retrynumber FROM sent WHERE toaddress=? '''
             ''' AND (status='doingpubkeypow' OR status='awaitingpubkey') '''
             ''' AND folder='sent' LIMIT 1''',
-            self.safe_decode(toAddress)
+            dbstr(toAddress)
         )
         
         # Überprüfe und parse Query-Ergebnis sicher
@@ -2080,7 +1951,7 @@ class singleWorker(StoppableThread):
             ''' status='awaitingpubkey', retrynumber=?, sleeptill=? '''
             ''' WHERE toaddress=? AND (status='doingpubkeypow' OR '''
             ''' status='awaitingpubkey') AND folder='sent' ''',
-            int(time.time()), retryNumber + 1, sleeptill, self.safe_decode(toAddress))
+            int(time.time()), retryNumber + 1, sleeptill, dbstr(toAddress))
 
         queues.UISignalQueue.put((
             'updateStatusBar', _translate(

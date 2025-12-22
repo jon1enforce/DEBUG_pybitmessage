@@ -10,23 +10,30 @@ import threading
 import logging
 import time
 from six.moves import queue
+import sqlite3
 
 logger = logging.getLogger('default')
 
 sqlSubmitQueue = queue.Queue()
-"""the queue for SQL"""
 sqlReturnQueue = queue.Queue()
-"""the queue for results"""
 sql_lock = threading.Lock()
-""" lock to prevent queueing a new request until the previous response
-    is available - DISABLED IN EMERGENCY PATCH """
 sql_available = False
-"""set to True by `.threads.sqlThread` immediately upon start"""
 sql_ready = threading.Event()
-"""set by `.threads.sqlThread` when ready for processing (after
-   initialization is done)"""
 sql_timeout = 60
-"""timeout for waiting for sql_ready in seconds"""
+
+
+def safe_decode(data, encoding='utf-8', errors='ignore'):
+    """
+    Sicher von Bytes zu String konvertieren
+    """
+    if isinstance(data, bytes):
+        return data.decode(encoding, errors)
+    elif isinstance(data, str):
+        return data
+    elif data is None:
+        return ''
+    else:
+        return str(data)
 
 
 def sqlQuery(sql_statement, *args):
@@ -36,11 +43,13 @@ def sqlQuery(sql_statement, *args):
     global sql_available
     
     if not sql_available:
-        # logger.debug("SQL not available in sqlQuery")
         return []
     
     try:
-        # NO LOCKING - direct queue access
+        # WICHTIG: Keine automatische Konvertierung hier!
+        # Der sqlThread kümmert sich um text_factory = str
+        # und die aufrufende Funktion muss wissen, was sie erwartet
+        
         sqlSubmitQueue.put(sql_statement, timeout=2)
         
         if args == ():
@@ -54,65 +63,55 @@ def sqlQuery(sql_statement, *args):
             queryreturn, _ = sqlReturnQueue.get(timeout=10)
             return queryreturn
         except queue.Empty:
-            # logger.warning(f"SQL query timeout: {sql_statement[:50]}...")
             return []
             
     except queue.Full:
-        # logger.warning("SQL submit queue full")
         return []
-    except Exception:
+    except Exception as e:
+        logger.error("Error in sqlQuery: %s", e)
         return []
 
 
-def sqlExecuteChunked(sql_statement, as_text, idCount, *args):
-    """Execute chunked SQL statement - EMERGENCY VERSION WITHOUT LOCKING"""
-    global sql_available
+def safe_sql_query(sql_statement, *args):
+    """
+    Sichere Version von sqlQuery für Python 3
+    Gibt automatisch dekodierte Strings zurück für Textfelder
+    """
+    results = sqlQuery(sql_statement, *args)
     
-    if not sql_available:
-        return 0
-        
-    sqlExecuteChunked.chunkSize = 999
-
-    if idCount == 0 or idCount > len(args):
-        return 0
-
-    total_row_count = 0
-    try:
-        for i in range(
-                len(args) - idCount, len(args),
-                sqlExecuteChunked.chunkSize - (len(args) - idCount)
-        ):
-            chunk_slice = args[
-                i:i + sqlExecuteChunked.chunkSize - (len(args) - idCount)
-            ]
-            if as_text:
-                q = ""
-                n = len(chunk_slice)
-                for i in range(n):
-                    q += "CAST(? AS TEXT)"
-                    if i != n - 1:
-                        q += ","
-                sqlSubmitQueue.put(sql_statement.format(q), timeout=2)
-            else:
-                sqlSubmitQueue.put(
-                    sql_statement.format(','.join('?' * len(chunk_slice))),
-                    timeout=2
-                )
-            # first static args, and then iterative chunk
-            sqlSubmitQueue.put(
-                args[0:len(args) - idCount] + chunk_slice,
-                timeout=2
-            )
-            try:
-                ret_val = sqlReturnQueue.get(timeout=10)
-                total_row_count += ret_val[1]
-            except queue.Empty:
-                break
-        sqlSubmitQueue.put('commit', timeout=2)
-    except Exception:
-        pass
+    # Basierend auf der SQL-Anfrage entscheiden, was dekodiert werden soll
+    sql_upper = sql_statement.upper()
     
-    return total_row_count
+    decoded_results = []
+    for row in results:
+        if isinstance(row, tuple):
+            new_row = []
+            for i, item in enumerate(row):
+                # Entscheide basierend auf Feldtyp, ob dekodiert werden soll
+                if isinstance(item, bytes):
+                    # Textfelder dekodieren, Binärfelder nicht
+                    if any(field in sql_upper for field in ['TOADDRESS', 'FROMADDRESS', 'SUBJECT', 'MESSAGE', 'LABEL', 'ADDRESS']):
+                        # Dies sind wahrscheinlich Textfelder
+                        try:
+                            new_row.append(safe_decode(item, "utf-8", "ignore"))
+                        except:
+                            new_row.append(item)
+                    elif any(field in sql_upper for field in ['MSGID', 'HASH', 'ACKDATA', 'SIGHASH', 'TAG']):
+                        # Dies sind Binärfelder - als Bytes belassen
+                        new_row.append(item)
+                    else:
+                        # Standard: versuche zu dekodieren
+                        try:
+                            new_row.append(safe_decode(item, "utf-8", "ignore"))
+                        except:
+                            new_row.append(item)
+                else:
+                    new_row.append(item)
+            decoded_results.append(tuple(new_row))
+        else:
+            decoded_results.append(row)
+    
+    return decoded_results
 
 
 def sqlExecute(sql_statement, *args):
@@ -137,8 +136,88 @@ def sqlExecute(sql_statement, *args):
             
         sqlSubmitQueue.put('commit', timeout=2)
         return rowcount
-    except Exception:
+    except Exception as e:
+        logger.error("Error in sqlExecute: %s", e)
         return 0
+
+
+def safe_sql_execute(sql_statement, *args):
+    """
+    Sichere Version von sqlExecute für Python 3
+    Konvertiert Strings zu Bytes für Binärfelder
+    """
+    # Basierend auf der SQL-Anfrage entscheiden, was konvertiert werden soll
+    sql_upper = sql_statement.upper()
+    
+    processed_args = []
+    for i, arg in enumerate(args):
+        if isinstance(arg, str):
+            # Wenn es ein String ist, der in ein Binärfeld eingefügt werden soll
+            if any(field in sql_upper for field in ['MSGID', 'HASH', 'ACKDATA', 'SIGHASH', 'TAG', 'TRANSMITDATA', 'PAYLOAD']):
+                # In Bytes konvertieren
+                processed_args.append(sqlite3.Binary(arg.encode('utf-8')))
+            else:
+                # Als String belassen
+                processed_args.append(arg)
+        elif isinstance(arg, bytes):
+            # Bytes für Binärfelder
+            processed_args.append(sqlite3.Binary(arg))
+        else:
+            processed_args.append(arg)
+    
+    return sqlExecute(sql_statement, *processed_args)
+
+
+def sqlExecuteChunked(sql_statement, as_text, idCount, *args):
+    """Execute chunked SQL statement - EMERGENCY VERSION WITHOUT LOCKING"""
+    global sql_available
+    
+    if not sql_available:
+        return 0
+        
+    sqlExecuteChunked.chunkSize = 999
+
+    if idCount == 0 or idCount > len(args):
+        return 0
+
+    total_row_count = 0
+    try:
+        for i in range(
+                len(args) - idCount, len(args),
+                sqlExecuteChunked.chunkSize - (len(args) - idCount)
+        ):
+            chunk_slice = args[
+                i:i + sqlExecuteChunked.chunkSize - (len(args) - idCount)
+            ]
+            
+            if as_text:
+                q = ""
+                n = len(chunk_slice)
+                for i in range(n):
+                    q += "CAST(? AS TEXT)"
+                    if i != n - 1:
+                        q += ","
+                sqlSubmitQueue.put(sql_statement.format(q), timeout=2)
+            else:
+                sqlSubmitQueue.put(
+                    sql_statement.format(','.join('?' * len(chunk_slice))),
+                    timeout=2
+                )
+            
+            sqlSubmitQueue.put(
+                args[0:len(args) - idCount] + list(chunk_slice),
+                timeout=2
+            )
+            try:
+                ret_val = sqlReturnQueue.get(timeout=10)
+                total_row_count += ret_val[1]
+            except queue.Empty:
+                break
+        sqlSubmitQueue.put('commit', timeout=2)
+    except Exception as e:
+        logger.error("Error in sqlExecuteChunked: %s", e)
+    
+    return total_row_count
 
 
 def sqlExecuteScript(sql_statement):
@@ -178,7 +257,6 @@ class SqlBulkExecute(object):
         if not sql_available:
             raise Exception('SQL not available')
             
-        # NO LOCKING
         return self
 
     def __exit__(self, exc_type, value, traceback):

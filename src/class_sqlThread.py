@@ -43,7 +43,7 @@ class sqlThread(threading.Thread):
         
         try:
             self.conn = sqlite3.connect(state.appdata + 'messages.dat')
-            self.conn.text_factory = bytes
+            self.conn.text_factory = str
             self.cur = self.conn.cursor()
 
             self.cur.execute('PRAGMA secure_delete = true')

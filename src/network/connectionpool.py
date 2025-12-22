@@ -21,15 +21,15 @@ from .tcp import (
     bootstrap, Socks4aBMConnection, Socks5BMConnection,
     TCPConnection, TCPServer)
 from .udp import UDPSocket
+from helper_sql import safe_decode
 
 logger = logging.getLogger('default')
 
 
 def _ends_with(s, tail):
-    try:
-        return s.endswith(tail)
-    except:
-        return s.decode("utf-8", "replace").endswith(tail)
+    if isinstance(s, bytes):
+        return s.endswith(tail.encode())
+    return s.endswith(tail)
 
 class BMConnectionPool(object):
     """Pool of all existing connections"""

@@ -4,6 +4,7 @@ from qtpy import QtCore
 import queues
 from network.node import Peer
 from binascii import hexlify  # Wichtig für sendOutOrStoreMyV4Pubkey
+from helper_sql import safe_decode
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +72,7 @@ class UISignaler(QtCore.QThread):
                     toAddress, fromLabel, fromAddress, subject, message, ackdata = data
                     self.displayNewSentMessage.emit(
                         toAddress, fromLabel, fromAddress,
-                        subject.decode('utf-8'), message, ackdata)
+                        safe_decode(subject, "utf-8"), message, ackdata)
                 elif command == 'updateNetworkStatusTab':
                     outbound, add, destination = data
                     self.updateNetworkStatusTab.emit(outbound, add, destination)

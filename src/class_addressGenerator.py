@@ -16,6 +16,7 @@ from addresses import decodeAddress, encodeAddress, encodeVarint
 from bmconfigparser import config
 from network import StoppableThread
 from tr import _translate
+from helper_sql import safe_decode
 
 
 class AddressGeneratorException(Exception):
@@ -204,10 +205,10 @@ class addressGenerator(StoppableThread):
                 config.set(address, 'payloadlengthextrabytes', str(
                     payloadLengthExtraBytes))
                 config.set(
-                    address, 'privsigningkey', privSigningKeyWIF.decode())
+                    address, 'privsigningkey', safe_decode(privSigningKeyWIF))
                 config.set(
                     address, 'privencryptionkey',
-                    privEncryptionKeyWIF.decode())
+                    safe_decode(privEncryptionKeyWIF))
                 config.save()
                 print("DEBUG: Saved new address to config")
 
@@ -383,10 +384,10 @@ class addressGenerator(StoppableThread):
                                 str(payloadLengthExtraBytes))
                             config.set(
                                 address, 'privsigningkey',
-                                privSigningKeyWIF.decode())
+                                safe_decode(privSigningKeyWIF))
                             config.set(
                                 address, 'privencryptionkey',
-                                privEncryptionKeyWIF.decode())
+                                safe_decode(privEncryptionKeyWIF))
                             config.save()
                             print("DEBUG: Saved address details to config")
 

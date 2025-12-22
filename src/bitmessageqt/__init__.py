@@ -62,6 +62,7 @@ from bitmessageqt import sound
 # This is needed for tray icon
 from bitmessageqt import bitmessage_icons_rc  # noqa:F401 pylint: disable=unused-import
 import helper_sent
+from helper_sql import safe_decode
 
 try:
     from plugins.plugin import get_plugin, get_plugins
@@ -551,8 +552,8 @@ class MyForm(settingsmixin.SMainWindow):
             "GROUP BY toaddress, folder")
         for row in queryreturn:
             toaddress, folder, cnt = row
-            toaddress = toaddress.decode("utf-8", "replace")
-            folder = folder.decode("utf-8", "replace")
+            toaddress = safe_decode(toaddress, "utf-8", "replace")
+            folder = safe_decode(folder, "utf-8", "replace")
             total += cnt
             if toaddress in db and folder in db[toaddress]:
                 db[toaddress][folder] = cnt
@@ -1077,9 +1078,9 @@ class MyForm(settingsmixin.SMainWindow):
                         
                         # Konvertiere bytes zu strings falls nötig
                         if isinstance(addr, bytes):
-                            addr = addr.decode("utf-8", "replace")
+                            addr = safe_decode(addr, "utf-8", "replace")
                         if isinstance(fld, bytes):
-                            fld = fld.decode("utf-8", "replace")
+                            fld = safe_decode(fld, "utf-8", "replace")
                         
                         # Konvertiere count zu int
                         try:
@@ -1117,9 +1118,9 @@ class MyForm(settingsmixin.SMainWindow):
                         addr, fld, count = row[0], row[1], row[2]
                         
                         if isinstance(addr, bytes):
-                            addr = addr.decode("utf-8", "replace")
+                            addr = safe_decode(addr, "utf-8", "replace")
                         if isinstance(fld, bytes):
-                            fld = fld.decode("utf-8", "replace")
+                            fld = safe_decode(fld, "utf-8", "replace")
                         
                         try:
                             count = int(count)
@@ -1497,7 +1498,7 @@ class MyForm(settingsmixin.SMainWindow):
         
         try:
             if isinstance(value, bytes):
-                return value.decode("utf-8", "replace")
+                return safe_decode(value, "utf-8", "replace")
             elif isinstance(value, (int, float, bool)):
                 return str(value)
             elif hasattr(value, '__str__'):
@@ -1828,7 +1829,7 @@ class MyForm(settingsmixin.SMainWindow):
         
         try:
             if isinstance(value, bytes):
-                return value.decode("utf-8", "replace")
+                return safe_decode(value, "utf-8", "replace")
             else:
                 return str(value)
         except:
@@ -1857,7 +1858,7 @@ class MyForm(settingsmixin.SMainWindow):
             return ""
         if isinstance(value, bytes):
             try:
-                return value.decode("utf-8", "replace")
+                return safe_decode(value, "utf-8", "replace")
             except Exception:
                 return str(value)
         elif isinstance(value, int):
@@ -1935,7 +1936,7 @@ class MyForm(settingsmixin.SMainWindow):
         SELECT msgid, toaddress, read FROM inbox where folder='inbox'
         ''')
         for msgid, toAddress, read in queryreturn:
-            toAddress = toAddress.decode("utf-8", "replace")
+            toAddress = safe_decode(toAddress, "utf-8", "replace")
 
             if not read:
                 # increment the unread subscriptions if True (1)
@@ -2699,8 +2700,8 @@ class MyForm(settingsmixin.SMainWindow):
         queryreturn = sqlQuery('SELECT label, address FROM subscriptions WHERE enabled = 1')
         for row in queryreturn:
             label, address = row
-            label = label.decode("utf-8", "replace")
-            address = address.decode("utf-8", "replace")
+            label = safe_decode(label, "utf-8", "replace")
+            address = safe_decode(address, "utf-8", "replace")
             newRows[address] = [label, AccountMixin.SUBSCRIPTION]
         # chans
         for address in config.addresses(True):
@@ -2714,8 +2715,8 @@ class MyForm(settingsmixin.SMainWindow):
         queryreturn = sqlQuery('SELECT label, address FROM addressbook')
         for row in queryreturn:
             label, address = row
-            label = label.decode("utf-8", "replace")
-            address = address.decode("utf-8", "replace")
+            label = safe_decode(label, "utf-8", "replace")
+            address = safe_decode(address, "utf-8", "replace")
             newRows[address] = [label, AccountMixin.NORMAL]
 
         completerList = []
@@ -2985,7 +2986,7 @@ class MyForm(settingsmixin.SMainWindow):
                             try:
                                 # Sicherstellen, dass toLabel ein String ist
                                 if isinstance(toLabel, bytes):
-                                    toLabel = toLabel.decode("utf-8", "replace")
+                                    toLabel = safe_decode(toLabel, "utf-8", "replace")
                                 elif isinstance(toLabel, int):
                                     # WICHTIG: Integer zu String konvertieren
                                     toLabel = str(toLabel)
@@ -3649,7 +3650,7 @@ class MyForm(settingsmixin.SMainWindow):
             lines_raw = queryreturn[-1][0].split('\n')
             lines = []
             for line in lines_raw:
-                lines.append(line.decode("utf-8", "replace"))
+                lines.append(safe_decode(line, "utf-8", "replace"))
         except IndexError:
             lines = ''
 
@@ -3806,7 +3807,7 @@ class MyForm(settingsmixin.SMainWindow):
             if data is None:
                 return ""
             if isinstance(data, bytes):
-                return data.decode("utf-8", "replace")
+                return safe_decode(data, "utf-8", "replace")
             elif isinstance(data, bytearray):
                 return bytes(data).decode("utf-8", "replace")
             else:
@@ -4141,7 +4142,7 @@ class MyForm(settingsmixin.SMainWindow):
         if queryreturn != []:
             for row in queryreturn:
                 message, = row
-            message = message.decode("utf-8", "replace")
+            message = safe_decode(message, "utf-8", "replace")
 
         defaultFilename = "".join(
             x for x in subjectAtCurrentInboxRow if x.isalnum()) + '.txt'
@@ -5062,7 +5063,7 @@ class MyForm(settingsmixin.SMainWindow):
                 
                 if queryreturn:  # Nur verarbeiten wenn Ergebnisse existieren
                     status = queryreturn[0][0]
-                    status = status.decode("utf-8", "replace") if isinstance(status, bytes) else str(status)
+                    status = safe_decode(status, "utf-8", "replace") if isinstance(status, bytes) else str(status)
                     
                     if status == 'toodifficult':
                         self.popMenuSent.addAction(self.actionForceSend)
@@ -5237,7 +5238,7 @@ class MyForm(settingsmixin.SMainWindow):
                             message_data = queryreturn[-1][0]
                             # KORREKTUR: Bessere Bytes zu String Konvertierung
                             if isinstance(message_data, bytes):
-                                message = message_data.decode("utf-8", "replace")
+                                message = safe_decode(message_data, "utf-8", "replace")
                             elif isinstance(message_data, bytearray):
                                 message = bytes(message_data).decode("utf-8", "replace")
                             elif isinstance(message_data, memoryview):

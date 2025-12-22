@@ -1,5 +1,6 @@
 import sys
 import six
+from helper_sql import safe_decode
 
 def ustr(v):
     """Convert input to appropriate string type for current Python version"""
@@ -12,7 +13,7 @@ def ustr(v):
             return v
         elif isinstance(v, bytes):
             print("DEBUG: Input is bytes, decoding to utf-8 with replacement")
-            return v.decode("utf-8", "replace")
+            return safe_decode(v, "utf-8", "replace")
         else:
             print("DEBUG: Input is other type (%s), converting to str" % type(v))
             return str(v)

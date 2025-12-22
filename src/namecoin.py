@@ -15,6 +15,7 @@ from addresses import decodeAddress
 from bmconfigparser import config
 from debug import logger
 from tr import _translate
+from helper_sql import safe_decode
 
 
 configSection = "bitmessagesettings"
@@ -103,7 +104,7 @@ class namecoinConnection(object):
                 res = res["reply"]
                 if not res:
                     msg = _translate("MainWindow", "The name {0} was not found.").format(
-                        identity.decode("utf-8", "ignore"))
+                        safe_decode(identity, "utf-8", "ignore"))
                     logger.debug("DEBUG: Name not found: %s", identity)
                     return (msg, None)
             else:
@@ -115,12 +116,12 @@ class namecoinConnection(object):
             else:
                 errmsg = exc.error
             msg = _translate("MainWindow", "The namecoin query failed ({0})").format(
-                errmsg.decode("utf-8", "ignore"))
+                safe_decode(errmsg, "utf-8", "ignore"))
             logger.debug("DEBUG: RPC error: %s", msg)
             return (msg, None)
         except AssertionError:
             msg = _translate("MainWindow", "Unknown namecoin interface type: {0}").format(
-                self.nmctype.decode("utf-8", "ignore"))
+                self.safe_decode(nmctype, "utf-8", "ignore"))
             logger.debug("DEBUG: Assertion error: %s", msg)
             return (msg, None)
         except Exception:
@@ -151,7 +152,7 @@ class namecoinConnection(object):
             return (None, result)
         else:
             msg = _translate("MainWindow", "The name {0} has no associated Bitmessage address.").format(
-                identity.decode("utf-8", "ignore"))
+                safe_decode(identity, "utf-8", "ignore"))
             logger.debug("DEBUG: No valid address found: %s", msg)
             return (msg, None)
 
@@ -177,7 +178,7 @@ class namecoinConnection(object):
                     versStr = "0.%d.%d.%d" % (v1, v2, v3)
                 
                 msg = _translate("MainWindow", "Success!  Namecoind version {0} running.").format(
-                    versStr.decode("utf-8", "ignore"))
+                    safe_decode(versStr, "utf-8", "ignore"))
                 logger.debug("DEBUG: namecoind test success: %s", msg)
                 return ('success', msg)
 

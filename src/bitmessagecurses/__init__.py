@@ -33,6 +33,7 @@ from addresses import addBMIfNotPresent, decodeAddress
 from bmconfigparser import config
 from helper_sql import sqlExecute, sqlQuery
 from dbcompat import dbstr
+from helper_sql import safe_decode
 
 # pylint: disable=global-statement
 
@@ -412,7 +413,7 @@ def handlech(c, stdscr):
                                 body = "\n\n------------------------------------------------------\n"
                                 for row in ret:
                                     body, = row
-                                body = body.decode("utf-8", "replace")
+                                body = safe_decode(body, "utf-8", "replace")
 
                             sendMessage(fromaddr, toaddr, ischan, subject, body, True)
                             dialogreset(stdscr)
@@ -440,7 +441,7 @@ def handlech(c, stdscr):
                                 if ret != []:
                                     for row in ret:
                                         msg, = row
-                                    msg = msg.decode("utf-8", "replace")
+                                    msg = safe_decode(msg, "utf-8", "replace")
                                     fh = open(t, "a")       # Open in append mode just in case
                                     fh.write(msg)
                                     fh.close()
@@ -1021,10 +1022,10 @@ def loadInbox():
         """ % (where,), dbstr(what))
     for row in ret:
         msgid, toaddr, fromaddr, subject, received, read = row
-        toaddr = toaddr.decode("utf-8", "replace")
-        fromaddr = fromaddr.decode("utf-8", "replace")
+        toaddr = safe_decode(toaddr, "utf-8", "replace")
+        fromaddr = safe_decode(fromaddr, "utf-8", "replace")
         subject = ascii(shared.fixPotentiallyInvalidUTF8Data(subject))
-        received = received.decode("utf-8", "replace")
+        received = safe_decode(received, "utf-8", "replace")
 
         # Set label for to address
         try:
@@ -1078,10 +1079,10 @@ def loadSent():
         """ % (where,), dbstr(what))
     for row in ret:
         toaddr, fromaddr, subject, status, ackdata, lastactiontime = row
-        toaddr = toaddr.decode("utf-8", "replace")
-        fromaddr = fromaddr.decode("utf-8", "replace")
+        toaddr = safe_decode(toaddr, "utf-8", "replace")
+        fromaddr = safe_decode(fromaddr, "utf-8", "replace")
         subject = ascii(shared.fixPotentiallyInvalidUTF8Data(subject))
-        status = status.decode("utf-8", "replace")
+        status = safe_decode(status, "utf-8", "replace")
 
         # Set label for to address
         tolabel = ""
@@ -1089,13 +1090,13 @@ def loadSent():
         if qr != []:
             for r in qr:
                 tolabel, = r
-            tolabel = tolabel.decode("utf-8", "replace")
+            tolabel = safe_decode(tolabel, "utf-8", "replace")
         if tolabel == "":
             qr = sqlQuery("SELECT label FROM subscriptions WHERE address=?", dbstr(toaddr))
             if qr != []:
                 for r in qr:
                     tolabel, = r
-                tolabel = tolabel.decode("utf-8", "replace")
+                tolabel = safe_decode(tolabel, "utf-8", "replace")
         if tolabel == "":
             if config.has_section(toaddr):
                 tolabel = config.get(toaddr, "label")
@@ -1165,7 +1166,7 @@ def loadAddrBook():
     for row in ret:
         label, addr = row
         label = shared.fixPotentiallyInvalidUTF8Data(label)
-        addr = addr.decode("utf-8", "replace")
+        addr = safe_decode(addr, "utf-8", "replace")
         addrbook.append([label, addr])
     addrbook.reverse()
 
@@ -1175,8 +1176,8 @@ def loadSubscriptions():
     ret = sqlQuery("SELECT label, address, enabled FROM subscriptions")
     for row in ret:
         label, address, enabled = row
-        label = label.decode("utf-8", "replace")
-        address = address.decode("utf-8", "replace")
+        label = safe_decode(label, "utf-8", "replace")
+        address = safe_decode(address, "utf-8", "replace")
         subscriptions.append([label, address, enabled])
     subscriptions.reverse()
 
@@ -1191,8 +1192,8 @@ def loadBlackWhiteList():
         ret = sqlQuery("SELECT label, address, enabled FROM whitelist")
     for row in ret:
         label, address, enabled = row
-        label = label.decode("utf-8", "replace")
-        address = address.decode("utf-8", "replace")
+        label = safe_decode(label, "utf-8", "replace")
+        address = safe_decode(address, "utf-8", "replace")
         blacklist.append([label, address, enabled])
     blacklist.reverse()
 

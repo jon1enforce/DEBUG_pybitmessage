@@ -56,7 +56,7 @@ To use the API concider such simple example:
 
 For further examples please reference `.tests.test_api`.
 """
-
+from helper_sql import safe_decode
 import base64
 import errno
 import hashlib
@@ -534,12 +534,12 @@ class BMRPCDispatcher(object):
         message = shared.fixPotentiallyInvalidUTF8Data(message)
         return {
             'msgid': hexlify(msgid),
-            'toAddress': toAddress.decode("utf-8", "replace"),
-            'fromAddress': fromAddress.decode("utf-8", "replace"),
+            'toAddress': safe_decode(toAddress, "utf-8", "replace"),
+            'fromAddress': safe_decode(fromAddress, "utf-8", "replace"),
             'subject': base64.b64encode(subject),
             'message': base64.b64encode(message),
             'encodingType': encodingtype,
-            'receivedTime': received.decode("utf-8", "replace"),
+            'receivedTime': safe_decode(received, "utf-8", "replace"),
             'read': read
         }
 
@@ -606,7 +606,7 @@ class BMRPCDispatcher(object):
         data = []
         for label, address in queryreturn:
             label = shared.fixPotentiallyInvalidUTF8Data(label)
-            address = address.decode("utf-8", "replace")
+            address = safe_decode(address, "utf-8", "replace")
             data.append({
                 'label': base64.b64encode(label),
                 'address': address
@@ -674,7 +674,7 @@ class BMRPCDispatcher(object):
                 % type(eighteenByteRipe))
         label = self._decode(label, "base64")
         try:
-            label.decode('utf-8')
+            safe_decode(label, "utf-8")
         except UnicodeDecodeError:
             raise APIError(17, 'Label is not valid UTF-8 data.')
         queues.apiAddressGeneratorReturnQueue.queue.clear()
@@ -803,7 +803,7 @@ class BMRPCDispatcher(object):
         # It would be nice to make the label the passphrase but it is
         # possible that the passphrase contains non-utf-8 characters.
         try:
-            passphrase.decode('utf-8')
+            safe_decode(passphrase, "utf-8")
             label = str_chan + ' ' + passphrase
         except UnicodeDecodeError:
             label = str_chan + ' ' + repr(passphrase)
@@ -835,7 +835,7 @@ class BMRPCDispatcher(object):
         # It would be nice to make the label the passphrase but it is
         # possible that the passphrase contains non-utf-8 characters.
         try:
-            passphrase.decode('utf-8')
+            safe_decode(passphrase, "utf-8")
             label = str_chan + ' ' + passphrase
         except UnicodeDecodeError:
             label = str_chan + ' ' + repr(passphrase)
@@ -1266,7 +1266,7 @@ class BMRPCDispatcher(object):
         if label:
             label = self._decode(label, "base64")
             try:
-                label.decode('utf-8')
+                safe_decode(label, "utf-8")
             except UnicodeDecodeError:
                 raise APIError(17, 'Label is not valid UTF-8 data.')
         self._verifyAddress(address)
@@ -1310,7 +1310,7 @@ class BMRPCDispatcher(object):
         data = []
         for label, address, enabled in queryreturn:
             label = shared.fixPotentiallyInvalidUTF8Data(label)
-            address = address.decode("utf-8", "replace")
+            address = safe_decode(address, "utf-8", "replace")
             data.append({
                 'label': base64.b64encode(label),
                 'address': address,

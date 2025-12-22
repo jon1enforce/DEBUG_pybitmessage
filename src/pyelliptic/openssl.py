@@ -9,6 +9,7 @@ needed openssl functionality in class _OpenSSL.
 import ctypes
 import sys
 import six
+from helper_sql import safe_decode
 
 # pylint: disable=protected-access
 
@@ -1000,7 +1001,7 @@ def loadOpenSSL():
                     version = OpenSSL.SSLeay_version(0)
                 
                 if version:
-                    version_str = version.decode() if hasattr(version, 'decode') else str(version)
+                    version_str = version if isinstance(version, str) else safe_decode(version)
                     print(f"✓ OpenSSL version: {version_str}")
                     
                     # Check if it's LibreSSL
@@ -1071,7 +1072,7 @@ def loadOpenSSL():
             try:
                 result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
                                       timeout=15, shell=False)
-                found_libs = result.stdout.decode().splitlines()
+                found_libs = safe_decode(result.stdout).splitlines()
                 
                 for library in found_libs:
                     try:
@@ -1107,7 +1108,7 @@ def loadOpenSSL():
         result = subprocess.run(['openssl', 'version'], 
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5)
         if result.returncode == 0:
-            print(f"✓ OpenSSL command available: {result.stdout.decode().strip()}")
+            print(f"✓ OpenSSL command available: {safe_decode(result.stdout).strip()}")
         else:
             print("✗ OpenSSL command not working")
     except (FileNotFoundError, subprocess.TimeoutExpired):

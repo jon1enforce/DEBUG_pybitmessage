@@ -8,6 +8,7 @@ import messagetypes
 from bmconfigparser import config
 from debug import logger
 from tr import _translate
+from helper_sql import safe_decode
 
 try:
     import msgpack
@@ -156,5 +157,5 @@ class MsgDecode(object):
         if subject:
             subject = subject.splitlines()[0]
         # Field types should be the same for all message types
-        self.subject = subject.decode("utf-8", "replace")
-        self.body = body.decode("utf-8", "replace")
+        self.subject = safe_decode(subject, "utf-8", "replace")
+        self.body = safe_decode(body, "utf-8", "replace")
