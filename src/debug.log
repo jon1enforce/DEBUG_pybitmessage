@@ -3136,3 +3136,36 @@ Traceback (most recent call last):
     toAddress, _translate(
                ^^^^^^^^^^
 NameError: name '_translate' is not defined
+2025-12-22 19:26:29,351 - WARNING - Using default logger configuration
+2025-12-22 19:26:30,150 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-22 19:26:30,158 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-22 19:26:30,158 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-22 19:26:30,159 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-22 19:26:30,197 - WARNING - No indicator plugin found
+2025-12-22 19:26:30,222 - WARNING - No notification.message plugin found
+2025-12-22 19:26:31,890 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-22 19:26:39,980 - ERROR - 158.69.63.42:8080 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-22 19:26:45,859 - ERROR - Unexpected error in sendMsg row 0: name '_translate' is not defined
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_singleWorker.py", line 980, in sendMsg
+    self.requestPubKey(toaddress)
+  File "/home/jon/DEBUG_pybitmessage/src/class_singleWorker.py", line 1540, in requestPubKey
+    toAddress, _translate(
+               ^^^^^^^^^^
+NameError: name '_translate' is not defined
+2025-12-22 19:26:57,230 - WARNING - ⚠️ GUI still running, forcing exit
