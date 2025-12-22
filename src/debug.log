@@ -10331,3 +10331,109 @@ TypeError: the JSON object must be str, bytes or bytearray, not NoneType
 2025-12-23 00:35:45,897 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
 2025-12-23 00:35:53,879 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
 2025-12-23 00:36:12,114 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-23 00:45:15,949 - WARNING - Using default logger configuration
+2025-12-23 00:45:16,277 - ERROR - DEBUG: Error in makeCryptor: [OpenSSL] EC_KEY_check_key FAIL ...
+2025-12-23 00:45:16,298 - WARNING - defusedxml not available, only use API on a secure, closed network.
+2025-12-23 00:45:16,549 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-23 00:45:16,554 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-23 00:45:16,554 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-23 00:45:16,555 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-23 00:45:16,585 - WARNING - No indicator plugin found
+2025-12-23 00:45:16,606 - WARNING - No notification.message plugin found
+2025-12-23 00:45:25,105 - ERROR - DEBUG: Error in makeCryptor: [OpenSSL] EC_KEY_check_key FAIL ...
+2025-12-23 00:45:26,279 - ERROR - DEBUG: Error in makeCryptor: [OpenSSL] EC_KEY_check_key FAIL ...
+2025-12-23 00:45:26,279 - ERROR - DEBUG: Error in sign: [OpenSSL] EC_KEY_check_key FAIL ...
+2025-12-23 00:45:26,280 - WARNING - sendOutOrStoreMyV4Pubkey didn't work
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_singleWorker.py", line 168, in run
+    self.sendOutOrStoreMyV4Pubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_singleWorker.py", line 380, in sendOutOrStoreMyV4Pubkey
+    signature = highlevelcrypto.sign(payload + dataToEncrypt, privSigningKeyHex, self.digestAlg)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/highlevelcrypto.py", line 573, in sign
+    cryptor = makeCryptor(hexPrivkey)
+              ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/highlevelcrypto.py", line 462, in makeCryptor
+    cryptor = pyelliptic.ECC(
+              ^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/pyelliptic/ecc.py", line 69, in __init__
+    self._set_keys(pubkey_x, pubkey_y, raw_privkey)
+  File "/home/jon/DEBUG_pybitmessage/src/pyelliptic/ecc.py", line 82, in _set_keys
+    if self.raw_check_key(privkey, pubkey_x, pubkey_y) < 0:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/pyelliptic/ecc.py", line 316, in raw_check_key
+    raise Exception("[OpenSSL] EC_KEY_check_key FAIL ...")
+Exception: [OpenSSL] EC_KEY_check_key FAIL ...
+2025-12-23 00:45:34,764 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 00:46:08,003 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 00:46:16,397 - WARNING - Server full, dropping connection
+2025-12-23 00:46:24,472 - ERROR - DEBUG: Error in makeCryptor: [OpenSSL] EC_KEY_check_key FAIL ...
+2025-12-23 00:46:24,473 - ERROR - Unexpected error in sendMsg row 0: [OpenSSL] EC_KEY_check_key FAIL ...
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_singleWorker.py", line 934, in sendMsg
+    highlevelcrypto.makeCryptor(
+  File "/home/jon/DEBUG_pybitmessage/src/highlevelcrypto.py", line 462, in makeCryptor
+    cryptor = pyelliptic.ECC(
+              ^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/pyelliptic/ecc.py", line 69, in __init__
+    self._set_keys(pubkey_x, pubkey_y, raw_privkey)
+  File "/home/jon/DEBUG_pybitmessage/src/pyelliptic/ecc.py", line 82, in _set_keys
+    if self.raw_check_key(privkey, pubkey_x, pubkey_y) < 0:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/pyelliptic/ecc.py", line 316, in raw_check_key
+    raise Exception("[OpenSSL] EC_KEY_check_key FAIL ...")
+Exception: [OpenSSL] EC_KEY_check_key FAIL ...
+2025-12-23 00:46:52,649 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 00:46:58,481 - WARNING - Server full, dropping connection
+2025-12-23 00:47:17,363 - WARNING - Server full, dropping connection
+2025-12-23 00:47:38,786 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-23 00:51:57,756 - WARNING - Using default logger configuration
+2025-12-23 00:51:58,272 - WARNING - defusedxml not available, only use API on a secure, closed network.
+2025-12-23 00:51:58,537 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-23 00:51:58,542 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-23 00:51:58,542 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-23 00:51:58,543 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-23 00:51:58,572 - WARNING - No indicator plugin found
+2025-12-23 00:51:58,593 - WARNING - No notification.message plugin found
+2025-12-23 00:52:17,308 - ERROR - 31.40.196.252:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 00:52:30,788 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 00:53:23,569 - ERROR - 187.198.194.141:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 00:53:25,093 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 00:53:26,968 - ERROR - 175.0.121.90:2841 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 00:54:15,174 - ERROR - 175.0.121.90:2841 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 00:54:19,662 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 00:54:26,042 - ERROR - 187.198.194.141:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 00:54:48,695 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 00:54:59,190 - WARNING - Server full, dropping connection
+2025-12-23 00:55:03,216 - WARNING - Server full, dropping connection
+2025-12-23 00:55:15,319 - WARNING - ⚠️ GUI still running, forcing exit
