@@ -14,7 +14,7 @@ from binascii import hexlify
 from struct import Struct, pack, unpack
 import six
 import sqlite3
-
+import logging
 import defaults
 import highlevelcrypto
 import state

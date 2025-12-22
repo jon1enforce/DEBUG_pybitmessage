@@ -72,3 +72,4 @@ maxnodes = 10000
 
 [zlib]
 maxsize = 1048576
+

@@ -382,7 +382,9 @@ class objectProcessor(threading.Thread):
     def _process_v3_pubkey(self, data, readPosition, addressVersion, streamNumber):
         """Process version 3 pubkey"""
         logger = logging.getLogger('objectProcessor')
-        logger.debug("Processing V3 pubkey")
+        logger.debug("=== PROCESS V3 PUBKEY DEBUG START ===")
+        logger.debug("Data length: %d bytes", len(data))
+        logger.debug("Read position: %d", readPosition)
         
         if len(data) < 170:  # sanity check.
             logger.error("V3 payload length less than 170. Sanity check failed.")
@@ -394,27 +396,33 @@ class objectProcessor(threading.Thread):
         if len(data) < readPosition + 128:
             logger.error("Data too short for V3 pubkeys")
             return
-            
-        pubSigningKey = b'\x04' + data[readPosition:readPosition + 64]
-        readPosition += 64
-        logger.debug("Public signing key (first 16): %s", hexlify(pubSigningKey[:16]))
         
-        pubEncryptionKey = b'\x04' + data[readPosition:readPosition + 64]
+        # 1. PUB SIGNING KEY EXTRACTION
+        pubSigningKeyRaw = data[readPosition:readPosition + 64]
+        # PYTHON 3 FIX: Korrekte Bytes-Konkatenation
+        pubSigningKey = bytes([0x04]) + bytes(pubSigningKeyRaw)
         readPosition += 64
-        logger.debug("Public encryption key (first 16): %s", hexlify(pubEncryptionKey[:16]))
+        logger.debug("Public signing key raw (hex): %s", hexlify(pubSigningKeyRaw))
+        logger.debug("Public signing key with prefix (hex): %s", hexlify(pubSigningKey))
         
-        # Store position before nonce trials
+        # 2. PUB ENCRYPTION KEY EXTRACTION
+        pubEncryptionKeyRaw = data[readPosition:readPosition + 64]
+        pubEncryptionKey = bytes([0x04]) + bytes(pubEncryptionKeyRaw)
+        readPosition += 64
+        logger.debug("Public encryption key (hex): %s", hexlify(pubEncryptionKey))
+        
+        # 3. NONCE TRIALS PER BYTE
         position_before_nonce = readPosition
-        
-        specifiedNonceTrialsPerByteLength = decodeVarint(
-            data[readPosition:readPosition + 10])[1]
+        specifiedNonceTrialsPerByte, specifiedNonceTrialsPerByteLength = decodeVarint(
+            data[readPosition:readPosition + 10])
         readPosition += specifiedNonceTrialsPerByteLength
-        logger.debug("Nonce trials per byte varint length: %d", specifiedNonceTrialsPerByteLength)
+        logger.debug("Nonce trials per byte: %d", specifiedNonceTrialsPerByte)
         
-        specifiedPayloadLengthExtraBytesLength = decodeVarint(
-            data[readPosition:readPosition + 10])[1]
+        # 4. PAYLOAD LENGTH EXTRA BYTES
+        specifiedPayloadLengthExtraBytes, specifiedPayloadLengthExtraBytesLength = decodeVarint(
+            data[readPosition:readPosition + 10])
         readPosition += specifiedPayloadLengthExtraBytesLength
-        logger.debug("Payload length extra bytes varint length: %d", specifiedPayloadLengthExtraBytesLength)
+        logger.debug("Payload length extra bytes: %d", specifiedPayloadLengthExtraBytes)
         
         endOfSignedDataPosition = readPosition
         logger.debug("End of signed data position: %d", endOfSignedDataPosition)
@@ -423,7 +431,7 @@ class objectProcessor(threading.Thread):
         dataToStore = data[20:readPosition]
         logger.debug("Data to store length: %d bytes", len(dataToStore))
         
-        # Read signature
+        # 5. SIGNATURE LENGTH
         if len(data) < readPosition + 10:
             logger.error("Data too short for signature length varint")
             return
@@ -438,35 +446,72 @@ class objectProcessor(threading.Thread):
                         readPosition + signatureLength, len(data))
             return
             
+        # 6. SIGNATURE EXTRACTION
         signature = data[readPosition:readPosition + signatureLength]
-        logger.debug("Signature (first 32): %s", hexlify(signature[:32]) if len(signature) >= 32 else "Invalid")
+        logger.debug("Signature (hex): %s", hexlify(signature))
         
-        # VERIFICATION STEP
-        logger.debug("=== V3 VERIFICATION STEP ===")
+        # 7. VERIFICATION STEP - KRITISCH!
+        logger.debug("=== V3 VERIFICATION DATA ===")
         data_to_verify = data[8:endOfSignedDataPosition]
         logger.debug("Data to verify length: %d bytes", len(data_to_verify))
-        logger.debug("Data to verify (first 50): %s", hexlify(data_to_verify[:50]))
-        logger.debug("Public signing key for verification: %s", hexlify(pubSigningKey))
+        logger.debug("Data to verify (hex): %s", hexlify(data_to_verify))
         
-        verify_result = highlevelcrypto.verify(
-            data_to_verify, signature, hexlify(pubSigningKey))
+        # PYTHON 3 KOMPATIBILITÄT: Alles in bytes konvertieren
+        data_to_verify_bytes = bytes(data_to_verify)
+        signature_bytes = bytes(signature)
+        
+        # PUB SIGNING KEY FÜR VERIFICATION
+        # highlevelcrypto.verify() erwartet hexlified key als string oder bytes?
+        pubSigningKeyHex = hexlify(pubSigningKey)
+        logger.debug("Public signing key for verify (hex): %s", pubSigningKeyHex)
+        
+        # TEST: Unterschiedliche Formate versuchen
+        try:
+            # Versuch 1: Hex als bytes (Python 3 Standard)
+            verify_result = highlevelcrypto.verify(
+                data_to_verify_bytes, signature_bytes, pubSigningKeyHex)
+            logger.debug("Verify attempt 1 (hex bytes): %s", verify_result)
+            
+            if not verify_result:
+                # Versuch 2: Hex als string (Python 2 Style)
+                pubSigningKeyHexStr = pubSigningKeyHex.decode('utf-8')
+                verify_result = highlevelcrypto.verify(
+                    data_to_verify_bytes, signature_bytes, pubSigningKeyHexStr)
+                logger.debug("Verify attempt 2 (hex string): %s", verify_result)
+            
+            if not verify_result:
+                # Versuch 3: Raw bytes (ohne hex encoding)
+                verify_result = highlevelcrypto.verify(
+                    data_to_verify_bytes, signature_bytes, pubSigningKey)
+                logger.debug("Verify attempt 3 (raw bytes): %s", verify_result)
+                
+        except Exception as e:
+            logger.error("Verification exception: %s", e)
+            verify_result = False
         
         if not verify_result:
-            logger.warning('ECDSA verify failed (within processpubkey)')
-            logger.warning("V3 pubkey verification FAILED")
+            logger.error("=== V3 PUBKEY VERIFICATION FAILED ===")
+            logger.error("This is a PYTHON 3 COMPATIBILITY ISSUE!")
+            logger.error("Data to verify was: %s", hexlify(data_to_verify_bytes))
+            logger.error("Signature was: %s", hexlify(signature_bytes))
+            logger.error("Public key was: %s", hexlify(pubSigningKey))
+            logger.debug("=== PROCESS V3 PUBKEY DEBUG END (FAILED) ===")
             return
         else:
-            logger.debug('ECDSA verify passed (within processpubkey)')
-            logger.debug("V3 pubkey verification SUCCESSFUL")
+            logger.info("V3 pubkey verification SUCCESSFUL")
         
+        # 8. RIPE BERECHNUNG
         ripe = highlevelcrypto.to_ripe(pubSigningKey, pubEncryptionKey)
         logger.debug("Calculated RIPE: %s", hexlify(ripe))
         
+        # 9. ADDRESS GENERIERUNG
         address = encodeAddress(addressVersion, streamNumber, ripe)
         logger.debug("Generated address: %s", address)
         
+        # 10. IN DATABASE SPEICHERN
         self._store_pubkey_in_db(address, addressVersion, dataToStore, 'V3')
-
+        
+        logger.debug("=== PROCESS V3 PUBKEY DEBUG END (SUCCESS) ===")
     def _process_v4_pubkey(self, data, readPosition, addressVersion, streamNumber):
         """Process version 4 pubkey"""
         logger = logging.getLogger('objectProcessor')
