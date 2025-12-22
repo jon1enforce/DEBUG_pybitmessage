@@ -58,12 +58,32 @@ def decode(string, base):
     """Returns the decoded string"""
     code_string = get_code_string(base)
     result = 0
+    
+    # PYTHON 3 FIX: Handle string/bytes properly
+    if isinstance(string, bytes) and base != 256:
+        # For non-binary bases, decode bytes to string
+        try:
+            string = string.decode('ascii')
+        except:
+            string = string.decode('latin-1')
+    
     if base == 16:
+        if isinstance(string, bytes):
+            string = string.decode('ascii')
         string = string.lower()
-    while string:
-        result *= base
-        result += code_string.find(string[0])
-        string = string[1:]
+    
+    if base == 256 and isinstance(string, bytes):
+        # For base 256, process bytes directly
+        for byte in string:
+            if isinstance(byte, int):  # Python 3: byte is int
+                result = result * base + byte
+            else:  # Python 2: byte is str/bytes
+                result = result * base + code_string.find(byte)
+    else:
+        # For other bases
+        for char in string:
+            result = result * base + code_string.find(char)
+    
     return result
 
 

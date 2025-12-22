@@ -11,7 +11,8 @@ import logging
 from unqstr import unic
 import hashlib
 import os
-from binascii import hexlify
+from binascii import hexlify, unhexlify
+import sys
 
 logger = logging.getLogger('default')
 
@@ -34,6 +35,32 @@ __all__ = [
     'double_sha512', 'calculateInventoryHash', 'encodeWalletImportFormat',
     'encrypt', 'makeCryptor', 'pointMult', 'privToPub', 'randomBytes',
     'random_keys', 'sign', 'to_ripe', 'verify']
+
+
+# PYTHON 3 COMPATIBILITY FIXES
+def _ensure_bytes(data):
+    """Ensure data is bytes for Python 3 compatibility."""
+    if isinstance(data, str):
+        return data.encode('latin-1')
+    elif isinstance(data, bytes):
+        return data
+    elif isinstance(data, memoryview):
+        return bytes(data)
+    else:
+        return bytes(str(data), 'latin-1')
+
+
+def _ensure_str(data):
+    """Ensure data is string for Python 3 compatibility."""
+    if isinstance(data, bytes):
+        try:
+            return data.decode('utf-8')
+        except UnicodeDecodeError:
+            return data.decode('latin-1')
+    elif isinstance(data, str):
+        return data
+    else:
+        return str(data)
 
 
 def decodeWalletImportFormat(WIFstring):
@@ -172,54 +199,37 @@ def deterministic_keys(passphrase, nonce):
 def hexToPubkey(pubkey):
     """Convert a pubkey from hex to binary"""
     logger = logging.getLogger('highlevelcrypto')
-    logger.debug("=== HEXTOPUBKEY DEBUG ===")
-    logger.debug("Input type: %s, value: %s", type(pubkey), pubkey[:100] if pubkey else "None")
     
     try:
-        # PYTHON 3 KOMPATIBILITÄT: Handle both str and bytes
+        # Handle input - keep it SIMPLE like Python 2 version
         if isinstance(pubkey, bytes):
-            # If it's bytes, decode to string first
-            try:
-                # Try to decode as utf-8 (might be hex string as bytes)
-                hex_string = pubkey.decode('utf-8')
-                logger.debug("Decoded bytes to utf-8 string")
-            except UnicodeDecodeError:
-                # If not utf-8, try to interpret as hex directly
-                # hexlify() returns bytes like b'0432abc...'
-                hex_string = pubkey.hex()  # Python 3.5+ method
-                logger.debug("Converted bytes to hex string using .hex()")
+            # Convert bytes to string
+            hex_string = pubkey.decode('ascii')
         elif isinstance(pubkey, str):
             hex_string = pubkey
-            logger.debug("Input is already string")
         else:
-            logger.error("Unsupported type: %s", type(pubkey))
             raise TypeError("pubkey must be str or bytes")
         
-        # Remove '04' prefix if present (uncompressed marker)
-        if hex_string.startswith('04'):
-            hex_string = hex_string[2:]
-            logger.debug("Removed '04' prefix")
+        # EXACTLY like Python 2 version: Skip first 2 chars ('04')
+        hex_string = hex_string[2:]
         
-        logger.debug("Hex string length after cleanup: %d", len(hex_string))
+        # Use manual conversion to avoid a.changebase() bug
+        # hex_string should be 128 chars (64 bytes * 2)
+        if len(hex_string) != 128:
+            # Pad if needed
+            hex_string = hex_string.rjust(128, '0')[:128]
         
-        # Convert hex string to raw bytes
-        pubkey_raw = a.changebase(hex_string, 16, 256, minlen=64)
-        logger.debug("Converted to raw bytes, length: %d", len(pubkey_raw))
+        # Convert hex to bytes manually
+        pubkey_raw = bytes.fromhex(hex_string)
         
-        # Construct binary format expected by pyelliptic
+        # Build binary format exactly like Python 2
         # Format: b'\x02\xca\x00 ' + X (32 bytes) + b'\x00 ' + Y (32 bytes)
-        x_component = pubkey_raw[:32]
-        y_component = pubkey_raw[32:]
-        
-        pubkey_bin = b'\x02\xca\x00 ' + x_component + b'\x00 ' + y_component
-        logger.debug("Final binary pubkey length: %d", len(pubkey_bin))
-        logger.debug("=== HEXTOPUBKEY DEBUG END ===")
+        pubkey_bin = b'\x02\xca\x00 ' + pubkey_raw[:32] + b'\x00 ' + pubkey_raw[32:]
         
         return pubkey_bin
         
     except Exception as e:
         logger.error("Error in hexToPubkey: %s", str(e), exc_info=True)
-        logger.debug("=== HEXTOPUBKEY DEBUG END (ERROR) ===")
         raise
 
 
@@ -227,7 +237,16 @@ def privToPub(privkey):
     """Converts hex private key into hex public key"""
     logger.debug("DEBUG: privToPub called")
     try:
-        private_key = a.changebase(privkey, 16, 256, minlen=32)
+        # PYTHON 3 FIX: Convert hex string to bytes manually
+        if isinstance(privkey, str):
+            # Remove any spaces or non-hex characters
+            privkey_clean = ''.join(c for c in privkey if c in '0123456789abcdefABCDEF')
+            if len(privkey_clean) % 2 != 0:
+                privkey_clean = '0' + privkey_clean
+            private_key = bytes.fromhex(privkey_clean)
+        else:
+            private_key = _ensure_bytes(privkey)
+        
         public_key = pointMult(private_key)
         result = hexlify(public_key)
         logger.debug("DEBUG: Converted private key to public key")
@@ -277,11 +296,34 @@ def makeCryptor(privkey, curve='secp256k1'):
     """Return a private `.pyelliptic.ECC` instance"""
     logger.debug("DEBUG: makeCryptor called")
     try:
-        private_key = a.changebase(privkey, 16, 256, minlen=32)
+        # PYTHON 3 FIX: Convert hex to bytes safely
+        if isinstance(privkey, str):
+            # Clean hex string
+            privkey_clean = ''.join(c for c in privkey if c in '0123456789abcdefABCDEF')
+            if len(privkey_clean) % 2 != 0:
+                privkey_clean = '0' + privkey_clean
+            private_key = bytes.fromhex(privkey_clean)
+        else:
+            private_key = _ensure_bytes(privkey)
+        
         public_key = pointMult(private_key)
+        
+        # Extract X and Y coordinates from public key
+        # Public key format: b'\x02\xca\x00 ' + X + b'\x00 ' + Y
+        if len(public_key) >= 66:
+            pubkey_x = public_key[1:-32]  # Skip first byte, get X (32 bytes)
+            pubkey_y = public_key[-32:]    # Get Y (32 bytes)
+        else:
+            # Fallback for older format
+            pubkey_x = public_key[1:33]
+            pubkey_y = public_key[33:]
+        
         cryptor = pyelliptic.ECC(
-            pubkey_x=public_key[1:-32], pubkey_y=public_key[-32:],
-            raw_privkey=private_key, curve=curve)
+            pubkey_x=pubkey_x, 
+            pubkey_y=pubkey_y,
+            raw_privkey=private_key, 
+            curve=curve
+        )
         logger.debug("DEBUG: Created cryptor successfully")
         return cryptor
     except Exception as e:
@@ -293,6 +335,7 @@ def makePubCryptor(pubkey):
     """Return a public `.pyelliptic.ECC` instance"""
     logger = logging.getLogger('highlevelcrypto')
     logger.debug("=== MAKEPUBCRYPTOR DEBUG ===")
+    logger.debug("Python version: %s", sys.version)
     
     try:
         # First, ensure we have the correct format
@@ -310,6 +353,9 @@ def makePubCryptor(pubkey):
             pubkey_bin = hexToPubkey(pubkey)
             logger.debug("Converted hex string to binary")
         
+        logger.debug("Binary pubkey length: %d", len(pubkey_bin))
+        logger.debug("Binary pubkey first 20 bytes: %s", hexlify(pubkey_bin[:20]))
+        
         # Create ECC instance
         cryptor = pyelliptic.ECC(curve='secp256k1', pubkey=pubkey_bin)
         logger.debug("Created public cryptor successfully")
@@ -326,8 +372,15 @@ def encrypt(msg, hexPubkey):
     """Encrypts message with hex public key"""
     logger.debug("DEBUG: encrypt called")
     try:
-        result = pyelliptic.ECC(curve='secp256k1').encrypt(
-            msg, hexToPubkey(hexPubkey))
+        # Convert message to bytes if needed
+        if isinstance(msg, str):
+            msg_bytes = msg.encode('utf-8')
+        else:
+            msg_bytes = _ensure_bytes(msg)
+        
+        cryptor = pyelliptic.ECC(curve='secp256k1')
+        pubkey_bin = hexToPubkey(hexPubkey)
+        result = cryptor.encrypt(msg_bytes, pubkey_bin)
         logger.debug("DEBUG: Message encrypted successfully")
         return result
     except Exception as e:
@@ -377,7 +430,14 @@ def sign(msg, hexPrivkey, digestAlg="sha256"):
     logger.debug("DEBUG: sign called with digestAlg: %s", digestAlg)
     try:
         cryptor = makeCryptor(hexPrivkey)
-        result = cryptor.sign(msg, digest_alg=_choose_digest_alg(digestAlg))
+        
+        # Convert message to bytes if needed
+        if isinstance(msg, str):
+            msg_bytes = msg.encode('utf-8')
+        else:
+            msg_bytes = _ensure_bytes(msg)
+        
+        result = cryptor.sign(msg_bytes, digest_alg=_choose_digest_alg(digestAlg))
         logger.debug("DEBUG: Message signed successfully")
         return result
     except Exception as e:
@@ -396,146 +456,141 @@ def verify(msg, sig, hexPubkey, digestAlg=None):
     logger.debug("Input signature type: %s, length: %d", type(sig), len(sig))
     logger.debug("Input hexPubkey type: %s, length: %d", type(hexPubkey), len(hexPubkey))
     
-    # Debug: Zeige die ersten Bytes jedes Parameters
     try:
-        if isinstance(msg, bytes):
-            logger.debug("Message (first 50 hex): %s", hexlify(msg[:50]))
-        else:
-            logger.debug("Message (raw): %s", str(msg)[:100])
-            
-        if isinstance(sig, bytes):
-            logger.debug("Signature (first 50 hex): %s", hexlify(sig[:50]))
-        else:
-            logger.debug("Signature (raw): %s", str(sig)[:100])
-            
-        logger.debug("hexPubkey (first 100 chars): %s", str(hexPubkey)[:100])
-    except:
-        pass
-    
-    # PYTHON 3 KOMPATIBILITÄT: Konvertiere alle Eingaben zu bytes/str wie benötigt
-    try:
-        # 1. Konvertiere msg zu bytes falls nötig
-        if isinstance(msg, str):
-            msg_bytes = msg.encode('utf-8')
-            logger.debug("Converted message from str to bytes")
-        elif isinstance(msg, memoryview):
-            msg_bytes = bytes(msg)
-            logger.debug("Converted message from memoryview to bytes")
-        else:
-            msg_bytes = bytes(msg) if not isinstance(msg, bytes) else msg
-            logger.debug("Message already bytes or converted")
+        # 1. Convert all inputs to appropriate types
+        msg_bytes = _ensure_bytes(msg)
+        sig_bytes = _ensure_bytes(sig)
+        hexPubkey_str = _ensure_str(hexPubkey)
         
-        # 2. Konvertiere signature zu bytes falls nötig
-        if isinstance(sig, str):
-            # Versuche hex decoding wenn es aussieht wie hex
-            if len(sig) % 2 == 0 and all(c in '0123456789abcdefABCDEF' for c in sig):
-                sig_bytes = unhexlify(sig)
-                logger.debug("Converted signature from hex string to bytes")
-            else:
-                sig_bytes = sig.encode('utf-8')
-                logger.debug("Converted signature from str to bytes")
-        elif isinstance(sig, memoryview):
-            sig_bytes = bytes(sig)
-            logger.debug("Converted signature from memoryview to bytes")
-        else:
-            sig_bytes = bytes(sig) if not isinstance(sig, bytes) else sig
-            logger.debug("Signature already bytes or converted")
+        logger.debug("Converted message length: %d", len(msg_bytes))
+        logger.debug("Converted signature length: %d", len(sig_bytes))
+        logger.debug("Converted pubkey: %s...", hexPubkey_str[:100])
         
-        # 3. Konvertiere pubkey zu hex string (pyelliptic erwartet hex string)
-        if isinstance(hexPubkey, bytes):
-            # Versuche zu dekodieren
-            try:
-                hexPubkey_str = hexPubkey.decode('utf-8')
-                logger.debug("Converted pubkey from bytes to str (utf-8)")
-            except:
-                # Falls nicht utf-8, dann hexlify
-                hexPubkey_str = hexlify(hexPubkey).decode('utf-8')
-                logger.debug("Converted pubkey from bytes to hex str")
-        elif isinstance(hexPubkey, memoryview):
-            hexPubkey_str = hexlify(bytes(hexPubkey)).decode('utf-8')
-            logger.debug("Converted pubkey from memoryview to hex str")
-        elif isinstance(hexPubkey, str):
-            hexPubkey_str = hexPubkey
-            logger.debug("Pubkey already str")
-        else:
-            hexPubkey_str = str(hexPubkey)
-            logger.debug("Converted pubkey to str")
-        
-        logger.debug("Final message length: %d", len(msg_bytes))
-        logger.debug("Final signature length: %d", len(sig_bytes))
-        logger.debug("Final pubkey (first 100): %s", hexPubkey_str[:100])
-        
+        # 2. Try different digest algorithms if not specified
         if digestAlg is None:
-            logger.debug("No digestAlg specified, trying SHA1 then SHA256")
+            logger.debug("No digestAlg specified, trying SHA256 then SHA1")
             
-            # Versuche SHA1
-            logger.debug("=== TRYING SHA1 ===")
-            sha1_result = False
-            try:
-                sha1_result = verify(msg_bytes, sig_bytes, hexPubkey_str, "sha1")
-                logger.debug("SHA1 verify result: %s", sha1_result)
-            except Exception as e:
-                logger.debug("SHA1 verify exception: %s", e)
-            
-            if sha1_result:
-                logger.debug("=== VERIFY SUCCESS WITH SHA1 ===")
-                logger.debug("=== HIGHLEVELCRYPTO VERIFY DEBUG END ===")
-                return True
-            
-            # SHA1 failed, versuche SHA256
+            # Try SHA256 first (newer)
             logger.debug("=== TRYING SHA256 ===")
-            sha256_result = False
             try:
-                sha256_result = verify(msg_bytes, sig_bytes, hexPubkey_str, "sha256")
-                logger.debug("SHA256 verify result: %s", sha256_result)
-            except Exception as e:
-                logger.debug("SHA256 verify exception: %s", e)
-            
-            logger.debug("=== HIGHLEVELCRYPTO VERIFY DEBUG END ===")
-            return sha256_result
-        
-        # Spezifischer digest algorithmus
-        logger.debug("Using digest algorithm: %s", digestAlg)
-        
-        # TEST: Verschiedene PubKey-Formate ausprobieren
-        test_keys = []
-        
-        # Format 1: Hex string (original)
-        test_keys.append(("hex_string", hexPubkey_str))
-        
-        # Format 2: Ohne '04' prefix falls vorhanden
-        if hexPubkey_str.startswith('04'):
-            test_keys.append(("without_04_prefix", hexPubkey_str[2:]))
-            logger.debug("Testing without 0x04 prefix: %s...", hexPubkey_str[2:50])
-        
-        # Format 3: Mit '04' prefix falls nicht vorhanden
-        if not hexPubkey_str.startswith('04'):
-            test_keys.append(("with_04_prefix", '04' + hexPubkey_str))
-            logger.debug("Testing with 0x04 prefix: 04%s...", hexPubkey_str[:50])
-        
-        # Format 4: Lowercase hex
-        test_keys.append(("lowercase_hex", hexPubkey_str.lower()))
-        
-        for test_name, test_key in test_keys:
-            logger.debug("=== TRYING KEY FORMAT: %s ===", test_name)
-            try:
-                cryptor = makePubCryptor(test_key)
-                result = cryptor.verify(sig_bytes, msg_bytes, 
-                                      digest_alg=_choose_digest_alg(digestAlg))
-                logger.debug("Verify with format '%s': %s", test_name, result)
-                if result:
-                    logger.info("=== VERIFICATION SUCCESS with format: %s ===", test_name)
+                if _verify_single(msg_bytes, sig_bytes, hexPubkey_str, "sha256"):
+                    logger.debug("=== VERIFY SUCCESS WITH SHA256 ===")
                     logger.debug("=== HIGHLEVELCRYPTO VERIFY DEBUG END ===")
                     return True
             except Exception as e:
-                logger.debug("Verify with format '%s' failed: %s", test_name, e)
+                logger.debug("SHA256 verify exception: %s", e)
+            
+            # Try SHA1 (older)
+            logger.debug("=== TRYING SHA1 ===")
+            try:
+                if _verify_single(msg_bytes, sig_bytes, hexPubkey_str, "sha1"):
+                    logger.debug("=== VERIFY SUCCESS WITH SHA1 ===")
+                    logger.debug("=== HIGHLEVELCRYPTO VERIFY DEBUG END ===")
+                    return True
+            except Exception as e:
+                logger.debug("SHA1 verify exception: %s", e)
+            
+            logger.debug("=== ALL DIGEST ALGORITHMS FAILED ===")
+            logger.debug("=== HIGHLEVELCRYPTO VERIFY DEBUG END ===")
+            return False
         
-        logger.error("=== ALL VERIFICATION ATTEMPTS FAILED ===")
-        logger.error("This is likely a PYTHON 3 / OpenSSL 3 compatibility issue!")
-        logger.debug("=== HIGHLEVELCRYPTO VERIFY DEBUG END ===")
-        return False
+        # 3. Specific digest algorithm
+        logger.debug("Using specific digest algorithm: %s", digestAlg)
+        return _verify_single(msg_bytes, sig_bytes, hexPubkey_str, digestAlg)
         
     except Exception as e:
         logger.error("Unhandled exception in verify: %s", e, exc_info=True)
         logger.debug("=== HIGHLEVELCRYPTO VERIFY DEBUG END ===")
         return False
+
+
+def _verify_single(msg_bytes, sig_bytes, hexPubkey_str, digestAlg):
+    """Internal helper for verification with specific algorithm"""
+    logger = logging.getLogger('highlevelcrypto')
+    
+    # Try different pubkey formats
+    test_keys = []
+    
+    # Original format
+    test_keys.append(("original", hexPubkey_str))
+    
+    # Without '04' prefix
+    if hexPubkey_str.startswith('04'):
+        test_keys.append(("without_04", hexPubkey_str[2:]))
+    
+    # With '04' prefix if missing
+    if not hexPubkey_str.startswith('04'):
+        test_keys.append(("with_04", '04' + hexPubkey_str))
+    
+    # Lowercase
+    test_keys.append(("lowercase", hexPubkey_str.lower()))
+    
+    # Uppercase
+    test_keys.append(("uppercase", hexPubkey_str.upper()))
+    
+    for test_name, test_key in test_keys:
+        logger.debug("=== TRYING KEY FORMAT: %s ===", test_name)
+        try:
+            cryptor = makePubCryptor(test_key)
+            result = cryptor.verify(
+                sig_bytes, 
+                msg_bytes, 
+                digest_alg=_choose_digest_alg(digestAlg)
+            )
+            logger.debug("Verify with format '%s': %s", test_name, result)
+            if result:
+                logger.info("=== VERIFICATION SUCCESS with format: %s ===", test_name)
+                return True
+        except Exception as e:
+            logger.debug("Verify with format '%s' failed: %s", test_name, str(e))
+    
+    logger.error("=== ALL PUBKEY FORMATS FAILED for %s ===", digestAlg)
+    return False
+
+
+# PYTHON 3 COMPATIBILITY MONKEY-PATCH
+if sys.version_info[0] >= 3:
+    logger.debug("Applying Python 3 compatibility patches...")
+    
+    # Patch arithmetic functions to handle Python 3 properly
+    original_decode = a.decode
+    
+    def patched_decode(string, base):
+        """Patched decode function for Python 3 compatibility"""
+        # Get code string
+        code_string = a.get_code_string(base)
+        result = 0
+        
+        # Handle different input types
+        if base == 256:
+            # For base 256, code_string is bytes
+            if isinstance(string, str):
+                string = string.encode('latin-1')
+            
+            # Process each byte
+            for byte in string:
+                if isinstance(byte, int):
+                    # Python 3: byte is int (0-255)
+                    result = result * base + byte
+                else:
+                    # Python 2: byte is bytes/str
+                    result = result * base + code_string.find(byte)
+        else:
+            # For other bases
+            if isinstance(string, bytes):
+                if base == 16:
+                    string = string.decode('ascii').lower()
+                else:
+                    string = string.decode('latin-1')
+            elif base == 16 and isinstance(string, str):
+                string = string.lower()
+            
+            # Process each character
+            for char in string:
+                result = result * base + code_string.find(char)
+        
+        return result
+    
+    # Apply the patch
+    a.decode = patched_decode
+    logger.debug("Patched a.decode() for Python 3 compatibility")
