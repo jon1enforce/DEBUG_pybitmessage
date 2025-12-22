@@ -2394,6 +2394,18 @@ class MyForm(settingsmixin.SMainWindow):
 
 
     def calcTrayIcon(self, iconFileName, inboxUnreadCount):
+        """Calculate tray icon with optional unread count overlay"""
+        # PYTHON 3 KOMPATIBILITÄT: Konvertiere bytes/string zu int
+        try:
+            if isinstance(inboxUnreadCount, bytes):
+                inboxUnreadCount = int(inboxUnreadCount.decode('utf-8'))
+            elif isinstance(inboxUnreadCount, str):
+                inboxUnreadCount = int(inboxUnreadCount)
+            # Falls es schon ein int ist, bleibt es unverändert
+        except (ValueError, AttributeError):
+            # Bei Konvertierungsfehler: 0 anzeigen
+            inboxUnreadCount = 0
+        
         pixmap = QtGui.QPixmap(":/newPrefix/images/" + iconFileName)
         if inboxUnreadCount > 0:
             # choose font and calculate font parameters

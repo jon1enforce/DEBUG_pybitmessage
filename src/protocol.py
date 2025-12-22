@@ -461,122 +461,227 @@ def decryptAndCheckPubkeyPayload(data, address):
     already in our inventory when we tried to send a msg to this
     particular address.
     """
+    logger = logging.getLogger('protocol')
+    logger.debug("=== DECRYPT_AND_CHECK_PUBKEY_PAYLOAD DEBUG START ===")
+    logger.debug("Input address: %s", address)
+    logger.debug("Data length: %d bytes", len(data))
+    
+    if len(data) < 100:
+        logger.error("Data too short (%d bytes) for pubkey payload", len(data))
+        logger.debug("=== DECRYPT_AND_CHECK_PUBKEY_PAYLOAD DEBUG END ===")
+        return 'failed'
+    
     try:
-        addressVersion, streamNumber, ripe = decodeAddress(address)[1:]
-
+        # Decode the address first
+        addressStatus, addressVersion, streamNumber, ripe = decodeAddress(address)
+        if addressStatus != 'success':
+            logger.error("Failed to decode address: %s", address)
+            logger.debug("=== DECRYPT_AND_CHECK_PUBKEY_PAYLOAD DEBUG END ===")
+            return 'failed'
+            
+        logger.debug("Address decoded - Version: %d, Stream: %d", addressVersion, streamNumber)
+        logger.debug("Address RIPE (first 20): %s", hexlify(ripe[:20]) if len(ripe) >= 20 else "Invalid")
+        
         readPosition = 20  # bypass the nonce, time, and object type
+        logger.debug("Read position after skipping nonce/time/type: %d", readPosition)
+        
+        # Embedded address version
         embeddedAddressVersion, varintLength = decodeVarint(
             data[readPosition:readPosition + 10])
         readPosition += varintLength
+        logger.debug("Embedded address version: %d (varint length: %d)", 
+                    embeddedAddressVersion, varintLength)
+        
+        # Embedded stream number
         embeddedStreamNumber, varintLength = decodeVarint(
             data[readPosition:readPosition + 10])
         readPosition += varintLength
+        logger.debug("Embedded stream number: %d (varint length: %d)", 
+                    embeddedStreamNumber, varintLength)
+        
+        # Verify address version and stream number match
+        if addressVersion != embeddedAddressVersion:
+            logger.error("ADDRESS VERSION MISMATCH! Expected: %d, Got: %d", 
+                        addressVersion, embeddedAddressVersion)
+            logger.debug("=== DECRYPT_AND_CHECK_PUBKEY_PAYLOAD DEBUG END ===")
+            return 'failed'
+            
+        if streamNumber != embeddedStreamNumber:
+            logger.error("STREAM NUMBER MISMATCH! Expected: %d, Got: %d", 
+                        streamNumber, embeddedStreamNumber)
+            logger.debug("=== DECRYPT_AND_CHECK_PUBKEY_PAYLOAD DEBUG END ===")
+            return 'failed'
+        
+        logger.debug("Address version and stream number match OK")
+        
         # We'll store the address version and stream number
         # (and some more) in the pubkeys table.
         storedData = bytes(data[20:readPosition])
-
-        if addressVersion != embeddedAddressVersion:
-            logger.info(
-                'Pubkey decryption was UNsuccessful'
-                ' due to address version mismatch.')
+        logger.debug("Stored data length: %d bytes", len(storedData))
+        
+        # Tag for v4 addresses
+        if len(data) < readPosition + 32:
+            logger.error("Data too short for tag (need %d bytes, have %d)", 
+                        readPosition + 32, len(data))
+            logger.debug("=== DECRYPT_AND_CHECK_PUBKEY_PAYLOAD DEBUG END ===")
             return 'failed'
-        if streamNumber != embeddedStreamNumber:
-            logger.info(
-                'Pubkey decryption was UNsuccessful'
-                ' due to stream number mismatch.')
-            return 'failed'
-
+            
         tag = data[readPosition:readPosition + 32]
         readPosition += 32
+        logger.debug("Tag (first 16): %s", hexlify(tag[:16]) if len(tag) >= 16 else "Invalid")
+        
         # the time through the tag. More data is appended onto
         # signedData below after the decryption.
         signedData = bytes(data[8:readPosition])
+        logger.debug("Signed data length (before decryption): %d bytes", len(signedData))
+        
         encryptedData = data[readPosition:]
-
-        # Let us try to decrypt the pubkey
-        toAddress, cryptorObject = state.neededPubkeys[bytes(tag)]
-        if toAddress != address:
-            logger.critical(
-                'decryptAndCheckPubkeyPayload failed due to toAddress'
-                ' mismatch. This is very peculiar.'
-                ' toAddress: %s, address %s',
-                toAddress, address
-            )
-            # the only way I can think that this could happen
-            # is if someone encodes their address data two different ways.
-            # That sort of address-malleability should have been caught
-            # by the UI or API and an error given to the user.
+        logger.debug("Encrypted data length: %d bytes", len(encryptedData))
+        
+        # Check if we have the decryption key for this tag
+        tag_bytes = bytes(tag)
+        if tag_bytes not in state.neededPubkeys:
+            logger.error("TAG NOT FOUND in neededPubkeys! Tag: %s", hexlify(tag))
+            logger.debug("Available tags in neededPubkeys: %s", 
+                        [hexlify(k[:8]) for k in state.neededPubkeys.keys()][:5])
+            logger.debug("=== DECRYPT_AND_CHECK_PUBKEY_PAYLOAD DEBUG END ===")
             return 'failed'
+        
+        toAddress, cryptorObject = state.neededPubkeys[tag_bytes]
+        logger.debug("Found cryptor object for tag")
+        logger.debug("Expected address: %s", toAddress)
+        logger.debug("Current address: %s", address)
+        
+        if toAddress != address:
+            logger.error("ADDRESS MISMATCH in neededPubkeys! Expected: %s, Got: %s", 
+                        toAddress, address)
+            logger.debug("=== DECRYPT_AND_CHECK_PUBKEY_PAYLOAD DEBUG END ===")
+            return 'failed'
+        
+        logger.debug("Address match OK")
+        
+        # Try to decrypt the data
+        logger.debug("Attempting decryption with cryptor object...")
         try:
             decryptedData = cryptorObject.decrypt(encryptedData)
-        except:  # noqa:E722
-            # FIXME: use a proper exception after `pyelliptic.ecc` is refactored.
-            # Someone must have encrypted some data with a different key
-            # but tagged it with a tag for which we are watching.
-            logger.info('Pubkey decryption was unsuccessful.')
+            logger.debug("Decryption SUCCESSFUL! Decrypted data length: %d bytes", len(decryptedData))
+        except Exception as e:
+            logger.error("DECRYPTION FAILED with exception: %s", str(e))
+            logger.debug("=== DECRYPT_AND_CHECK_PUBKEY_PAYLOAD DEBUG END ===")
             return 'failed'
-
+        
+        if len(decryptedData) < 140:
+            logger.error("Decrypted data too short (%d bytes), expected at least 140", len(decryptedData))
+            logger.debug("=== DECRYPT_AND_CHECK_PUBKEY_PAYLOAD DEBUG END ===")
+            return 'failed'
+        
+        # Parse decrypted data
         readPosition = 0
-        # bitfieldBehaviors = decryptedData[readPosition:readPosition + 4]
+        
+        # Bitfield behaviors (4 bytes)
+        bitfieldBehaviors = decryptedData[readPosition:readPosition + 4]
         readPosition += 4
+        logger.debug("Bitfield behaviors: %s", hexlify(bitfieldBehaviors))
+        
+        # Public signing key
         pubSigningKey = b'\x04' + decryptedData[readPosition:readPosition + 64]
         readPosition += 64
+        logger.debug("Public signing key length: %d bytes", len(pubSigningKey))
+        logger.debug("Public signing key (first 16): %s", hexlify(pubSigningKey[:16]))
+        
+        # Public encryption key
         pubEncryptionKey = b'\x04' + decryptedData[readPosition:readPosition + 64]
         readPosition += 64
-        specifiedNonceTrialsPerByteLength = decodeVarint(
-            decryptedData[readPosition:readPosition + 10])[1]
+        logger.debug("Public encryption key length: %d bytes", len(pubEncryptionKey))
+        logger.debug("Public encryption key (first 16): %s", hexlify(pubEncryptionKey[:16]))
+        
+        # Nonce trials per byte
+        specifiedNonceTrialsPerByte, specifiedNonceTrialsPerByteLength = decodeVarint(
+            decryptedData[readPosition:readPosition + 10])
         readPosition += specifiedNonceTrialsPerByteLength
-        specifiedPayloadLengthExtraBytesLength = decodeVarint(
-            decryptedData[readPosition:readPosition + 10])[1]
+        logger.debug("Nonce trials per byte: %d (varint length: %d)", 
+                    specifiedNonceTrialsPerByte, specifiedNonceTrialsPerByteLength)
+        
+        # Payload length extra bytes
+        specifiedPayloadLengthExtraBytes, specifiedPayloadLengthExtraBytesLength = decodeVarint(
+            decryptedData[readPosition:readPosition + 10])
         readPosition += specifiedPayloadLengthExtraBytesLength
+        logger.debug("Payload length extra bytes: %d (varint length: %d)", 
+                    specifiedPayloadLengthExtraBytes, specifiedPayloadLengthExtraBytesLength)
+        
         storedData += decryptedData[:readPosition]
         signedData += decryptedData[:readPosition]
+        logger.debug("Updated stored data length: %d bytes", len(storedData))
+        logger.debug("Updated signed data length: %d bytes", len(signedData))
+        
+        # Signature
         signatureLength, signatureLengthLength = decodeVarint(
             decryptedData[readPosition:readPosition + 10])
         readPosition += signatureLengthLength
+        logger.debug("Signature length: %d bytes (varint length: %d)", 
+                    signatureLength, signatureLengthLength)
+        
+        if len(decryptedData) < readPosition + signatureLength:
+            logger.error("Decrypted data too short for signature (need %d, have %d)", 
+                        readPosition + signatureLength, len(decryptedData))
+            logger.debug("=== DECRYPT_AND_CHECK_PUBKEY_PAYLOAD DEBUG END ===")
+            return 'failed'
+        
         signature = decryptedData[readPosition:readPosition + signatureLength]
-
-        if not highlevelcrypto.verify(
-                signedData, signature, hexlify(pubSigningKey)):
-            logger.info(
-                'ECDSA verify failed (within decryptAndCheckPubkeyPayload)')
+        logger.debug("Signature length actual: %d bytes", len(signature))
+        logger.debug("Signature (first 32): %s", hexlify(signature[:32]) if len(signature) >= 32 else "Invalid")
+        
+        # VERIFICATION STEP - CRITICAL!
+        logger.debug("=== VERIFICATION STEP ===")
+        logger.debug("Data to verify length: %d bytes", len(signedData))
+        logger.debug("Data to verify (first 50): %s", hexlify(signedData[:50]))
+        logger.debug("Public signing key for verification (full): %s", hexlify(pubSigningKey))
+        
+        verify_result = highlevelcrypto.verify(
+            signedData, signature, hexlify(pubSigningKey))
+        
+        if not verify_result:
+            logger.error("ECDSA VERIFY FAILED!")
+            logger.error("Possible causes:")
+            logger.error("1. Wrong public key")
+            logger.error("2. Corrupted signature")
+            logger.error("3. Modified signed data")
+            logger.error("4. Python 3 encoding issue")
+            logger.debug("=== DECRYPT_AND_CHECK_PUBKEY_PAYLOAD DEBUG END ===")
             return 'failed'
-
-        logger.info(
-            'ECDSA verify passed (within decryptAndCheckPubkeyPayload)')
-
+        
+        logger.info("ECDSA verify passed (within decryptAndCheckPubkeyPayload)")
+        
+        # Calculate RIPE from pubkeys
         embeddedRipe = highlevelcrypto.to_ripe(pubSigningKey, pubEncryptionKey)
-
+        logger.debug("Calculated RIPE from pubkeys: %s", hexlify(embeddedRipe))
+        logger.debug("Expected RIPE from address: %s", hexlify(ripe))
+        
         if embeddedRipe != ripe:
-            # Although this pubkey object had the tag were were looking for
-            # and was encrypted with the correct encryption key,
-            # it doesn't contain the correct pubkeys. Someone is
-            # either being malicious or using buggy software.
-            logger.info(
-                'Pubkey decryption was UNsuccessful due to RIPE mismatch.')
+            logger.error("RIPE MISMATCH!")
+            logger.error("Calculated: %s", hexlify(embeddedRipe))
+            logger.error("Expected:   %s", hexlify(ripe))
+            logger.debug("=== DECRYPT_AND_CHECK_PUBKEY_PAYLOAD DEBUG END ===")
             return 'failed'
-
+        
+        logger.debug("RIPE match OK")
+        
         # Everything checked out. Insert it into the pubkeys table.
-
-        logger.info(
-            'within decryptAndCheckPubkeyPayload, '
-            'addressVersion: %s, streamNumber: %s\nripe %s\n'
-            'publicSigningKey in hex: %s\npublicEncryptionKey in hex: %s',
-            addressVersion, streamNumber, hexlify(ripe),
-            hexlify(pubSigningKey), hexlify(pubEncryptionKey)
-        )
-
-        t = (dbstr(address), addressVersion, sqlite3.Binary(storedData), int(time.time()), dbstr('yes'))
+        logger.info("Pubkey validation SUCCESSFUL for address: %s", address)
+        logger.debug("Address version: %s, stream number: %s", addressVersion, streamNumber)
+        
+        t = (dbstr(address), addressVersion, sqlite3.Binary(storedData), 
+             int(time.time()), dbstr('yes'))
         sqlExecute('''INSERT INTO pubkeys VALUES (?,?,?,?,?)''', *t)
+        
+        logger.debug("=== DECRYPT_AND_CHECK_PUBKEY_PAYLOAD DEBUG END (SUCCESS) ===")
         return 'successful'
-    except varintDecodeError:
-        logger.info(
-            'Pubkey decryption was UNsuccessful due to a malformed varint.')
+        
+    except varintDecodeError as e:
+        logger.error("VARINT DECODE ERROR: %s", str(e))
+        logger.debug("=== DECRYPT_AND_CHECK_PUBKEY_PAYLOAD DEBUG END ===")
         return 'failed'
-    except Exception:
-        logger.critical(
-            'Pubkey decryption was UNsuccessful because of'
-            ' an unhandled exception! This is definitely a bug!',
-            exc_info=True
-        )
+    except Exception as e:
+        logger.error("UNHANDLED EXCEPTION: %s", str(e), exc_info=True)
+        logger.debug("=== DECRYPT_AND_CHECK_PUBKEY_PAYLOAD DEBUG END ===")
         return 'failed'

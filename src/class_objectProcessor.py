@@ -281,164 +281,257 @@ class objectProcessor(threading.Thread):
 
     def processpubkey(self, data):
         """Process a pubkey object"""
+        logger = logging.getLogger('objectProcessor')
+        logger.debug("=== PROCESSPUBKEY DEBUG START ===")
+        logger.debug("Data length: %d bytes", len(data))
+        
+        if len(data) < 100:
+            logger.error("Data too short (%d bytes) for pubkey processing", len(data))
+            logger.debug("=== PROCESSPUBKEY DEBUG END ===")
+            return
+            
         pubkeyProcessingStartTime = time.time()
         state.numberOfPubkeysProcessed += 1
         queues.UISignalQueue.put((
             'updateNumberOfPubkeysProcessed', 'no data'))
+            
         readPosition = 20  # bypass the nonce, time, and object type
-        addressVersion, varintLength = decodeVarint(
-            data[readPosition:readPosition + 10])
-        readPosition += varintLength
-        streamNumber, varintLength = decodeVarint(
-            data[readPosition:readPosition + 10])
-        readPosition += varintLength
-        if addressVersion == 0:
-            return logger.debug(
-                '(Within processpubkey) addressVersion of 0 doesn\'t'
-                ' make sense.')
-        if addressVersion > 4 or addressVersion == 1:
-            return logger.info(
-                'This version of Bitmessage cannot handle version %s'
-                ' addresses.', addressVersion)
-        if addressVersion == 2:
-            # sanity check. This is the minimum possible length.
-            if len(data) < 146:
-                return logger.debug(
-                    '(within processpubkey) payloadLength less than 146.'
-                    ' Sanity check failed.')
-            readPosition += 4
-            pubSigningKey = b'\x04' + data[readPosition:readPosition + 64]
-            # Is it possible for a public key to be invalid such that trying to
-            # encrypt or sign with it will cause an error? If it is, it would
-            # be easiest to test them here.
-            readPosition += 64
-            pubEncryptionKey = b'\x04' + data[readPosition:readPosition + 64]
-            if len(pubEncryptionKey) < 65:
-                return logger.debug(
-                    'publicEncryptionKey length less than 64. Sanity check'
-                    ' failed.')
-            readPosition += 64
-            # The data we'll store in the pubkeys table.
-            dataToStore = data[20:readPosition]
-            ripe = highlevelcrypto.to_ripe(pubSigningKey, pubEncryptionKey)
-
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug(
-                    'within recpubkey, addressVersion: %s, streamNumber: %s'
-                    '\nripe %s\npublicSigningKey in hex: %s'
-                    '\npublicEncryptionKey in hex: %s',
-                    addressVersion, streamNumber, hexlify(ripe),
-                    hexlify(pubSigningKey), hexlify(pubEncryptionKey)
-                )
-
-            address = encodeAddress(addressVersion, streamNumber, ripe)
-
-            queryreturn = sqlQuery(
-                "SELECT usedpersonally FROM pubkeys WHERE address=?"
-                " AND usedpersonally='yes'", dbstr(address))
-            # if this pubkey is already in our database and if we have
-            # used it personally:
-            if queryreturn != []:
-                logger.info(
-                    'We HAVE used this pubkey personally. Updating time.')
-                t = (dbstr(address), addressVersion, sqlite3.Binary(dataToStore),
-                     int(time.time()), 'yes')
-            else:
-                logger.info(
-                    'We have NOT used this pubkey personally. Inserting'
-                    ' in database.')
-                t = (dbstr(address), addressVersion, sqlite3.Binary(dataToStore),
-                     int(time.time()), 'no')
-            sqlExecute('''INSERT INTO pubkeys VALUES (?,?,?,?,?)''', *t)
-            self.possibleNewPubkey(address)
-        if addressVersion == 3:
-            if len(data) < 170:  # sanity check.
-                logger.warning(
-                    '(within processpubkey) payloadLength less than 170.'
-                    ' Sanity check failed.')
-                return
-            readPosition += 4
-            pubSigningKey = b'\x04' + data[readPosition:readPosition + 64]
-            readPosition += 64
-            pubEncryptionKey = b'\x04' + data[readPosition:readPosition + 64]
-            readPosition += 64
-            specifiedNonceTrialsPerByteLength = decodeVarint(
-                data[readPosition:readPosition + 10])[1]
-            readPosition += specifiedNonceTrialsPerByteLength
-            specifiedPayloadLengthExtraBytesLength = decodeVarint(
-                data[readPosition:readPosition + 10])[1]
-            readPosition += specifiedPayloadLengthExtraBytesLength
-            endOfSignedDataPosition = readPosition
-            # The data we'll store in the pubkeys table.
-            dataToStore = data[20:readPosition]
-            signatureLength, signatureLengthLength = decodeVarint(
+        logger.debug("Read position after skipping nonce/time/type: %d", readPosition)
+        
+        try:
+            addressVersion, varintLength = decodeVarint(
                 data[readPosition:readPosition + 10])
-            readPosition += signatureLengthLength
-            signature = data[readPosition:readPosition + signatureLength]
-            if highlevelcrypto.verify(
-                    data[8:endOfSignedDataPosition],
-                    signature, hexlify(pubSigningKey)):
-                logger.debug('ECDSA verify passed (within processpubkey)')
-            else:
-                logger.warning('ECDSA verify failed (within processpubkey)')
+            readPosition += varintLength
+            logger.debug("Address version: %d (varint length: %d)", 
+                        addressVersion, varintLength)
+            
+            streamNumber, varintLength = decodeVarint(
+                data[readPosition:readPosition + 10])
+            readPosition += varintLength
+            logger.debug("Stream number: %d (varint length: %d)", 
+                        streamNumber, varintLength)
+            
+            if addressVersion == 0:
+                logger.error("Address version 0 is invalid")
+                logger.debug("=== PROCESSPUBKEY DEBUG END ===")
                 return
+                
+            if addressVersion > 4 or addressVersion == 1:
+                logger.warning("Address version %d not supported", addressVersion)
+                logger.debug("=== PROCESSPUBKEY DEBUG END ===")
+                return
+                
+            # Process different address versions
+            if addressVersion == 2:
+                self._process_v2_pubkey(data, readPosition, addressVersion, streamNumber)
+            elif addressVersion == 3:
+                self._process_v3_pubkey(data, readPosition, addressVersion, streamNumber)
+            elif addressVersion == 4:
+                self._process_v4_pubkey(data, readPosition, addressVersion, streamNumber)
+                
+            # Display timing data
+            logger.debug("Time to process pubkey: %.3f seconds", 
+                        time.time() - pubkeyProcessingStartTime)
+            logger.debug("=== PROCESSPUBKEY DEBUG END ===")
+            
+        except Exception as e:
+            logger.error("Error in processpubkey: %s", str(e), exc_info=True)
+            logger.debug("=== PROCESSPUBKEY DEBUG END ===")
 
-            ripe = highlevelcrypto.to_ripe(pubSigningKey, pubEncryptionKey)
+    def _process_v2_pubkey(self, data, readPosition, addressVersion, streamNumber):
+        """Process version 2 pubkey"""
+        logger = logging.getLogger('objectProcessor')
+        logger.debug("Processing V2 pubkey")
+        
+        # sanity check. This is the minimum possible length.
+        if len(data) < 146:
+            logger.error("V2 payload length less than 146. Sanity check failed.")
+            return
+            
+        readPosition += 4  # skip bitfield
+        logger.debug("After bitfield, read position: %d", readPosition)
+        
+        if len(data) < readPosition + 128:
+            logger.error("Data too short for V2 pubkeys")
+            return
+            
+        pubSigningKey = b'\x04' + data[readPosition:readPosition + 64]
+        readPosition += 64
+        logger.debug("Public signing key (first 16): %s", hexlify(pubSigningKey[:16]))
+        
+        pubEncryptionKey = b'\x04' + data[readPosition:readPosition + 64]
+        readPosition += 64
+        logger.debug("Public encryption key (first 16): %s", hexlify(pubEncryptionKey[:16]))
+        
+        if len(pubEncryptionKey) < 65:
+            logger.error("Public encryption key length less than 65")
+            return
+            
+        # The data we'll store in the pubkeys table.
+        dataToStore = data[20:readPosition]
+        logger.debug("Data to store length: %d bytes", len(dataToStore))
+        
+        ripe = highlevelcrypto.to_ripe(pubSigningKey, pubEncryptionKey)
+        logger.debug("Calculated RIPE: %s", hexlify(ripe))
+        
+        address = encodeAddress(addressVersion, streamNumber, ripe)
+        logger.debug("Generated address: %s", address)
+        
+        self._store_pubkey_in_db(address, addressVersion, dataToStore, 'V2')
 
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug(
-                    'within recpubkey, addressVersion: %s, streamNumber: %s'
-                    '\nripe %s\npublicSigningKey in hex: %s'
-                    '\npublicEncryptionKey in hex: %s',
-                    addressVersion, streamNumber, hexlify(ripe),
-                    hexlify(pubSigningKey), hexlify(pubEncryptionKey)
-                )
+    def _process_v3_pubkey(self, data, readPosition, addressVersion, streamNumber):
+        """Process version 3 pubkey"""
+        logger = logging.getLogger('objectProcessor')
+        logger.debug("Processing V3 pubkey")
+        
+        if len(data) < 170:  # sanity check.
+            logger.error("V3 payload length less than 170. Sanity check failed.")
+            return
+            
+        readPosition += 4  # skip bitfield
+        logger.debug("After bitfield, read position: %d", readPosition)
+        
+        if len(data) < readPosition + 128:
+            logger.error("Data too short for V3 pubkeys")
+            return
+            
+        pubSigningKey = b'\x04' + data[readPosition:readPosition + 64]
+        readPosition += 64
+        logger.debug("Public signing key (first 16): %s", hexlify(pubSigningKey[:16]))
+        
+        pubEncryptionKey = b'\x04' + data[readPosition:readPosition + 64]
+        readPosition += 64
+        logger.debug("Public encryption key (first 16): %s", hexlify(pubEncryptionKey[:16]))
+        
+        # Store position before nonce trials
+        position_before_nonce = readPosition
+        
+        specifiedNonceTrialsPerByteLength = decodeVarint(
+            data[readPosition:readPosition + 10])[1]
+        readPosition += specifiedNonceTrialsPerByteLength
+        logger.debug("Nonce trials per byte varint length: %d", specifiedNonceTrialsPerByteLength)
+        
+        specifiedPayloadLengthExtraBytesLength = decodeVarint(
+            data[readPosition:readPosition + 10])[1]
+        readPosition += specifiedPayloadLengthExtraBytesLength
+        logger.debug("Payload length extra bytes varint length: %d", specifiedPayloadLengthExtraBytesLength)
+        
+        endOfSignedDataPosition = readPosition
+        logger.debug("End of signed data position: %d", endOfSignedDataPosition)
+        
+        # The data we'll store in the pubkeys table.
+        dataToStore = data[20:readPosition]
+        logger.debug("Data to store length: %d bytes", len(dataToStore))
+        
+        # Read signature
+        if len(data) < readPosition + 10:
+            logger.error("Data too short for signature length varint")
+            return
+            
+        signatureLength, signatureLengthLength = decodeVarint(
+            data[readPosition:readPosition + 10])
+        readPosition += signatureLengthLength
+        logger.debug("Signature length: %d bytes", signatureLength)
+        
+        if len(data) < readPosition + signatureLength:
+            logger.error("Data too short for signature (need %d, have %d)", 
+                        readPosition + signatureLength, len(data))
+            return
+            
+        signature = data[readPosition:readPosition + signatureLength]
+        logger.debug("Signature (first 32): %s", hexlify(signature[:32]) if len(signature) >= 32 else "Invalid")
+        
+        # VERIFICATION STEP
+        logger.debug("=== V3 VERIFICATION STEP ===")
+        data_to_verify = data[8:endOfSignedDataPosition]
+        logger.debug("Data to verify length: %d bytes", len(data_to_verify))
+        logger.debug("Data to verify (first 50): %s", hexlify(data_to_verify[:50]))
+        logger.debug("Public signing key for verification: %s", hexlify(pubSigningKey))
+        
+        verify_result = highlevelcrypto.verify(
+            data_to_verify, signature, hexlify(pubSigningKey))
+        
+        if not verify_result:
+            logger.warning('ECDSA verify failed (within processpubkey)')
+            logger.warning("V3 pubkey verification FAILED")
+            return
+        else:
+            logger.debug('ECDSA verify passed (within processpubkey)')
+            logger.debug("V3 pubkey verification SUCCESSFUL")
+        
+        ripe = highlevelcrypto.to_ripe(pubSigningKey, pubEncryptionKey)
+        logger.debug("Calculated RIPE: %s", hexlify(ripe))
+        
+        address = encodeAddress(addressVersion, streamNumber, ripe)
+        logger.debug("Generated address: %s", address)
+        
+        self._store_pubkey_in_db(address, addressVersion, dataToStore, 'V3')
 
-            address = encodeAddress(addressVersion, streamNumber, ripe)
-            queryreturn = sqlQuery(
-                "SELECT usedpersonally FROM pubkeys WHERE address=?"
-                " AND usedpersonally='yes'", dbstr(address))
-            # if this pubkey is already in our database and if we have
-            # used it personally:
-            if queryreturn != []:
-                logger.info(
-                    'We HAVE used this pubkey personally. Updating time.')
-                t = (dbstr(address), addressVersion, sqlite3.Binary(dataToStore),
-                     int(time.time()), dbstr('yes'))
-            else:
-                logger.info(
-                    'We have NOT used this pubkey personally. Inserting'
-                    ' in database.')
-                t = (dbstr(address), addressVersion, sqlite3.Binary(dataToStore),
-                     int(time.time()), dbstr('no'))
+    def _process_v4_pubkey(self, data, readPosition, addressVersion, streamNumber):
+        """Process version 4 pubkey"""
+        logger = logging.getLogger('objectProcessor')
+        logger.debug("Processing V4 pubkey")
+        
+        if len(data) < 350:  # sanity check.
+            logger.error("V4 payload length less than 350. Sanity check failed.")
+            return
+            
+        if len(data) < readPosition + 32:
+            logger.error("Data too short for V4 tag")
+            return
+            
+        tag = data[readPosition:readPosition + 32]
+        tag_bytes = bytes(tag)
+        readPosition += 32
+        logger.debug("V4 Tag (first 16): %s", hexlify(tag[:16]))
+        
+        if tag_bytes not in state.neededPubkeys:
+            logger.info("We don't need this v4 pubkey. We didn't ask for it.")
+            logger.debug("Tag not found in neededPubkeys")
+            logger.debug("Tags in neededPubkeys: %s", 
+                        [hexlify(k[:8]) for k in state.neededPubkeys.keys()][:5])
+            return
+        
+        logger.debug("Tag found in neededPubkeys")
+        toAddress = state.neededPubkeys[tag_bytes][0]
+        logger.debug("Expected address for this tag: %s", toAddress)
+        
+        # Let us try to decrypt the pubkey
+        logger.debug("Calling decryptAndCheckPubkeyPayload for V4 pubkey")
+        result = protocol.decryptAndCheckPubkeyPayload(data, toAddress)
+        
+        if result == 'successful':
+            logger.debug("V4 pubkey decryptAndCheck successful")
+            # At this point we know that we have been waiting on this
+            # pubkey. This function will command the workerThread
+            # to start work on the messages that require it.
+            self.possibleNewPubkey(toAddress)
+        else:
+            logger.warning("V4 pubkey decryptAndCheck FAILED with result: %s", result)
+
+    def _store_pubkey_in_db(self, address, addressVersion, dataToStore, version_str):
+        """Store pubkey in database"""
+        logger = logging.getLogger('objectProcessor')
+        
+        queryreturn = sqlQuery(
+            "SELECT usedpersonally FROM pubkeys WHERE address=?"
+            " AND usedpersonally='yes'", dbstr(address))
+        
+        if queryreturn != []:
+            logger.info('We HAVE used this %s pubkey personally. Updating time.', version_str)
+            t = (dbstr(address), addressVersion, sqlite3.Binary(dataToStore),
+                 int(time.time()), 'yes')
+        else:
+            logger.info('We have NOT used this %s pubkey personally. Inserting in database.', version_str)
+            t = (dbstr(address), addressVersion, sqlite3.Binary(dataToStore),
+                 int(time.time()), 'no')
+        
+        try:
             sqlExecute('''INSERT INTO pubkeys VALUES (?,?,?,?,?)''', *t)
+            logger.debug("%s pubkey stored successfully in database", version_str)
             self.possibleNewPubkey(address)
-
-        if addressVersion == 4:
-            if len(data) < 350:  # sanity check.
-                return logger.debug(
-                    '(within processpubkey) payloadLength less than 350.'
-                    ' Sanity check failed.')
-
-            tag = data[readPosition:readPosition + 32]
-            tag_bytes = bytes(tag)
-            if tag_bytes not in state.neededPubkeys:
-                return logger.info(
-                    'We don\'t need this v4 pubkey. We didn\'t ask for it.')
-
-            # Let us try to decrypt the pubkey
-            toAddress = state.neededPubkeys[tag_bytes][0]
-            if protocol.decryptAndCheckPubkeyPayload(data, toAddress) == \
-                    'successful':
-                # At this point we know that we have been waiting on this
-                # pubkey. This function will command the workerThread
-                # to start work on the messages that require it.
-                self.possibleNewPubkey(toAddress)
-
-        # Display timing data
-        logger.debug(
-            'Time required to process this pubkey: %s',
-            time.time() - pubkeyProcessingStartTime)
+        except Exception as e:
+            logger.error("Failed to store %s pubkey in database: %s", version_str, str(e))
 
     def processmsg(self, data):
         """Process a message object"""

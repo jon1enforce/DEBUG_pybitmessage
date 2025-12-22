@@ -156,21 +156,36 @@ class singleCleaner(StoppableThread):
             for connection in connectionpool.pool.connections():
                 connection.clean()
 
-            # discovery tracking
+            # discovery tracking - KORREKTUR: Dictionary changed size during iteration
             print("DEBUG: Cleaning discovered peers")
-            exp = time.time() - singleCleaner.expireDiscoveredPeers
-            reaper = (k for k, v in state.discoveredPeers.items() if v < exp)
-            for k in reaper:
-                try:
-                    del state.discoveredPeers[k]
-                except KeyError:
-                    print(f"DEBUG: Key {k} not found in discoveredPeers during cleanup")
-                    pass
+            self.cleanDiscoveredPeers()
+            
             # ..todo:: cleanup pending upload / download
 
             print("DEBUG: Running garbage collection")
             gc.collect()
             print("DEBUG: singleCleaner cycle completed")
+
+    def cleanDiscoveredPeers(self):
+        """Clean up discovered peers"""
+        try:
+            exp = int(time.time()) - 2 * 60 * 60  # 2 hours
+            # PYTHON 3 KOMPATIBILITÄT: Erstelle zuerst eine Liste, dann filtere
+            peers_to_remove = []
+            for k, v in list(state.discoveredPeers.items()):  # list() macht Kopie
+                if v < exp:
+                    peers_to_remove.append(k)
+            
+            # Jetzt entfernen
+            for k in peers_to_remove:
+                try:
+                    del state.discoveredPeers[k]
+                except KeyError:
+                    pass
+                    
+            print(f"DEBUG: Cleaned up {len(peers_to_remove)} discovered peer(s)")
+        except Exception as e:
+            print(f"DEBUG: Error cleaning discovered peers: {str(e)}")
 
     def resendPubkeyRequest(self, address):
         """Resend pubkey request for address"""
