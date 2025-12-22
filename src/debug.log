@@ -3169,3 +3169,61 @@ Traceback (most recent call last):
                ^^^^^^^^^^
 NameError: name '_translate' is not defined
 2025-12-22 19:26:57,230 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-22 21:07:01,752 - WARNING - Using default logger configuration
+2025-12-22 21:07:02,446 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-22 21:07:02,453 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-22 21:07:02,453 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-22 21:07:02,454 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-22 21:07:02,488 - WARNING - No indicator plugin found
+2025-12-22 21:07:02,509 - WARNING - No notification.message plugin found
+2025-12-22 21:07:05,280 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-22 21:07:07,051 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-22 21:08:27,792 - ERROR - Unexpected error in sendMsg row 0: name '_translate' is not defined
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_singleWorker.py", line 980, in sendMsg
+    self.requestPubKey(toaddress)
+  File "/home/jon/DEBUG_pybitmessage/src/class_singleWorker.py", line 1540, in requestPubKey
+    toAddress, _translate(
+               ^^^^^^^^^^
+NameError: name '_translate' is not defined
+2025-12-22 21:10:20,035 - WARNING - ECDSA verify failed (within processpubkey)
+2025-12-22 21:11:36,729 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-22 21:16:36,052 - WARNING - Using default logger configuration
+2025-12-22 21:16:36,980 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-22 21:16:36,985 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-22 21:16:36,985 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-22 21:16:36,986 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-22 21:16:37,016 - WARNING - No indicator plugin found
+2025-12-22 21:16:37,037 - WARNING - No notification.message plugin found
+2025-12-22 21:16:38,780 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-22 21:17:04,305 - WARNING - ⚠️ GUI still running, forcing exit

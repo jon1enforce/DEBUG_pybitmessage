@@ -1537,7 +1537,7 @@ class singleWorker(StoppableThread):
         queues.UISignalQueue.put(('updateStatusBar', statusbar))
         queues.UISignalQueue.put((
             'updateSentItemStatusByToAddress', (
-                toAddress, _translate(
+                toAddress, tr._translate(  # ERSTE KORREKTUR ✓
                     "MainWindow",
                     "Doing work necessary to request encryption key."))
         ))
@@ -1560,15 +1560,16 @@ class singleWorker(StoppableThread):
             ''' status='awaitingpubkey') AND folder='sent' ''',
             int(time.time()), retryNumber + 1, sleeptill, dbstr(toAddress))
 
+        # ZWEITE KORREKTUR HIER: _translate → tr._translate
         queues.UISignalQueue.put((
-            'updateStatusBar', _translate(
+            'updateStatusBar', tr._translate(  # KORRIGIERT!
                 "MainWindow",
                 "Broadcasting the public key request. This program will"
                 " auto-retry if they are offline.")
         ))
         queues.UISignalQueue.put((
             'updateSentItemStatusByToAddress', (
-                toAddress, _translate(
+                toAddress, tr._translate(  # DIESE WAR SCHON RICHTIG
                     "MainWindow",
                     "Sending public key request. Waiting for reply."
                     " Requested at {0}"
