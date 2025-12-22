@@ -1,10 +1,10 @@
 [bitmessagesettings]
-maxaddrperstreamsend = 100          # Reduzierte Peer-Announcements
-maxbootstrapconnections = 2         # Minimale Bootstrap-Verbindungen
-maxdownloadrate = 15000              # 15 KB/s Download Limit
+maxaddrperstreamsend = 100
+maxbootstrapconnections = 2
+maxdownloadrate = 15000
 maxoutboundconnections = 8
-maxtotalconnections = 15            # Gesamtlimit für Alpine
-maxuploadrate = 8000                 # 8 KB/s Upload Limit
+maxtotalconnections = 15
+maxuploadrate = 8000
 apiinterface = 127.0.0.1
 apiport = 8442
 udp = true
@@ -24,33 +24,33 @@ keysencrypted = true
 messagesencrypted = true
 minimizeonclose = false
 replybelow = False
-stopresendingafterxdays = 3         # Kürzer für Alpine
+stopresendingafterxdays = 3
 stopresendingafterxmonths = 
 opencl = 
-maxinboundconnections = 10          # Weniger für Container/VM
-bind = 192.168.8.169                # Deine statische IP ANPASSEN!
-onionbindip = 192.168.8.169         # Gleiche IP für Onion
+maxinboundconnections = 10
+bind = 192.168.8.169
+onionbindip = 192.168.8.169
 sockslisten = false
-dns = 1.1.1.1                       # Cloudflare DNS 1
-dnsserver = 1.0.0.1                 # Cloudflare DNS 2
+dns = 1.1.1.1
+dnsserver = 1.0.0.1
 dnsport = 53
-usednspython = true                 # Python DNS statt musl DNS
-usepeerdns = false                  # Keine DNS von Peers (statisch besser)
-defaultgateway = 192.168.8.1        # Dein Router
+usednspython = true
+usepeerdns = false
+defaultgateway = 192.168.8.1
 dontconnect = false
 sendoutgoingconnections = true
 onionservicesonly = false
-threads = 1                          # Weniger Threads für musl
-receivequeues = 2                    # Reduzierte Queues
-sockettimeout = 45                   # Längere Timeouts für musl
+threads = 1
+receivequeues = 2
+sockettimeout = 45
 connectiontimeout = 60
 maxsocketidletime = 300
-maxbandwidth = 25000                 # Gesamtbandbreite
+maxbandwidth = 25000
 staticpeers = 194.182.189.194:8444,158.69.63.42:8080,41.193.189.143:8444,85.214.65.189:8444
-maxnodes = 500                       # Reduziert für Alpine
+maxnodes = 500
 maxnodesperstream = 200
-preferredmaximumage = 86400          # 1 Tag
-defaultnoncetrialsperbyte = 320      # Standard PoW
+preferredmaximumage = 86400
+defaultnoncetrialsperbyte = 320
 defaultpayloadlengthextrabytes = 14000
 maxacceptablenoncetrialsperbyte = 1000000
 maxacceptablepayloadlengthextrabytes = 1000000
@@ -72,6 +72,11 @@ settingsversion = 10
 onionport = 8444
 smtpdeliver = 
 ttl = 367200
+namecoinrpctype = namecoind
+namecoinrpchost = localhost
+namecoinrpcuser = 
+namecoinrpcpassword = 
+namecoinrpcport = 8336
 
 [threads]
 receive = 3
@@ -82,9 +87,7 @@ dandelion = 90
 
 [inventory]
 storage = sqlite
-acceptmismatch = false
-maxsize = 500                        # Reduzierte Inventory Größe
-cleanonstartup = true                # Beim Start aufräumen
+acceptmismatch = False
 
 [knownnodes]
 maxnodes = 20000
@@ -92,34 +95,12 @@ maxnodes = 20000
 [zlib]
 maxsize = 1048576
 
-[alpine]
-musl_threading = 1                   # Single-threaded musl mode
-musl_dns_fallback = true             # Fallback DNS bei musl Fehlern
-musl_socket_buffer = 8192            # Größerer Buffer für musl
-musl_network_retry = 3               # Wiederholungsversuche
-container_mode = true                Alpine läuft oft in Containern
-vm_optimized = true                  # VM-spezifische Optimierungen
-
-[networktimeouts]
-initial = 60
-established = 300
-ping = 120
-bootstrap = 180
-
-[staticroutes]
-192.168.8.0/24 = 192.168.8.1
-default = 192.168.8.1
-
-[dnsresolvers]
-primary = 1.1.1.1
-secondary = 1.0.0.1
-timeout = 5
-attempts = 2
-rotate = true                        # DNS Rotation für musl
-
-[performance]
-sqlite_cache_size = 2000
-sqlite_page_size = 4096
-sqlite_journal_mode = WAL
-python_gc_threshold = (700, 10, 10)  # Aggressive GC für Alpine
+[BM-2cTcvaXs7EtHJEVRuorbbrmKjKhbu4YvCw]
+label = 
+enabled = true
+decoy = false
+noncetrialsperbyte = 1000
+payloadlengthextrabytes = 14000
+privsigningkey = 5JksUnXiSZRuqSDSj3AuBUPyAYKmffd1eNLpHCh4Nki4T6MWXrk
+privencryptionkey = 5J5janqgSto6xksTVovfxG2RJcDiPMqTX9Czt1X84hZ2bMUVwuE
 

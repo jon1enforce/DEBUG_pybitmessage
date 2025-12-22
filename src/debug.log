@@ -23645,3 +23645,75 @@ TypeError: the JSON object must be str, bytes or bytearray, not NoneType
 2025-12-22 23:37:32,882 - WARNING - No notification.message plugin found
 2025-12-22 23:37:51,995 - ERROR - 31.29.179.118:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
 2025-12-22 23:38:32,174 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-22 23:41:19,445 - WARNING - Using default logger configuration
+2025-12-22 23:41:19,783 - ERROR - DEBUG: Error in makeCryptor: [OpenSSL] EC_KEY_check_key FAIL ...
+2025-12-22 23:41:19,808 - WARNING - defusedxml not available, only use API on a secure, closed network.
+2025-12-22 23:41:20,109 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-22 23:41:20,115 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-22 23:41:20,115 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-22 23:41:20,116 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-22 23:41:20,150 - WARNING - No indicator plugin found
+2025-12-22 23:41:20,172 - WARNING - No notification.message plugin found
+2025-12-22 23:41:44,125 - WARNING - Server full, dropping connection
+2025-12-22 23:42:15,856 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-22 23:43:13,613 - WARNING - Using default logger configuration
+2025-12-22 23:43:13,913 - ERROR - DEBUG: Error in makeCryptor: [OpenSSL] EC_KEY_check_key FAIL ...
+2025-12-22 23:43:13,933 - WARNING - defusedxml not available, only use API on a secure, closed network.
+2025-12-22 23:43:14,224 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-22 23:43:14,229 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-22 23:43:14,230 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-22 23:43:14,232 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-22 23:43:14,261 - WARNING - No indicator plugin found
+2025-12-22 23:43:14,282 - WARNING - No notification.message plugin found
+2025-12-22 23:43:17,993 - ERROR - DEBUG: Error in decodeWalletImportFormat: argument should be integer or bytes-like object, not 'str'
+2025-12-22 23:43:23,911 - ERROR - DEBUG: Error in decodeWalletImportFormat: argument should be integer or bytes-like object, not 'str'
+2025-12-22 23:43:23,912 - ERROR - Error within sendOutOrStoreMyV4Pubkey
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_singleWorker.py", line 365, in sendOutOrStoreMyV4Pubkey
+    privSigningKeyHex, _, pubSigningKey, pubEncryptionKey = self._getKeysForAddress(myAddress)
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/class_singleWorker.py", line 212, in _getKeysForAddress
+    privSigningKeyHex = hexlify(highlevelcrypto.decodeWalletImportFormat(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/highlevelcrypto.py", line 73, in decodeWalletImportFormat
+    fullString = a.changebase(WIFstring, 58, 256)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/pyelliptic/arithmetic.py", line 92, in changebase
+    return encode(decode(string, frm), to, minlen)
+                  ^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/highlevelcrypto.py", line 590, in patched_decode
+    result = result * base + code_string.find(char)
+                             ^^^^^^^^^^^^^^^^^^^^^^
+TypeError: argument should be integer or bytes-like object, not 'str'
+2025-12-22 23:43:24,080 - WARNING - Server full, dropping connection
+2025-12-22 23:43:32,997 - WARNING - ⚠️ GUI still running, forcing exit
