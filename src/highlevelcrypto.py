@@ -171,14 +171,55 @@ def deterministic_keys(passphrase, nonce):
 
 def hexToPubkey(pubkey):
     """Convert a pubkey from hex to binary"""
-    logger.debug("DEBUG: hexToPubkey called")
+    logger = logging.getLogger('highlevelcrypto')
+    logger.debug("=== HEXTOPUBKEY DEBUG ===")
+    logger.debug("Input type: %s, value: %s", type(pubkey), pubkey[:100] if pubkey else "None")
+    
     try:
-        pubkey_raw = a.changebase(pubkey[2:], 16, 256, minlen=64)
-        pubkey_bin = b'\x02\xca\x00 ' + pubkey_raw[:32] + b'\x00 ' + pubkey_raw[32:]
-        logger.debug("DEBUG: Converted hex pubkey to binary")
+        # PYTHON 3 KOMPATIBILITÄT: Handle both str and bytes
+        if isinstance(pubkey, bytes):
+            # If it's bytes, decode to string first
+            try:
+                # Try to decode as utf-8 (might be hex string as bytes)
+                hex_string = pubkey.decode('utf-8')
+                logger.debug("Decoded bytes to utf-8 string")
+            except UnicodeDecodeError:
+                # If not utf-8, try to interpret as hex directly
+                # hexlify() returns bytes like b'0432abc...'
+                hex_string = pubkey.hex()  # Python 3.5+ method
+                logger.debug("Converted bytes to hex string using .hex()")
+        elif isinstance(pubkey, str):
+            hex_string = pubkey
+            logger.debug("Input is already string")
+        else:
+            logger.error("Unsupported type: %s", type(pubkey))
+            raise TypeError("pubkey must be str or bytes")
+        
+        # Remove '04' prefix if present (uncompressed marker)
+        if hex_string.startswith('04'):
+            hex_string = hex_string[2:]
+            logger.debug("Removed '04' prefix")
+        
+        logger.debug("Hex string length after cleanup: %d", len(hex_string))
+        
+        # Convert hex string to raw bytes
+        pubkey_raw = a.changebase(hex_string, 16, 256, minlen=64)
+        logger.debug("Converted to raw bytes, length: %d", len(pubkey_raw))
+        
+        # Construct binary format expected by pyelliptic
+        # Format: b'\x02\xca\x00 ' + X (32 bytes) + b'\x00 ' + Y (32 bytes)
+        x_component = pubkey_raw[:32]
+        y_component = pubkey_raw[32:]
+        
+        pubkey_bin = b'\x02\xca\x00 ' + x_component + b'\x00 ' + y_component
+        logger.debug("Final binary pubkey length: %d", len(pubkey_bin))
+        logger.debug("=== HEXTOPUBKEY DEBUG END ===")
+        
         return pubkey_bin
+        
     except Exception as e:
-        logger.error("DEBUG: Error in hexToPubkey: %s", str(e))
+        logger.error("Error in hexToPubkey: %s", str(e), exc_info=True)
+        logger.debug("=== HEXTOPUBKEY DEBUG END (ERROR) ===")
         raise
 
 
@@ -250,14 +291,34 @@ def makeCryptor(privkey, curve='secp256k1'):
 
 def makePubCryptor(pubkey):
     """Return a public `.pyelliptic.ECC` instance"""
-    logger.debug("DEBUG: makePubCryptor called")
+    logger = logging.getLogger('highlevelcrypto')
+    logger.debug("=== MAKEPUBCRYPTOR DEBUG ===")
+    
     try:
-        pubkey_bin = hexToPubkey(pubkey)
+        # First, ensure we have the correct format
+        if isinstance(pubkey, bytes):
+            # Check if it's already in binary format (starts with b'\x02\xca')
+            if pubkey.startswith(b'\x02\xca'):
+                logger.debug("Pubkey already in binary format")
+                pubkey_bin = pubkey
+            else:
+                # Convert using hexToPubkey
+                pubkey_bin = hexToPubkey(pubkey)
+                logger.debug("Converted to binary via hexToPubkey")
+        else:
+            # Assume it's hex string
+            pubkey_bin = hexToPubkey(pubkey)
+            logger.debug("Converted hex string to binary")
+        
+        # Create ECC instance
         cryptor = pyelliptic.ECC(curve='secp256k1', pubkey=pubkey_bin)
-        logger.debug("DEBUG: Created public cryptor successfully")
+        logger.debug("Created public cryptor successfully")
+        logger.debug("=== MAKEPUBCRYPTOR DEBUG END ===")
         return cryptor
+        
     except Exception as e:
-        logger.error("DEBUG: Error in makePubCryptor: %s", str(e))
+        logger.error("Error in makePubCryptor: %s", str(e), exc_info=True)
+        logger.debug("=== MAKEPUBCRYPTOR DEBUG END (ERROR) ===")
         raise
 
 
