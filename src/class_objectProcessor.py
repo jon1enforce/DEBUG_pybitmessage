@@ -39,6 +39,51 @@ from dbcompat import dbstr
 logger = logging.getLogger('default')
 
 
+def to_hex_string(data):
+    """
+    Konvertiere beliebige Daten zu einem hex-String für Python 2/3 Kompatibilität.
+    Verwendet String als Standard für bidirektionale Kompatibilität.
+    """
+    if data is None:
+        return ''
+    
+    # Wenn es bereits ein String ist
+    if isinstance(data, str):
+        # Prüfe, ob es bereits ein hex-String ist (nur hex-Zeichen)
+        try:
+            int(data, 16)
+            return data  # Ist bereits hex
+        except (ValueError, TypeError):
+            # Ist kein hex-String, konvertiere zu hex
+            return hexlify(data.encode('latin-1')).decode('utf-8')
+    
+    # Python 3: bytes, bytearray, memoryview
+    if hasattr(data, 'tobytes'):  # memoryview
+        data = data.tobytes()
+    
+    if isinstance(data, (bytes, bytearray)):
+        return hexlify(data).decode('utf-8')
+    
+    # Fallback: zu String und dann zu hex
+    try:
+        return hexlify(str(data).encode('latin-1')).decode('utf-8')
+    except:
+        return str(data)
+
+
+def from_hex_string(hex_str):
+    """
+    Konvertiere hex-String zurück zu bytes.
+    """
+    if not hex_str:
+        return b''
+    try:
+        return bytes.fromhex(hex_str)
+    except (ValueError, TypeError):
+        # Falls es kein valider hex-String ist
+        return hex_str.encode('latin-1')
+
+
 class objectProcessor(threading.Thread):
     """
     The objectProcessor thread, of which there is only one, receives network
@@ -143,9 +188,11 @@ class objectProcessor(threading.Thread):
         readPosition = 16
 
         data_bytes = bytes(data[readPosition:])
-        if data_bytes in state.ackdataForWhichImWatching:
+        # Konvertiere zu hex-String für Kompatibilität
+        data_hex = to_hex_string(data_bytes)
+        if data_hex in state.ackdataForWhichImWatching:
             logger.info('This object is an acknowledgement bound for me.')
-            del state.ackdataForWhichImWatching[data_bytes]
+            del state.ackdataForWhichImWatching[data_hex]
             rowcount = sqlExecute(
                 "UPDATE sent SET status='ackreceived', lastactiontime=?"
                 " WHERE ackdata=?", int(time.time()), sqlite3.Binary(data_bytes))
@@ -221,10 +268,11 @@ class objectProcessor(threading.Thread):
             logger.info(
                 'the hash requested in this getpubkey request is: %s',
                 hexlify(requestedHash))
-            requestedHash_bytes = bytes(requestedHash)
+            # Konvertiere zu hex-String für Kompatibilität
+            requestedHash_hex = to_hex_string(requestedHash)
             # if this address hash is one of mine
-            if requestedHash_bytes in shared.myAddressesByHash:
-                myAddress = shared.myAddressesByHash[requestedHash_bytes]
+            if requestedHash_hex in shared.myAddressesByHash:
+                myAddress = shared.myAddressesByHash[requestedHash_hex]
         elif requestedAddressVersionNumber >= 4:
             requestedTag = data[readPosition:readPosition + 32]
             if len(requestedTag) != 32:
@@ -234,9 +282,10 @@ class objectProcessor(threading.Thread):
             logger.debug(
                 'the tag requested in this getpubkey request is: %s',
                 hexlify(requestedTag))
-            requestedTag_bytes = bytes(requestedTag)
-            if requestedTag_bytes in shared.myAddressesByTag:
-                myAddress = shared.myAddressesByTag[requestedTag_bytes]
+            # Konvertiere zu hex-String für Kompatibilität
+            requestedTag_hex = to_hex_string(requestedTag)
+            if requestedTag_hex in shared.myAddressesByTag:
+                myAddress = shared.myAddressesByTag[requestedTag_hex]
 
         if myAddress == '':
             logger.info('This getpubkey request is not for any of my keys.')
@@ -281,302 +330,165 @@ class objectProcessor(threading.Thread):
 
     def processpubkey(self, data):
         """Process a pubkey object"""
-        logger = logging.getLogger('objectProcessor')
-        logger.debug("=== PROCESSPUBKEY DEBUG START ===")
-        logger.debug("Data length: %d bytes", len(data))
-        
-        if len(data) < 100:
-            logger.error("Data too short (%d bytes) for pubkey processing", len(data))
-            logger.debug("=== PROCESSPUBKEY DEBUG END ===")
-            return
-            
         pubkeyProcessingStartTime = time.time()
         state.numberOfPubkeysProcessed += 1
         queues.UISignalQueue.put((
             'updateNumberOfPubkeysProcessed', 'no data'))
-            
         readPosition = 20  # bypass the nonce, time, and object type
-        logger.debug("Read position after skipping nonce/time/type: %d", readPosition)
-        
-        try:
-            addressVersion, varintLength = decodeVarint(
-                data[readPosition:readPosition + 10])
-            readPosition += varintLength
-            logger.debug("Address version: %d (varint length: %d)", 
-                        addressVersion, varintLength)
-            
-            streamNumber, varintLength = decodeVarint(
-                data[readPosition:readPosition + 10])
-            readPosition += varintLength
-            logger.debug("Stream number: %d (varint length: %d)", 
-                        streamNumber, varintLength)
-            
-            if addressVersion == 0:
-                logger.error("Address version 0 is invalid")
-                logger.debug("=== PROCESSPUBKEY DEBUG END ===")
-                return
-                
-            if addressVersion > 4 or addressVersion == 1:
-                logger.warning("Address version %d not supported", addressVersion)
-                logger.debug("=== PROCESSPUBKEY DEBUG END ===")
-                return
-                
-            # Process different address versions
-            if addressVersion == 2:
-                self._process_v2_pubkey(data, readPosition, addressVersion, streamNumber)
-            elif addressVersion == 3:
-                self._process_v3_pubkey(data, readPosition, addressVersion, streamNumber)
-            elif addressVersion == 4:
-                self._process_v4_pubkey(data, readPosition, addressVersion, streamNumber)
-                
-            # Display timing data
-            logger.debug("Time to process pubkey: %.3f seconds", 
-                        time.time() - pubkeyProcessingStartTime)
-            logger.debug("=== PROCESSPUBKEY DEBUG END ===")
-            
-        except Exception as e:
-            logger.error("Error in processpubkey: %s", str(e), exc_info=True)
-            logger.debug("=== PROCESSPUBKEY DEBUG END ===")
-
-    def _process_v2_pubkey(self, data, readPosition, addressVersion, streamNumber):
-        """Process version 2 pubkey"""
-        logger = logging.getLogger('objectProcessor')
-        logger.debug("Processing V2 pubkey")
-        
-        # sanity check. This is the minimum possible length.
-        if len(data) < 146:
-            logger.error("V2 payload length less than 146. Sanity check failed.")
-            return
-            
-        readPosition += 4  # skip bitfield
-        logger.debug("After bitfield, read position: %d", readPosition)
-        
-        if len(data) < readPosition + 128:
-            logger.error("Data too short for V2 pubkeys")
-            return
-            
-        pubSigningKey = b'\x04' + data[readPosition:readPosition + 64]
-        readPosition += 64
-        logger.debug("Public signing key (first 16): %s", hexlify(pubSigningKey[:16]))
-        
-        pubEncryptionKey = b'\x04' + data[readPosition:readPosition + 64]
-        readPosition += 64
-        logger.debug("Public encryption key (first 16): %s", hexlify(pubEncryptionKey[:16]))
-        
-        if len(pubEncryptionKey) < 65:
-            logger.error("Public encryption key length less than 65")
-            return
-            
-        # The data we'll store in the pubkeys table.
-        dataToStore = data[20:readPosition]
-        logger.debug("Data to store length: %d bytes", len(dataToStore))
-        
-        ripe = highlevelcrypto.to_ripe(pubSigningKey, pubEncryptionKey)
-        logger.debug("Calculated RIPE: %s", hexlify(ripe))
-        
-        address = encodeAddress(addressVersion, streamNumber, ripe)
-        logger.debug("Generated address: %s", address)
-        
-        self._store_pubkey_in_db(address, addressVersion, dataToStore, 'V2')
-
-    def _process_v3_pubkey(self, data, readPosition, addressVersion, streamNumber):
-        """Process version 3 pubkey"""
-        logger = logging.getLogger('objectProcessor')
-        logger.debug("=== PROCESS V3 PUBKEY DEBUG START ===")
-        logger.debug("Data length: %d bytes", len(data))
-        logger.debug("Read position: %d", readPosition)
-        
-        if len(data) < 170:  # sanity check.
-            logger.error("V3 payload length less than 170. Sanity check failed.")
-            return
-            
-        readPosition += 4  # skip bitfield
-        logger.debug("After bitfield, read position: %d", readPosition)
-        
-        if len(data) < readPosition + 128:
-            logger.error("Data too short for V3 pubkeys")
-            return
-        
-        # 1. PUB SIGNING KEY EXTRACTION
-        pubSigningKeyRaw = data[readPosition:readPosition + 64]
-        # PYTHON 3 FIX: Korrekte Bytes-Konkatenation
-        pubSigningKey = bytes([0x04]) + bytes(pubSigningKeyRaw)
-        readPosition += 64
-        logger.debug("Public signing key raw (hex): %s", hexlify(pubSigningKeyRaw))
-        logger.debug("Public signing key with prefix (hex): %s", hexlify(pubSigningKey))
-        
-        # 2. PUB ENCRYPTION KEY EXTRACTION
-        pubEncryptionKeyRaw = data[readPosition:readPosition + 64]
-        pubEncryptionKey = bytes([0x04]) + bytes(pubEncryptionKeyRaw)
-        readPosition += 64
-        logger.debug("Public encryption key (hex): %s", hexlify(pubEncryptionKey))
-        
-        # 3. NONCE TRIALS PER BYTE
-        position_before_nonce = readPosition
-        specifiedNonceTrialsPerByte, specifiedNonceTrialsPerByteLength = decodeVarint(
+        addressVersion, varintLength = decodeVarint(
             data[readPosition:readPosition + 10])
-        readPosition += specifiedNonceTrialsPerByteLength
-        logger.debug("Nonce trials per byte: %d", specifiedNonceTrialsPerByte)
-        
-        # 4. PAYLOAD LENGTH EXTRA BYTES
-        specifiedPayloadLengthExtraBytes, specifiedPayloadLengthExtraBytesLength = decodeVarint(
+        readPosition += varintLength
+        streamNumber, varintLength = decodeVarint(
             data[readPosition:readPosition + 10])
-        readPosition += specifiedPayloadLengthExtraBytesLength
-        logger.debug("Payload length extra bytes: %d", specifiedPayloadLengthExtraBytes)
-        
-        endOfSignedDataPosition = readPosition
-        logger.debug("End of signed data position: %d", endOfSignedDataPosition)
-        
-        # The data we'll store in the pubkeys table.
-        dataToStore = data[20:readPosition]
-        logger.debug("Data to store length: %d bytes", len(dataToStore))
-        
-        # 5. SIGNATURE LENGTH
-        if len(data) < readPosition + 10:
-            logger.error("Data too short for signature length varint")
-            return
-            
-        signatureLength, signatureLengthLength = decodeVarint(
-            data[readPosition:readPosition + 10])
-        readPosition += signatureLengthLength
-        logger.debug("Signature length: %d bytes", signatureLength)
-        
-        if len(data) < readPosition + signatureLength:
-            logger.error("Data too short for signature (need %d, have %d)", 
-                        readPosition + signatureLength, len(data))
-            return
-            
-        # 6. SIGNATURE EXTRACTION
-        signature = data[readPosition:readPosition + signatureLength]
-        logger.debug("Signature (hex): %s", hexlify(signature))
-        
-        # 7. VERIFICATION STEP - KRITISCH!
-        logger.debug("=== V3 VERIFICATION DATA ===")
-        data_to_verify = data[8:endOfSignedDataPosition]
-        logger.debug("Data to verify length: %d bytes", len(data_to_verify))
-        logger.debug("Data to verify (hex): %s", hexlify(data_to_verify))
-        
-        # PYTHON 3 KOMPATIBILITÄT: Alles in bytes konvertieren
-        data_to_verify_bytes = bytes(data_to_verify)
-        signature_bytes = bytes(signature)
-        
-        # PUB SIGNING KEY FÜR VERIFICATION
-        # highlevelcrypto.verify() erwartet hexlified key als string oder bytes?
-        pubSigningKeyHex = hexlify(pubSigningKey)
-        logger.debug("Public signing key for verify (hex): %s", pubSigningKeyHex)
-        
-        # TEST: Unterschiedliche Formate versuchen
-        try:
-            # Versuch 1: Hex als bytes (Python 3 Standard)
-            verify_result = highlevelcrypto.verify(
-                data_to_verify_bytes, signature_bytes, pubSigningKeyHex)
-            logger.debug("Verify attempt 1 (hex bytes): %s", verify_result)
-            
-            if not verify_result:
-                # Versuch 2: Hex als string (Python 2 Style)
-                pubSigningKeyHexStr = pubSigningKeyHex.decode('utf-8')
-                verify_result = highlevelcrypto.verify(
-                    data_to_verify_bytes, signature_bytes, pubSigningKeyHexStr)
-                logger.debug("Verify attempt 2 (hex string): %s", verify_result)
-            
-            if not verify_result:
-                # Versuch 3: Raw bytes (ohne hex encoding)
-                verify_result = highlevelcrypto.verify(
-                    data_to_verify_bytes, signature_bytes, pubSigningKey)
-                logger.debug("Verify attempt 3 (raw bytes): %s", verify_result)
-                
-        except Exception as e:
-            logger.error("Verification exception: %s", e)
-            verify_result = False
-        
-        if not verify_result:
-            logger.error("=== V3 PUBKEY VERIFICATION FAILED ===")
-            logger.error("This is a PYTHON 3 COMPATIBILITY ISSUE!")
-            logger.error("Data to verify was: %s", hexlify(data_to_verify_bytes))
-            logger.error("Signature was: %s", hexlify(signature_bytes))
-            logger.error("Public key was: %s", hexlify(pubSigningKey))
-            logger.debug("=== PROCESS V3 PUBKEY DEBUG END (FAILED) ===")
-            return
-        else:
-            logger.info("V3 pubkey verification SUCCESSFUL")
-        
-        # 8. RIPE BERECHNUNG
-        ripe = highlevelcrypto.to_ripe(pubSigningKey, pubEncryptionKey)
-        logger.debug("Calculated RIPE: %s", hexlify(ripe))
-        
-        # 9. ADDRESS GENERIERUNG
-        address = encodeAddress(addressVersion, streamNumber, ripe)
-        logger.debug("Generated address: %s", address)
-        
-        # 10. IN DATABASE SPEICHERN
-        self._store_pubkey_in_db(address, addressVersion, dataToStore, 'V3')
-        
-        logger.debug("=== PROCESS V3 PUBKEY DEBUG END (SUCCESS) ===")
-    def _process_v4_pubkey(self, data, readPosition, addressVersion, streamNumber):
-        """Process version 4 pubkey"""
-        logger = logging.getLogger('objectProcessor')
-        logger.debug("Processing V4 pubkey")
-        
-        if len(data) < 350:  # sanity check.
-            logger.error("V4 payload length less than 350. Sanity check failed.")
-            return
-            
-        if len(data) < readPosition + 32:
-            logger.error("Data too short for V4 tag")
-            return
-            
-        tag = data[readPosition:readPosition + 32]
-        tag_bytes = tag
-        readPosition += 32
-        logger.debug("V4 Tag (first 16): %s", hexlify(tag[:16]))
-        
-        if tag_bytes not in state.neededPubkeys:
-            logger.info("We don't need this v4 pubkey. We didn't ask for it.")
-            logger.debug("Tag not found in neededPubkeys")
-            logger.debug("Tags in neededPubkeys: %s", 
-                        [hexlify(k[:8]) for k in state.neededPubkeys.keys()][:5])
-            return
-        
-        logger.debug("Tag found in neededPubkeys")
-        toAddress = state.neededPubkeys[tag_bytes][0]
-        logger.debug("Expected address for this tag: %s", toAddress)
-        
-        # Let us try to decrypt the pubkey
-        logger.debug("Calling decryptAndCheckPubkeyPayload for V4 pubkey")
-        result = protocol.decryptAndCheckPubkeyPayload(data, toAddress)
-        
-        if result == 'successful':
-            logger.debug("V4 pubkey decryptAndCheck successful")
-            # At this point we know that we have been waiting on this
-            # pubkey. This function will command the workerThread
-            # to start work on the messages that require it.
-            self.possibleNewPubkey(toAddress)
-        else:
-            logger.warning("V4 pubkey decryptAndCheck FAILED with result: %s", result)
+        readPosition += varintLength
+        if addressVersion == 0:
+            return logger.debug(
+                '(Within processpubkey) addressVersion of 0 doesn\'t'
+                ' make sense.')
+        if addressVersion > 4 or addressVersion == 1:
+            return logger.info(
+                'This version of Bitmessage cannot handle version %s'
+                ' addresses.', addressVersion)
+        if addressVersion == 2:
+            # sanity check. This is the minimum possible length.
+            if len(data) < 146:
+                return logger.debug(
+                    '(within processpubkey) payloadLength less than 146.'
+                    ' Sanity check failed.')
+            readPosition += 4
+            pubSigningKey = b'\x04' + data[readPosition:readPosition + 64]
+            # Is it possible for a public key to be invalid such that trying to
+            # encrypt or sign with it will cause an error? If it is, it would
+            # be easiest to test them here.
+            readPosition += 64
+            pubEncryptionKey = b'\x04' + data[readPosition:readPosition + 64]
+            if len(pubEncryptionKey) < 65:
+                return logger.debug(
+                    'publicEncryptionKey length less than 64. Sanity check'
+                    ' failed.')
+            readPosition += 64
+            # The data we'll store in the pubkeys table.
+            dataToStore = data[20:readPosition]
+            ripe = highlevelcrypto.to_ripe(pubSigningKey, pubEncryptionKey)
 
-    def _store_pubkey_in_db(self, address, addressVersion, dataToStore, version_str):
-        """Store pubkey in database"""
-        logger = logging.getLogger('objectProcessor')
-        
-        queryreturn = sqlQuery(
-            "SELECT usedpersonally FROM pubkeys WHERE address=?"
-            " AND usedpersonally='yes'", dbstr(address))
-        
-        if queryreturn != []:
-            logger.info('We HAVE used this %s pubkey personally. Updating time.', version_str)
-            t = (dbstr(address), addressVersion, sqlite3.Binary(dataToStore),
-                 int(time.time()), 'yes')
-        else:
-            logger.info('We have NOT used this %s pubkey personally. Inserting in database.', version_str)
-            t = (dbstr(address), addressVersion, sqlite3.Binary(dataToStore),
-                 int(time.time()), 'no')
-        
-        try:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    'within recpubkey, addressVersion: %s, streamNumber: %s'
+                    '\nripe %s\npublicSigningKey in hex: %s'
+                    '\npublicEncryptionKey in hex: %s',
+                    addressVersion, streamNumber, hexlify(ripe),
+                    hexlify(pubSigningKey), hexlify(pubEncryptionKey)
+                )
+
+            address = encodeAddress(addressVersion, streamNumber, ripe)
+
+            queryreturn = sqlQuery(
+                "SELECT usedpersonally FROM pubkeys WHERE address=?"
+                " AND usedpersonally='yes'", dbstr(address))
+            # if this pubkey is already in our database and if we have
+            # used it personally:
+            if queryreturn != []:
+                logger.info(
+                    'We HAVE used this pubkey personally. Updating time.')
+                t = (dbstr(address), addressVersion, sqlite3.Binary(dataToStore),
+                     int(time.time()), 'yes')
+            else:
+                logger.info(
+                    'We have NOT used this pubkey personally. Inserting'
+                    ' in database.')
+                t = (dbstr(address), addressVersion, sqlite3.Binary(dataToStore),
+                     int(time.time()), 'no')
             sqlExecute('''INSERT INTO pubkeys VALUES (?,?,?,?,?)''', *t)
-            logger.debug("%s pubkey stored successfully in database", version_str)
             self.possibleNewPubkey(address)
-        except Exception as e:
-            logger.error("Failed to store %s pubkey in database: %s", version_str, str(e))
+        if addressVersion == 3:
+            if len(data) < 170:  # sanity check.
+                logger.warning(
+                    '(within processpubkey) payloadLength less than 170.'
+                    ' Sanity check failed.')
+                return
+            readPosition += 4
+            pubSigningKey = b'\x04' + data[readPosition:readPosition + 64]
+            readPosition += 64
+            pubEncryptionKey = b'\x04' + data[readPosition:readPosition + 64]
+            readPosition += 64
+            specifiedNonceTrialsPerByteLength = decodeVarint(
+                data[readPosition:readPosition + 10])[1]
+            readPosition += specifiedNonceTrialsPerByteLength
+            specifiedPayloadLengthExtraBytesLength = decodeVarint(
+                data[readPosition:readPosition + 10])[1]
+            readPosition += specifiedPayloadLengthExtraBytesLength
+            endOfSignedDataPosition = readPosition
+            # The data we'll store in the pubkeys table.
+            dataToStore = data[20:readPosition]
+            signatureLength, signatureLengthLength = decodeVarint(
+                data[readPosition:readPosition + 10])
+            readPosition += signatureLengthLength
+            signature = data[readPosition:readPosition + signatureLength]
+            if highlevelcrypto.verify(
+                    data[8:endOfSignedDataPosition],
+                    signature, hexlify(pubSigningKey)):
+                logger.debug('ECDSA verify passed (within processpubkey)')
+            else:
+                logger.warning('ECDSA verify failed (within processpubkey)')
+                return
+
+            ripe = highlevelcrypto.to_ripe(pubSigningKey, pubEncryptionKey)
+
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    'within recpubkey, addressVersion: %s, streamNumber: %s'
+                    '\nripe %s\npublicSigningKey in hex: %s'
+                    '\npublicEncryptionKey in hex: %s',
+                    addressVersion, streamNumber, hexlify(ripe),
+                    hexlify(pubSigningKey), hexlify(pubEncryptionKey)
+                )
+
+            address = encodeAddress(addressVersion, streamNumber, ripe)
+            queryreturn = sqlQuery(
+                "SELECT usedpersonally FROM pubkeys WHERE address=?"
+                " AND usedpersonally='yes'", dbstr(address))
+            # if this pubkey is already in our database and if we have
+            # used it personally:
+            if queryreturn != []:
+                logger.info(
+                    'We HAVE used this pubkey personally. Updating time.')
+                t = (dbstr(address), addressVersion, sqlite3.Binary(dataToStore),
+                     int(time.time()), dbstr('yes'))
+            else:
+                logger.info(
+                    'We have NOT used this pubkey personally. Inserting'
+                    ' in database.')
+                t = (dbstr(address), addressVersion, sqlite3.Binary(dataToStore),
+                     int(time.time()), dbstr('no'))
+            sqlExecute('''INSERT INTO pubkeys VALUES (?,?,?,?,?)''', *t)
+            self.possibleNewPubkey(address)
+
+        if addressVersion == 4:
+            if len(data) < 350:  # sanity check.
+                return logger.debug(
+                    '(within processpubkey) payloadLength less than 350.'
+                    ' Sanity check failed.')
+
+            tag = data[readPosition:readPosition + 32]
+            # WICHTIG: Konvertiere zu hex-String für bidirektionale Kompatibilität
+            tag_hex = to_hex_string(tag)
+            if tag_hex not in state.neededPubkeys:
+                return logger.info(
+                    'We don\'t need this v4 pubkey. We didn\'t ask for it.')
+
+            # Let us try to decrypt the pubkey
+            toAddress = state.neededPubkeys[tag_hex][0]
+            if protocol.decryptAndCheckPubkeyPayload(data, toAddress) == \
+                    'successful':
+                # At this point we know that we have been waiting on this
+                # pubkey. This function will command the workerThread
+                # to start work on the messages that require it.
+                self.possibleNewPubkey(toAddress)
+
+        # Display timing data
+        logger.debug(
+            'Time required to process this pubkey: %s',
+            time.time() - pubkeyProcessingStartTime)
 
     def processmsg(self, data):
         """Process a message object"""
@@ -614,7 +526,8 @@ class objectProcessor(threading.Thread):
                     # This is the RIPE hash of my pubkeys. We need this
                     # below to compare to the destination_ripe included
                     # in the encrypted data.
-                    toRipe = key
+                    # Konvertiere key zu hex-String für Kompatibilität
+                    toRipe = to_hex_string(key)
                     initialDecryptionSuccessful = True
                     logger.info(
                         'EC decryption successful using key associated'
@@ -630,7 +543,7 @@ class objectProcessor(threading.Thread):
 
         # This is a message bound for me.
         # Look up my address based on the RIPE hash.
-        toAddress = shared.myAddressesByHash[bytes(toRipe)]
+        toAddress = shared.myAddressesByHash[toRipe]
         readPosition = 0
         sendersAddressVersionNumber, sendersAddressVersionNumberLength = \
             decodeVarint(decryptedData[readPosition:readPosition + 10])
@@ -654,9 +567,12 @@ class objectProcessor(threading.Thread):
             return
         readPosition += sendersStreamNumberLength
         readPosition += 4
-        pubSigningKey = b'\x04' + decryptedData[readPosition:readPosition + 64]
+        # PYTHON 2/3 KOMPATIBEL: Konvertiere zu bytes
+        pubSigningKey_raw = decryptedData[readPosition:readPosition + 64]
+        pubSigningKey = b'\x04' + (pubSigningKey_raw.tobytes() if hasattr(pubSigningKey_raw, 'tobytes') else pubSigningKey_raw)
         readPosition += 64
-        pubEncryptionKey = b'\x04' + decryptedData[readPosition:readPosition + 64]
+        pubEncryptionKey_raw = decryptedData[readPosition:readPosition + 64]
+        pubEncryptionKey = b'\x04' + (pubEncryptionKey_raw.tobytes() if hasattr(pubEncryptionKey_raw, 'tobytes') else pubEncryptionKey_raw)
         readPosition += 64
         if sendersAddressVersionNumber >= 3:
             requiredAverageProofOfWorkNonceTrialsPerByte, varintLength = \
@@ -674,14 +590,16 @@ class objectProcessor(threading.Thread):
         # needed for when we store the pubkey in our database of pubkeys
         # for later use.
         endOfThePublicKeyPosition = readPosition
-        if toRipe != decryptedData[readPosition:readPosition + 20]:
+        # Konvertiere toRipe zurück zu bytes für Vergleich
+        toRipe_bytes = from_hex_string(toRipe)
+        if toRipe_bytes != decryptedData[readPosition:readPosition + 20]:
             return logger.info(
                 'The original sender of this message did not send it to'
                 ' you. Someone is attempting a Surreptitious Forwarding'
                 ' Attack.\nSee: '
                 'http://world.std.com/~dtd/sign_encrypt/sign_encrypt7.html'
                 '\nyour toRipe: %s\nembedded destination toRipe: %s',
-                hexlify(toRipe),
+                hexlify(toRipe_bytes),
                 hexlify(decryptedData[readPosition:readPosition + 20])
             )
         readPosition += 20
@@ -705,7 +623,11 @@ class objectProcessor(threading.Thread):
         readPosition += signatureLengthLength
         signature = decryptedData[
             readPosition:readPosition + signatureLength]
-        signedData = bytes(data[8:20]) + encodeVarint(1) + encodeVarint(
+        # PYTHON 2/3 KOMPATIBEL: Konvertiere data[8:20] zu bytes
+        data_slice = data[8:20]
+        if hasattr(data_slice, 'tobytes'):
+            data_slice = data_slice.tobytes()
+        signedData = data_slice + encodeVarint(1) + encodeVarint(
             streamNumberAsClaimedByMsg
         ) + decryptedData[:positionOfBottomOfAckData]
 
@@ -938,7 +860,8 @@ class objectProcessor(threading.Thread):
                         # of the sender's address to verify that it was
                         # encrypted by with their key rather than some
                         # other key.
-                        toRipe = key
+                        # Konvertiere zu hex-String für Kompatibilität
+                        toRipe = to_hex_string(key)
                         initialDecryptionSuccessful = True
                         logger.info(
                             'EC decryption successful using key associated'
@@ -955,14 +878,19 @@ class objectProcessor(threading.Thread):
         elif broadcastVersion == 5:
             embeddedTag = data[readPosition:readPosition + 32]
             readPosition += 32
-            embeddedTag_bytes = bytes(embeddedTag)
-            if embeddedTag_bytes not in shared.MyECSubscriptionCryptorObjects:
+            # WICHTIG: Konvertiere zu hex-String für Kompatibilität
+            embeddedTag_hex = to_hex_string(embeddedTag)
+            if embeddedTag_hex not in shared.MyECSubscriptionCryptorObjects:
                 logger.debug('We\'re not interested in this broadcast.')
                 return
             # We are interested in this broadcast because of its tag.
             # We're going to add some more data which is signed further down.
-            signedData = bytes(data[8:readPosition])
-            cryptorObject = shared.MyECSubscriptionCryptorObjects[embeddedTag_bytes]
+            # PYTHON 2/3 KOMPATIBEL: Konvertiere zu bytes
+            data_slice = data[8:readPosition]
+            if hasattr(data_slice, 'tobytes'):
+                data_slice = data_slice.tobytes()
+            signedData = data_slice
+            cryptorObject = shared.MyECSubscriptionCryptorObjects[embeddedTag_hex]
             try:
                 decryptedData = cryptorObject.decrypt(data[readPosition:])
                 logger.debug('EC decryption successful')
@@ -1002,11 +930,12 @@ class objectProcessor(threading.Thread):
             )
         readPosition += sendersStreamLength
         readPosition += 4
-        sendersPubSigningKey = b'\x04' + \
-            decryptedData[readPosition:readPosition + 64]
+        # PYTHON 2/3 KOMPATIBEL: Konvertiere zu bytes
+        sendersPubSigningKey_raw = decryptedData[readPosition:readPosition + 64]
+        sendersPubSigningKey = b'\x04' + (sendersPubSigningKey_raw.tobytes() if hasattr(sendersPubSigningKey_raw, 'tobytes') else sendersPubSigningKey_raw)
         readPosition += 64
-        sendersPubEncryptionKey = b'\x04' + \
-            decryptedData[readPosition:readPosition + 64]
+        sendersPubEncryptionKey_raw = decryptedData[readPosition:readPosition + 64]
+        sendersPubEncryptionKey = b'\x04' + (sendersPubEncryptionKey_raw.tobytes() if hasattr(sendersPubEncryptionKey_raw, 'tobytes') else sendersPubEncryptionKey_raw)
         readPosition += 64
         if sendersAddressVersion >= 3:
             requiredAverageProofOfWorkNonceTrialsPerByte, varintLength = \
@@ -1027,7 +956,9 @@ class objectProcessor(threading.Thread):
             sendersPubSigningKey, sendersPubEncryptionKey)
 
         if broadcastVersion == 4:
-            if toRipe != calculatedRipe:
+            # Konvertiere toRipe zurück zu bytes für Vergleich
+            toRipe_bytes = from_hex_string(toRipe)
+            if toRipe_bytes != calculatedRipe:
                 return logger.info(
                     'The encryption key used to encrypt this message'
                     ' doesn\'t match the keys inbedded in the message'
@@ -1038,7 +969,9 @@ class objectProcessor(threading.Thread):
                 encodeVarint(sendersAddressVersion)
                 + encodeVarint(sendersStream) + calculatedRipe
             )[32:]
-            if calculatedTag != embeddedTag:
+            # Konvertiere embeddedTag zurück zu bytes für Vergleich
+            embeddedTag_bytes = from_hex_string(embeddedTag_hex)
+            if calculatedTag != embeddedTag_bytes:
                 return logger.debug(
                     'The tag and encryption key used to encrypt this'
                     ' message doesn\'t match the keys inbedded in the'
@@ -1145,9 +1078,10 @@ class objectProcessor(threading.Thread):
                 encodeVarint(addressVersion) + encodeVarint(streamNumber)
                 + ripe
             )[32:]
-            tag_bytes = bytes(tag)
-            if tag_bytes in state.neededPubkeys:
-                del state.neededPubkeys[tag_bytes]
+            # WICHTIG: Konvertiere zu hex-String für Kompatibilität
+            tag_hex = to_hex_string(tag)
+            if tag_hex in state.neededPubkeys:
+                del state.neededPubkeys[tag_hex]
                 self.sendMessages(address)
 
     @staticmethod
