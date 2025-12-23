@@ -23,36 +23,34 @@ from tr import _translate
 from helper_sql import safe_decode
 
 
-def getSortedSubscriptions(includeDisabled=False):
-    """Return sorted subscriptions as {address: {folder: unread}} dict"""
+def getSortedSubscriptions(count=False):
+    """
+    Return subscriptions grouped by address
+    Compatible with Python 2 version
+    """
+    queryreturn = sqlQuery(
+        'SELECT label, address, enabled FROM subscriptions ORDER BY label COLLATE NOCASE ASC')
     ret = {}
-    query = ''
-    if includeDisabled:
-        query = 'SELECT address, folder FROM subscriptions'
-    else:
-        query = '''SELECT address, folder FROM subscriptions
-                   WHERE enabled = 1'''
     
-    for address, folder in sqlQuery(query):
-        # FIX: Initialize dict for address if not exists
-        if address not in ret:
-            ret[address] = {}
+    for label, address, enabled in queryreturn:
+        ret[address] = {
+            'label': label,
+            'enabled': enabled,
+            'unread': 0
+        }
         
-        # FIX: Initialize folder with 0 if not exists
-        if folder not in ret[address]:
-            ret[address][folder] = 0
-        
-        # Count unread messages
-        unread = sqlQuery(
-            '''SELECT COUNT(*) FROM inbox WHERE toaddress = ?
-               AND read = 0 AND folder = ?''',
-            address, folder
-        )[0][0]
-        ret[address][folder] = unread
+        if count:
+            # Count unread broadcasts from this address
+            unread = sqlQuery('''
+                SELECT COUNT(*) 
+                FROM inbox 
+                WHERE fromaddress = ? 
+                AND read = 0 
+                AND folder = 'inbox'
+            ''', address)[0][0]
+            ret[address]['unread'] = unread
     
     return ret
-
-
 def accountClass(address):
     """Return a BMAccount for the address"""
     if not config.has_section(address):
