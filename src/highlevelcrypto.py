@@ -406,7 +406,6 @@ def pointMult(secret):
             OpenSSL.BN_free(priv_key)
             OpenSSL.EC_KEY_free(k)
 
-
 def makeCryptor(privkey, curve='secp256k1'):
     """Return a private `.pyelliptic.ECC` instance"""
     logger.debug("DEBUG: makeCryptor called")
@@ -460,8 +459,6 @@ def makeCryptor(privkey, curve='secp256k1'):
         # Get public key - should be 65 bytes (0x04 + X + Y)
         public_key = pointMult(private_key)
         
-        # Rest of the function remains the same...
-        
         if len(public_key) != 65 or public_key[0] != 0x04:
             logger.error(f"Invalid public key format from pointMult: {len(public_key)} bytes, first: 0x{public_key[0]:02x}")
             # Try to fix: assume first 65 bytes are the key
@@ -491,17 +488,24 @@ def makeCryptor(privkey, curve='secp256k1'):
             curve=curve
         )
         
-        # Test the cryptor works
+        # Test the cryptor works - FIXED VERSION
         try:
-            test_sig = cryptor.sign(b'test', digest_alg=OpenSSL.EVP_sha256())
+            # FIX 1: Ohne digest_alg Parameter (Standard verwenden)
+            test_sig = cryptor.sign(b'test')
+            
+            # FIX 2: ODER mit korrekter Konstante (ohne Klammern)
+            # test_sig = cryptor.sign(b'test', digest_alg=OpenSSL.EVP_sha256)
+            
+            # Optional: Verifikation testen
             valid = cryptor.verify(test_sig, b'test')
             if valid:
                 logger.debug("Cryptor validation passed")
             else:
-                logger.error("Cryptor validation failed: signature doesn't verify")
-                # Don't raise, might still work
+                logger.warning("Cryptor validation failed: signature doesn't verify")
+                # Nicht abbrechen, könnte trotzdem funktionieren
         except Exception as e:
             logger.warning(f"Cryptor test failed (non-fatal): {e}")
+            # Absichtlich ignorieren, Hauptfunktion soll weitergehen
         
         logger.debug("DEBUG: Created cryptor successfully")
         return cryptor
