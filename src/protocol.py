@@ -462,7 +462,6 @@ def decodeObjectParameters(data):
 
 # Python version check
 PY3 = sys.version_info[0] == 3
-
 def decryptAndCheckPubkeyPayload(data, address):
     """
     Version 4 pubkeys are encrypted. This function is run when we
@@ -486,27 +485,6 @@ def decryptAndCheckPubkeyPayload(data, address):
             return x.encode(encoding)
         else:
             return bytes(x)
-    
-    def to_str(x, encoding='utf-8'):
-        """Convert input to str (unicode in Python 3)"""
-        if isinstance(x, str):
-            return x
-        elif isinstance(x, bytes):
-            return x.decode(encoding)
-        elif isinstance(x, bytearray):
-            return bytes(x).decode(encoding)
-        else:
-            return str(x)
-    
-    def ensure_unicode(x):
-        """Ensure string is unicode (str in Python 3)"""
-        if PY3:
-            return to_str(x)
-        else:
-            # In Python 2, we want unicode
-            if isinstance(x, str):
-                return x.decode('utf-8')
-            return to_str(x)
     
     try:
         # Ensure data is bytes
@@ -537,7 +515,7 @@ def decryptAndCheckPubkeyPayload(data, address):
         
         storedData = data[20:readPosition]
         
-        # Tag
+        # Tag - 32 bytes binary data
         tag = data[readPosition:readPosition + 32]
         readPosition += 32
         
@@ -545,23 +523,33 @@ def decryptAndCheckPubkeyPayload(data, address):
         signedData = data[8:readPosition]
         encryptedData = data[readPosition:]
         
-        # Find the tag in neededPubkeys - handle both bytes and str keys
+        # Find the tag in neededPubkeys
+        # tag ist 32 Bytes binärer Daten, kann als Key verwendet werden
         found = False
         cryptorObject = None
         toAddress = None
         
-        # Convert tag to possible key formats
+        # In Python 3, Dictionary-Keys können bytes sein
+        # Aber state.neededPubkeys könnte hex strings als Keys haben
         tag_bytes = to_bytes(tag)
-        tag_str = to_str(tag_bytes) if PY3 else tag_bytes
         
-        # Try different representations
-        possible_keys = [tag_bytes, tag_str]
+        # Versuche verschiedene Darstellungen
+        possible_keys = []
+        
+        # 1. Direkt als bytes
+        possible_keys.append(tag_bytes)
+        
+        # 2. Als hex string (wahrscheinlich was PyBitmessage verwendet)
         if PY3:
-            # In Python 3, also try hex representation
-            possible_keys.append(tag_bytes.hex())
+            possible_keys.append(hexlify(tag_bytes).decode('ascii'))
         else:
-            # In Python 2, try hexlify
             possible_keys.append(hexlify(tag_bytes))
+        
+        # 3. Als latin-1 decoded string (für den Fall)
+        try:
+            possible_keys.append(tag_bytes.decode('latin-1'))
+        except:
+            pass
         
         for key in possible_keys:
             if key in state.neededPubkeys:
@@ -570,14 +558,12 @@ def decryptAndCheckPubkeyPayload(data, address):
                 break
         
         if not found:
-            logger.error("Tag not found in neededPubkeys")
+            logger.error("Tag not found in neededPubkeys. Tag hex: %s", 
+                        hexlify(tag_bytes).decode('ascii') if PY3 else hexlify(tag_bytes))
             return 'failed'
         
-        # Address comparison (ensure both are strings)
-        toAddress_str = ensure_unicode(toAddress)
-        address_str = ensure_unicode(address)
-        
-        if toAddress_str != address_str:
+        # Address comparison
+        if toAddress != address:
             logger.error("Address mismatch in neededPubkeys")
             return 'failed'
         
@@ -587,6 +573,8 @@ def decryptAndCheckPubkeyPayload(data, address):
         except Exception as e:
             logger.error("Decryption failed: %s", str(e))
             return 'failed'
+        
+
         
         # Ensure decryptedData is bytes
         decryptedData = to_bytes(decryptedData)

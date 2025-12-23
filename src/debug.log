@@ -11381,3 +11381,147 @@ TypeError: the JSON object must be str, bytes or bytearray, not NoneType
 2025-12-23 22:52:56,687 - WARNING - No notification.message plugin found
 2025-12-23 22:52:58,455 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
 2025-12-23 22:53:10,214 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-23 22:56:34,146 - WARNING - Using default logger configuration
+2025-12-23 22:56:34,512 - WARNING - defusedxml not available, only use API on a secure, closed network.
+2025-12-23 22:56:34,758 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-23 22:56:34,763 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-23 22:56:34,763 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-23 22:56:34,764 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-23 22:56:34,793 - WARNING - No indicator plugin found
+2025-12-23 22:56:34,814 - WARNING - No notification.message plugin found
+2025-12-23 22:56:56,819 - WARNING - Server full, dropping connection
+2025-12-23 22:57:35,703 - WARNING - Server full, dropping connection
+2025-12-23 22:58:00,583 - WARNING - Server full, dropping connection
+2025-12-23 22:58:34,756 - WARNING - Server full, dropping connection
+2025-12-23 22:59:18,450 - CRITICAL - BUG: Why are we requesting the pubkey for BM-2cTEgFmYe1niD1cf63tsp9bEZ5QKkvXEWe if there are no messages in the sent folder to that address?
+2025-12-23 22:59:30,680 - WARNING - Server full, dropping connection
+2025-12-23 22:59:34,660 - WARNING - Server full, dropping connection
+2025-12-23 22:59:57,719 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:00:32,881 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:00:33,149 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:00:35,167 - WARNING - Server full, dropping connection
+2025-12-23 23:01:35,587 - WARNING - Server full, dropping connection
+2025-12-23 23:01:36,500 - WARNING - Server full, dropping connection
+2025-12-23 23:02:01,118 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:02:30,239 - ERROR - 175.0.121.90:2841 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:02:30,860 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:02:36,793 - WARNING - Server full, dropping connection
+2025-12-23 23:03:35,758 - WARNING - Server full, dropping connection
+2025-12-23 23:03:55,069 - ERROR - 158.69.63.42:8080 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:03:56,458 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:04:36,126 - WARNING - Server full, dropping connection
+2025-12-23 23:04:41,537 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:05:26,201 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:05:36,519 - WARNING - Server full, dropping connection
+2025-12-23 23:05:51,579 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:07:37,319 - WARNING - Server full, dropping connection
+2025-12-23 23:08:36,286 - WARNING - Server full, dropping connection
+2025-12-23 23:08:45,066 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-23 23:11:32,627 - WARNING - Using default logger configuration
+2025-12-23 23:11:33,742 - WARNING - defusedxml not available, only use API on a secure, closed network.
+2025-12-23 23:11:34,026 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-23 23:11:34,032 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-23 23:11:34,032 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-23 23:11:34,033 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-23 23:11:34,069 - WARNING - No indicator plugin found
+2025-12-23 23:11:34,090 - WARNING - No notification.message plugin found
+2025-12-23 23:11:39,844 - WARNING - Server full, dropping connection
+2025-12-23 23:12:16,872 - ERROR - 189.224.203.179:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:12:23,762 - ERROR - 31.29.179.118:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:12:47,126 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-23 23:18:59,519 - WARNING - Using default logger configuration
+2025-12-23 23:18:59,913 - WARNING - defusedxml not available, only use API on a secure, closed network.
+2025-12-23 23:19:00,193 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-23 23:19:00,200 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-23 23:19:00,200 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-23 23:19:00,202 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-23 23:19:00,233 - WARNING - No indicator plugin found
+2025-12-23 23:19:00,253 - WARNING - No notification.message plugin found
+2025-12-23 23:19:45,615 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:20:34,991 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:21:07,893 - WARNING - Server full, dropping connection
+2025-12-23 23:21:44,183 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:21:55,744 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:22:03,796 - ERROR - 31.29.179.118:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:22:25,409 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:23:11,546 - ERROR - 31.29.179.118:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:23:58,247 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:24:01,070 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:24:14,949 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-23 23:29:09,219 - WARNING - Using default logger configuration
+2025-12-23 23:30:44,999 - WARNING - Using default logger configuration
+2025-12-23 23:30:56,332 - WARNING - Using default logger configuration
+2025-12-23 23:30:56,754 - WARNING - defusedxml not available, only use API on a secure, closed network.
+2025-12-23 23:30:57,031 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-23 23:30:57,037 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-23 23:30:57,037 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-23 23:30:57,038 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-23 23:30:57,072 - WARNING - No indicator plugin found
+2025-12-23 23:30:57,095 - WARNING - No notification.message plugin found
+2025-12-23 23:30:58,869 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:31:27,859 - WARNING - Server full, dropping connection
+2025-12-23 23:31:36,969 - ERROR - 31.29.179.118:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:32:30,782 - ERROR - 175.0.121.90:2841 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:32:50,988 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:33:01,069 - ERROR - 175.0.121.90:2841 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-23 23:33:28,390 - WARNING - ⚠️ GUI still running, forcing exit
