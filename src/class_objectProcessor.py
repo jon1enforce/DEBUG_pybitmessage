@@ -526,7 +526,7 @@ class objectProcessor(threading.Thread):
             return
             
         tag = data[readPosition:readPosition + 32]
-        tag_bytes = bytes(tag)
+        tag_bytes = tag
         readPosition += 32
         logger.debug("V4 Tag (first 16): %s", hexlify(tag[:16]))
         
