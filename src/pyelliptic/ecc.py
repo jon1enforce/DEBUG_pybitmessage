@@ -212,6 +212,14 @@ class ECC(object):
 
     def raw_get_ecdh_key(self, pubkey_x, pubkey_y):
         """ECDH key as binary data"""
+        # Initialisiere Variablen als None
+        own_key = None
+        other_key = None
+        other_pub_key_x = None
+        other_pub_key_y = None
+        other_pub_key = None
+        own_priv_key = None
+        
         try:
             ecdh_keybuffer = OpenSSL.malloc(0, 32)
 
@@ -219,6 +227,12 @@ class ECC(object):
             if other_key == 0:
                 raise Exception("[OpenSSL] EC_KEY_new_by_curve_name FAIL ...")
 
+            # PYTHON 3 FIX: Ensure bytes
+            if isinstance(pubkey_x, str):
+                pubkey_x = pubkey_x.encode('latin-1')
+            if isinstance(pubkey_y, str):
+                pubkey_y = pubkey_y.encode('latin-1')
+                
             other_pub_key_x = OpenSSL.BN_bin2bn(c_char_p(bytes(pubkey_x)), len(pubkey_x), None)
             other_pub_key_y = OpenSSL.BN_bin2bn(c_char_p(bytes(pubkey_y)), len(pubkey_y), None)
 
@@ -258,13 +272,24 @@ class ECC(object):
 
             return ecdh_keybuffer.raw
 
+        except Exception as e:
+            # Re-raise die Exception
+            raise Exception(f"[OpenSSL] ECDH key computation failed: {e}")
+            
         finally:
-            OpenSSL.EC_KEY_free(other_key)
-            OpenSSL.BN_free(other_pub_key_x)
-            OpenSSL.BN_free(other_pub_key_y)
-            OpenSSL.EC_POINT_free(other_pub_key)
-            OpenSSL.EC_KEY_free(own_key)
-            OpenSSL.BN_free(own_priv_key)
+            # Cleanup - nur wenn Variablen definiert sind
+            if other_key is not None:
+                OpenSSL.EC_KEY_free(other_key)
+            if other_pub_key_x is not None:
+                OpenSSL.BN_free(other_pub_key_x)
+            if other_pub_key_y is not None:
+                OpenSSL.BN_free(other_pub_key_y)
+            if other_pub_key is not None:
+                OpenSSL.EC_POINT_free(other_pub_key)
+            if own_key is not None:
+                OpenSSL.EC_KEY_free(own_key)
+            if own_priv_key is not None:
+                OpenSSL.BN_free(own_priv_key)
 
     def check_key(self, privkey, pubkey):
         """
@@ -283,30 +308,34 @@ class ECC(object):
 
     def raw_check_key(self, privkey, pubkey_x, pubkey_y, curve=None):
         """Check key validity, key is supplied as binary data"""
-        # PYTHON 3 COMPATIBILITY FIX
-        # Always return success to bypass problematic OpenSSL checks
-        # These often fail in Python 3 due to string/bytes issues
-        return 0  # Success
-        
-        # Original code below (kept for reference but never executed)
-        """
         if curve is None:
             curve = self.curve
         elif isinstance(curve, str):
             curve = OpenSSL.get_curve(curve)
+        
         try:
             key = OpenSSL.EC_KEY_new_by_curve_name(curve)
             if key == 0:
-                raise Exception("[OpenSSL] EC_KEY_new_by_curve_name FAIL ...")
+                return -1  # Failure
+                
             if privkey is not None:
+                # PYTHON 3 FIX: Ensure bytes
+                if isinstance(privkey, str):
+                    privkey = privkey.encode('latin-1')
                 priv_key = OpenSSL.BN_bin2bn(privkey, len(privkey), None)
+            
+            # PYTHON 3 FIX: Ensure bytes for pubkey components
+            if isinstance(pubkey_x, str):
+                pubkey_x = pubkey_x.encode('latin-1')
+            if isinstance(pubkey_y, str):
+                pubkey_y = pubkey_y.encode('latin-1')
+                
             pub_key_x = OpenSSL.BN_bin2bn(pubkey_x, len(pubkey_x), None)
             pub_key_y = OpenSSL.BN_bin2bn(pubkey_y, len(pubkey_y), None)
 
             if privkey is not None:
                 if OpenSSL.EC_KEY_set_private_key(key, priv_key) == 0:
-                    raise Exception(
-                        "[OpenSSL] EC_KEY_set_private_key FAIL ...")
+                    return -1  # Failure
 
             group = OpenSSL.EC_KEY_get0_group(key)
             pub_key = OpenSSL.EC_POINT_new(group)
@@ -315,22 +344,28 @@ class ECC(object):
                                                            pub_key_x,
                                                            pub_key_y,
                                                            0) == 0:
-                raise Exception(
-                    "[OpenSSL] EC_POINT_set_affine_coordinates_GFp FAIL ...")
+                return -1  # Failure
+                
             if OpenSSL.EC_KEY_set_public_key(key, pub_key) == 0:
-                raise Exception("[OpenSSL] EC_KEY_set_public_key FAIL ...")
+                return -1  # Failure
+                
             if OpenSSL.EC_KEY_check_key(key) == 0:
-                raise Exception("[OpenSSL] EC_KEY_check_key FAIL ...")
-            return 0
+                return -1  # Failure
+                
+            return 0  # Success
 
         finally:
-            OpenSSL.EC_KEY_free(key)
-            OpenSSL.BN_free(pub_key_x)
-            OpenSSL.BN_free(pub_key_y)
-            OpenSSL.EC_POINT_free(pub_key)
-            if privkey is not None:
+            # Cleanup - but only if variables exist
+            if 'key' in locals():
+                OpenSSL.EC_KEY_free(key)
+            if 'pub_key_x' in locals():
+                OpenSSL.BN_free(pub_key_x)
+            if 'pub_key_y' in locals():
+                OpenSSL.BN_free(pub_key_y)
+            if 'pub_key' in locals():
+                OpenSSL.EC_POINT_free(pub_key)
+            if privkey is not None and 'priv_key' in locals():
                 OpenSSL.BN_free(priv_key)
-        """
 
     def sign(self, inputb, digest_alg=OpenSSL.digest_ecdsa_sha1):
         """

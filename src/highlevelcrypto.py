@@ -299,17 +299,16 @@ def hexToPubkey(pubkey):
     logger = logging.getLogger('highlevelcrypto')
     
     try:
-        # Handle input - keep it SIMPLE like Python 2 version
+        # 1. Handle input
         if isinstance(pubkey, bytes):
-            # Convert bytes to string
+            # If it's already in binary format with header
+            if pubkey.startswith(b'\x02\xca'):
+                logger.debug("Pubkey already in binary format")
+                return pubkey
+            # Otherwise decode as hex
             try:
                 hex_string = pubkey.decode('ascii')
             except:
-                # If it's already binary, return as-is
-                if pubkey.startswith(b'\x02\xca'):
-                    logger.debug("Pubkey already in binary format")
-                    return pubkey
-                # Otherwise try latin-1
                 hex_string = pubkey.decode('latin-1')
         elif isinstance(pubkey, str):
             hex_string = pubkey
@@ -318,36 +317,53 @@ def hexToPubkey(pubkey):
         
         logger.debug(f"hexToPubkey input: {hex_string[:50]}... (length: {len(hex_string)})")
         
-        # Clean hex string - remove spaces and non-hex chars
+        # 2. Clean hex string
         import re
         hex_clean = re.sub(r'[^0-9a-fA-F]', '', hex_string)
         
-        # Check length
-        if len(hex_clean) == 130 and hex_clean.startswith('04'):
-            # 65 bytes (130 chars) with '04' prefix
-            hex_clean = hex_clean[2:]  # Remove '04'
-        elif len(hex_clean) == 128:
-            # 64 bytes (128 chars) without '04'
-            pass  # Keep as-is
-        elif len(hex_clean) > 128:
-            # Too long, truncate
-            hex_clean = hex_clean[:128]
-            logger.warning(f"Pubkey too long ({len(hex_string)}), truncated to 128 chars")
-        else:
-            # Too short, pad with zeros
-            hex_clean = hex_clean.rjust(128, '0')
-            logger.warning(f"Pubkey too short ({len(hex_string)}), padded to 128 chars")
+        # 3. WICHTIG: Pyelliptic pubkey format ist 70 bytes: 
+        #    b'\x02\xca\x00 ' (4 bytes) + X (32 bytes) + b'\x00 ' (2 bytes) + Y (32 bytes)
+        #    Das sind 70 bytes insgesamt.
+        #    Wenn wir 140 chars haben, ist das schon das komplette Format als Hex!
         
-        # Ensure exactly 128 chars (64 bytes)
+        if len(hex_clean) == 140:  # 70 bytes * 2 = 140 chars
+            # Das ist schon das komplette pyelliptic Format als Hex
+            logger.debug("Already 140 chars (70 bytes) - full pyelliptic format")
+            # Konvertiere direkt von Hex zu Bytes
+            return bytes.fromhex(hex_clean)
+        
+        elif len(hex_clean) == 130 and hex_clean.startswith('04'):
+            # 65 bytes (130 chars) mit '04' prefix (uncompressed)
+            logger.debug("65-byte uncompressed format with '04' prefix")
+            # Entferne '04' prefix
+            hex_clean = hex_clean[2:]  # Jetzt 128 chars (64 bytes)
+            
+        elif len(hex_clean) == 128:
+            # 64 bytes (128 chars) ohne prefix
+            logger.debug("64-byte raw format (no prefix)")
+            # Keep as-is
+            pass
+            
+        else:
+            # Ungültige Länge
+            logger.warning(f"Unexpected pubkey length: {len(hex_clean)} chars")
+            # Versuche zu reparieren
+            if len(hex_clean) > 128:
+                hex_clean = hex_clean[:128]
+            else:
+                hex_clean = hex_clean.rjust(128, '0')
+        
+        # 4. Ensure exactly 128 chars (64 bytes) für X + Y
         hex_clean = hex_clean[:128].rjust(128, '0')
         
-        # Convert hex to bytes
+        # 5. Convert to bytes (64 bytes)
         pubkey_raw = bytes.fromhex(hex_clean)
         
         if len(pubkey_raw) != 64:
             raise ValueError(f"Pubkey must be 64 bytes after conversion, got {len(pubkey_raw)}")
         
-        # Build binary format: b'\x02\xca\x00 ' + X (32 bytes) + b'\x00 ' + Y (32 bytes)
+        # 6. Build pyelliptic binary format
+        # Format: b'\x02\xca\x00 ' + X (32 bytes) + b'\x00 ' + Y (32 bytes)
         pubkey_bin = b'\x02\xca\x00 ' + pubkey_raw[:32] + b'\x00 ' + pubkey_raw[32:]
         
         logger.debug(f"hexToPubkey output: {len(pubkey_bin)} bytes, first 10: {pubkey_bin[:10].hex()}")
@@ -386,16 +402,25 @@ def privToPub(privkey):
 def pointMult(secret):
     """
     Does an EC point multiplication; turns a private key into a public key.
-    Returns 65 bytes: 0x04 + X (32 bytes) + Y (32 bytes)
     """
-    logger.debug("DEBUG: pointMult called")
-    secret_bytes = _ensure_bytes(secret)
-    
     while True:
         try:
+            # Stelle sicher dass secret Bytes sind
+            if isinstance(secret, str):
+                secret = secret.encode('latin-1')
+            elif not isinstance(secret, bytes):
+                secret = bytes(secret)
+            
+            # Stelle sicher es sind 32 Bytes
+            if len(secret) != 32:
+                if len(secret) > 32:
+                    secret = secret[:32]
+                else:
+                    secret = secret.ljust(32, b'\x00')
+            
             k = OpenSSL.EC_KEY_new_by_curve_name(
                 OpenSSL.get_curve('secp256k1'))
-            priv_key = OpenSSL.BN_bin2bn(secret_bytes, 32, None)
+            priv_key = OpenSSL.BN_bin2bn(secret, 32, None)
             group = OpenSSL.EC_KEY_get0_group(k)
             pub_key = OpenSSL.EC_POINT_new(group)
 
@@ -409,201 +434,158 @@ def pointMult(secret):
 
             result = mb.raw
             
-            # VERIFY: Should be 65 bytes starting with 0x04
+            # WICHTIG: Überprüfe das Ergebnis
+            # Sollte 65 Bytes sein: 0x04 + 32 bytes X + 32 bytes Y
             if len(result) == 65 and result[0] == 0x04:
-                logger.debug("DEBUG: Successfully performed point multiplication (65 bytes)")
                 return result
             else:
-                logger.warning(f"Unexpected public key format: {len(result)} bytes, first byte: 0x{result[0]:02x}")
-                # Try to convert if possible
-                if len(result) == 65:
-                    return result
-                elif len(result) > 65:
-                    return result[:65]  # Truncate if too long
+                # Versuche zu reparieren
+                logger = logging.getLogger('highlevelcrypto')
+                logger.warning(f"pointMult: Unexpected result: {len(result)} bytes, first: 0x{result[0]:02x}")
+                
+                if len(result) > 65:
+                    return result[:65]  # Schneide ab
+                elif len(result) < 65:
+                    # Pade auf 65 Bytes
+                    return result.ljust(65, b'\x00')
                 else:
-                    # Pad if too short
-                    return result + b'\x00' * (65 - len(result))
+                    # 65 Bytes aber falsches erstes Byte
+                    return b'\x04' + result[1:] if len(result) >= 2 else b'\x04' + b'\x00' * 64
 
-        except Exception as e:
+        except Exception:
             import traceback
             import time
-            logger.error("DEBUG: Error in pointMult: %s", e)
+            logger = logging.getLogger('highlevelcrypto')
+            logger.warning("pointMult exception, retrying...")
             traceback.print_exc()
             time.sleep(0.2)
         finally:
-            OpenSSL.EC_POINT_free(pub_key)
-            OpenSSL.BN_free(priv_key)
-            OpenSSL.EC_KEY_free(k)
-
+            # Cleanup
+            if 'pub_key' in locals():
+                OpenSSL.EC_POINT_free(pub_key)
+            if 'priv_key' in locals():
+                OpenSSL.BN_free(priv_key)
+            if 'k' in locals():
+                OpenSSL.EC_KEY_free(k)
 def makeCryptor(privkey, curve='secp256k1'):
     """Return a private `.pyelliptic.ECC` instance"""
+    logger = logging.getLogger('highlevelcrypto')
     logger.debug("DEBUG: makeCryptor called")
     try:
-        # Get private key bytes (handle WIF or hex)
+        # 1. Konvertiere privkey in 32 Bytes, GENAU WIE IM ORIGINAL: a.changebase(privkey, 16, 256, minlen=32)
         if isinstance(privkey, str):
-            # Check if it's hex (64 chars) or WIF
-            if len(privkey) in (51, 52) and privkey[0] in '5KL':
-                # It's WIF
-                private_key = decodeWalletImportFormat(privkey)
-            else:
-                # Assume hex - clean the string
-                clean_hex = ''.join(c for c in privkey if c in '0123456789abcdefABCDEF')
-                
-                # If it's 64 characters, it's a hex representation of 32 bytes
-                if len(clean_hex) == 64:
-                    private_key = bytes.fromhex(clean_hex)
-                # If it's 32 bytes encoded as hex (should be 64 chars)
-                elif len(clean_hex) == 32 and all(ord(c) < 128 for c in clean_hex):
-                    # It might actually be 32 bytes of binary data as a string
-                    private_key = clean_hex.encode('latin-1')
-                elif len(clean_hex) < 64:
-                    # Pad with zeros if too short
-                    clean_hex = clean_hex.rjust(64, '0')
-                    private_key = bytes.fromhex(clean_hex)
-                else:
-                    # If longer than 64 chars, take first 64
-                    clean_hex = clean_hex[:64]
-                    private_key = bytes.fromhex(clean_hex)
+            # Bereinige den Hex-String (entferne alles außer 0-9, a-f, A-F)
+            import re
+            clean_hex = re.sub(r'[^0-9a-fA-F]', '', privkey)
+            # Stelle sicher, dass die Länge für 32 Bytes ausreicht (64 Zeichen)
+            if len(clean_hex) < 64:
+                clean_hex = clean_hex.rjust(64, '0')
+            # Konvertiere Hex zu Integer, dann zu Bytes (Simuliert a.changebase von 16 zu 256)
+            try:
+                # Fallback: Direkte Konvertierung für den Anfang
+                private_key = bytes.fromhex(clean_hex[:64])
+            except Exception:
+                # Versuche es mit manueller Konvertierung falls nötig
+                private_key = bytes([int(clean_hex[i:i+2], 16) for i in range(0, 64, 2)])
         else:
-            # Already bytes or similar
+            # privkey ist bereits Bytes
             private_key = _ensure_bytes(privkey)
-        
-        # Now ensure it's exactly 32 bytes
-        if len(private_key) > 32:
-            # Take first 32 bytes if too long
-            private_key = private_key[:32]
-        elif len(private_key) < 32:
-            # Pad with zeros if too short
-            private_key = private_key + b'\x00' * (32 - len(private_key))
-        
-        # Verify private key is 32 bytes
-        if len(private_key) != 32:
-            raise ValueError(f"Private key must be 32 bytes, got {len(private_key)} (after processing)")
-        
-        # DEBUG: Show what we have
-        logger.debug(f"Private key type: {type(private_key)}")
-        logger.debug(f"Private key length: {len(private_key)}")
-        logger.debug(f"Private key hex: {hexlify(private_key).decode('ascii')}")
-        
-        # Get public key - should be 65 bytes (0x04 + X + Y)
+            if len(private_key) > 32:
+                private_key = private_key[:32]
+            elif len(private_key) < 32:
+                private_key = private_key.ljust(32, b'\x00')
+
+        # 2. Erzeuge öffentlichen Schlüssel (GENAU WIE ORIGINAL)
         public_key = pointMult(private_key)
         
-        if len(public_key) != 65 or public_key[0] != 0x04:
-            logger.error(f"Invalid public key format from pointMult: {len(public_key)} bytes, first: 0x{public_key[0]:02x}")
-            # Try to fix: assume first 65 bytes are the key
-            if len(public_key) >= 65:
-                public_key = public_key[:65]
-                if public_key[0] != 0x04:
-                    public_key = b'\x04' + public_key[1:65]
-            else:
-                raise ValueError(f"Public key too short: {len(public_key)} bytes")
+        # DEBUG: Überprüfe das Format
+        logger.debug(f"Public key from pointMult: {len(public_key)} bytes")
+        if len(public_key) == 65 and public_key[0] == 0x04:
+            logger.debug("✓ Public key format correct (65 bytes, 0x04 prefix)")
+        else:
+            logger.warning(f"⚠️  Public key format unexpected: {len(public_key)} bytes, starts with 0x{public_key[0]:02x}")
+
+        # 3. Erstelle binäres Format FÜR PYELLIPTIC (GENAU WIE ORIGINAL)
+        # Original: privkey_bin = '\x02\xca\x00\x20' + private_key
+        #          pubkey_bin = '\x02\xca\x00\x20' + public_key[1:33] + '\x00\x20' + public_key[33:]
         
-        # EXACTLY LIKE PYTHON 2 VERSION:
-        # public_key[1:-32] = skip first byte (0x04), get X (32 bytes)
-        # public_key[-32:] = get Y (32 bytes)
-        pubkey_x = public_key[1:-32]  # Should be 32 bytes
-        pubkey_y = public_key[-32:]   # Should be 32 bytes
+        # 0x02ca = 714 (curve ID für secp256k1 in pyelliptic)
+        privkey_bin = b'\x02\xca\x00\x20' + private_key
         
-        # Verify lengths
-        if len(pubkey_x) != 32 or len(pubkey_y) != 32:
-            logger.error(f"Invalid pubkey components: X={len(pubkey_x)}, Y={len(pubkey_y)}")
-            raise ValueError("Invalid public key components")
+        # Extrahiere X und Y aus public_key (65 bytes: 0x04 + 32 bytes X + 32 bytes Y)
+        if len(public_key) >= 65:
+            pubkey_x = public_key[1:33]   # 32 bytes
+            pubkey_y = public_key[33:65]  # 32 bytes
+        else:
+            # Fallback falls Format falsch
+            pubkey_x = private_key[:32]
+            pubkey_y = private_key[:32]
+            
+        pubkey_bin = b'\x02\xca\x00\x20' + pubkey_x + b'\x00\x20' + pubkey_y
         
-        # Create cryptor EXACTLY like Python 2
+        logger.debug(f"privkey_bin length: {len(privkey_bin)}")
+        logger.debug(f"pubkey_bin length: {len(pubkey_bin)}")
+
+        # 4. Erstelle ECC-Objekt MIT DEN BINÄRFORMATEN (GENAU WIE ORIGINAL)
+        # Original: cryptor = pyelliptic.ECC(curve='secp256k1', privkey=privkey_bin, pubkey=pubkey_bin)
         cryptor = pyelliptic.ECC(
-            pubkey_x=pubkey_x, 
-            pubkey_y=pubkey_y,
-            raw_privkey=private_key, 
-            curve=curve
+            curve=curve,
+            privkey=privkey_bin,
+            pubkey=pubkey_bin
         )
         
-        # Test the cryptor works - FIXED VERSION
-        try:
-            # FIX 1: Ohne digest_alg Parameter (Standard verwenden)
-            test_sig = cryptor.sign(b'test')
-            
-            # FIX 2: ODER mit korrekter Konstante (ohne Klammern)
-            # test_sig = cryptor.sign(b'test', digest_alg=OpenSSL.EVP_sha256)
-            
-            # Optional: Verifikation testen
-            valid = cryptor.verify(test_sig, b'test')
-            if valid:
-                logger.debug("Cryptor validation passed")
-            else:
-                logger.warning("Cryptor validation failed: signature doesn't verify")
-                # Nicht abbrechen, könnte trotzdem funktionieren
-        except Exception as e:
-            logger.warning(f"Cryptor test failed (non-fatal): {e}")
-            # Absichtlich ignorieren, Hauptfunktion soll weitergehen
+        logger.debug("✓ ECC object created with binary key format")
         
-        logger.debug("DEBUG: Created cryptor successfully")
+        # 5. Optional: Teste das Cryptor
+        try:
+            test_sig = cryptor.sign(b'test')
+            test_valid = cryptor.verify(test_sig, b'test')
+            logger.debug(f"Cryptor sign/verify test: {test_valid}")
+        except Exception as e:
+            logger.warning(f"Cryptor test warning: {e}")
+        
         return cryptor
         
     except Exception as e:
-        logger.error("DEBUG: Error in makeCryptor: %s", str(e), exc_info=True)
+        logger.error(f"makeCryptor error: {e}", exc_info=True)
         raise
 
 
 def makePubCryptor(pubkey):
     """Return a public `.pyelliptic.ECC` instance"""
     logger = logging.getLogger('highlevelcrypto')
-    logger.debug("=== MAKEPUBCRYPTOR DEBUG ===")
+    logger.debug("DEBUG: makePubCryptor called")
     
     try:
-        # First, ensure we have the correct format
+        # Konvertiere pubkey zum binären Format, das pyelliptic erwartet
         if isinstance(pubkey, bytes):
-            # Check if it's already in binary format (starts with b'\x02\xca')
             if pubkey.startswith(b'\x02\xca'):
-                logger.debug("Pubkey already in binary format")
+                # Bereits im richtigen Format
                 pubkey_bin = pubkey
+            elif len(pubkey) == 65 and pubkey[0] == 0x04:
+                # Format: 0x04 + X + Y → konvertiere zu pyelliptic Format
+                pubkey_bin = b'\x02\xca\x00\x20' + pubkey[1:33] + b'\x00\x20' + pubkey[33:65]
             else:
-                # Might be raw hex bytes, convert to string first
+                # Versuche es als Hex-String zu behandeln
                 try:
-                    hex_string = pubkey.decode('ascii')
-                    pubkey_bin = hexToPubkey(hex_string)
+                    hex_str = pubkey.decode('ascii')
+                    pubkey_bin = hexToPubkey(hex_str)
                 except:
-                    # If it's raw 64-byte key, build binary format
-                    if len(pubkey) == 64:
-                        pubkey_bin = b'\x02\xca\x00 ' + pubkey[:32] + b'\x00 ' + pubkey[32:]
-                    else:
-                        # Try hexToPubkey anyway
-                        pubkey_bin = hexToPubkey(pubkey)
+                    raise ValueError(f"Unknown pubkey format: {len(pubkey)} bytes")
         else:
-            # Assume it's hex string
+            # pubkey ist String (Hex)
             pubkey_bin = hexToPubkey(pubkey)
         
-        logger.debug("Binary pubkey length: %d", len(pubkey_bin))
-        logger.debug("Binary pubkey first 20 bytes: %s", hexlify(pubkey_bin[:20]))
+        logger.debug(f"Converted pubkey to {len(pubkey_bin)} bytes (pyelliptic format)")
         
-        # Create ECC instance - handle different pyelliptic versions
-        try:
-            # Try standard constructor
-            cryptor = pyelliptic.ECC(curve='secp256k1', pubkey=pubkey_bin)
-        except TypeError as e:
-            # Some pyelliptic versions need raw x,y components
-            logger.debug("Standard constructor failed, trying raw components")
-            
-            # Extract x and y from binary format
-            # Format: b'\x02\xca\x00 ' (4 bytes) + X (32 bytes) + b'\x00 ' (2 bytes) + Y (32 bytes)
-            if len(pubkey_bin) >= 70:
-                pubkey_x = pubkey_bin[4:36]  # bytes 4-35
-                pubkey_y = pubkey_bin[38:70]  # bytes 38-69
-                cryptor = pyelliptic.ECC(
-                    pubkey_x=pubkey_x,
-                    pubkey_y=pubkey_y,
-                    curve='secp256k1'
-                )
-            else:
-                raise ValueError(f"Pubkey too short: {len(pubkey_bin)} bytes")
+        # Erstelle öffentliches ECC-Objekt
+        cryptor = pyelliptic.ECC(curve='secp256k1', pubkey=pubkey_bin)
         
-        logger.debug("Created public cryptor successfully")
-        logger.debug("=== MAKEPUBCRYPTOR DEBUG END ===")
+        logger.debug("✓ Public cryptor created")
         return cryptor
         
     except Exception as e:
-        logger.error("Error in makePubCryptor: %s", str(e), exc_info=True)
-        logger.error(f"Input was: {pubkey[:100] if isinstance(pubkey, (str, bytes)) else pubkey}")
-        logger.debug("=== MAKEPUBCRYPTOR DEBUG END (ERROR) ===")
+        logger.error(f"makePubCryptor error: {e}")
         raise
 
 
@@ -706,10 +688,6 @@ def verify(msg, sig, hexPubkey, digestAlg=None):
     logger = logging.getLogger('highlevelcrypto')
     
     logger.debug("=== HIGHLEVELCRYPTO VERIFY DEBUG START ===")
-    logger.debug("Python version: %s", sys.version)
-    logger.debug("Input message type: %s, length: %d", type(msg), len(msg))
-    logger.debug("Input signature type: %s, length: %d", type(sig), len(sig))
-    logger.debug("Input hexPubkey type: %s, length: %d", type(hexPubkey), len(hexPubkey))
     
     try:
         # 1. Convert all inputs to appropriate types
@@ -719,33 +697,45 @@ def verify(msg, sig, hexPubkey, digestAlg=None):
         # Clean and normalize the public key
         hexPubkey_str = _ensure_str(hexPubkey)
         
-        # Remove any whitespace and ensure proper format
+        # Remove any whitespace
         import re
         hexPubkey_clean = re.sub(r'[^0-9a-fA-F]', '', hexPubkey_str)
         
-        logger.debug("Cleaned pubkey: %s... (%d chars)", hexPubkey_clean[:30], len(hexPubkey_clean))
+        logger.debug(f"Cleaned pubkey: {hexPubkey_clean[:30]}... ({len(hexPubkey_clean)} chars)")
         
-        # Check if we need to add '04' prefix (uncompressed public key)
-        if len(hexPubkey_clean) == 128 and not hexPubkey_clean.lower().startswith('04'):
-            # This is a 64-byte key without prefix, add '04'
-            hexPubkey_clean = '04' + hexPubkey_clean
-            logger.debug("Added '04' prefix to pubkey")
+        # 2. WICHTIG: Pyelliptic pubkey format ist 70 bytes = 140 chars
+        #    Wir müssen NICHT auf 128 chars kürzen!
+        
+        if len(hexPubkey_clean) == 140:
+            # Das ist das korrekte pyelliptic Format (70 bytes)
+            logger.debug("✓ Correct pyelliptic format (140 chars = 70 bytes)")
+            # Nichts ändern!
+            
         elif len(hexPubkey_clean) == 130 and hexPubkey_clean.lower().startswith('04'):
-            # Already has '04' prefix, remove it for hexToPubkey
-            hexPubkey_clean = hexPubkey_clean[2:]
-            logger.debug("Removed '04' prefix from pubkey")
-        
-        # Ensure exactly 128 chars (64 bytes)
-        if len(hexPubkey_clean) != 128:
-            logger.error(f"Pubkey length incorrect: {len(hexPubkey_clean)} chars, expected 128")
-            # Try to fix
-            if len(hexPubkey_clean) > 128:
-                hexPubkey_clean = hexPubkey_clean[:128]
-            else:
+            # 65 bytes uncompressed format
+            logger.debug("65-byte uncompressed format, converting to pyelliptic format")
+            # Entferne '04' prefix
+            hexPubkey_clean = hexPubkey_clean[2:]  # Jetzt 128 chars
+            # Jetzt müssen wir zu pyelliptic Format konvertieren
+            # Aber das sollte hexToPubkey machen
+            
+        elif len(hexPubkey_clean) == 128:
+            # 64 bytes raw format
+            logger.debug("64-byte raw format")
+            # Keep as-is, hexToPubkey wird es konvertieren
+            
+        else:
+            # Unerwartete Länge
+            logger.warning(f"Unexpected pubkey length: {len(hexPubkey_clean)} chars")
+            # Versuche das Beste
+            if len(hexPubkey_clean) > 140:
+                hexPubkey_clean = hexPubkey_clean[:140]
+            elif len(hexPubkey_clean) < 128:
                 hexPubkey_clean = hexPubkey_clean.rjust(128, '0')
-            logger.debug(f"Fixed pubkey length to 128 chars: {hexPubkey_clean[:30]}...")
         
-        # 2. Try different digest algorithms if not specified
+        logger.debug(f"Final pubkey length: {len(hexPubkey_clean)} chars")
+        
+        # 3. Try different digest algorithms if not specified
         if digestAlg is None:
             logger.debug("No digestAlg specified, trying SHA256 then SHA1")
             
@@ -777,7 +767,7 @@ def verify(msg, sig, hexPubkey, digestAlg=None):
             logger.debug("=== HIGHLEVELCRYPTO VERIFY DEBUG END ===")
             return False
         
-        # 3. Specific digest algorithm
+        # 4. Specific digest algorithm
         logger.debug("Using specific digest algorithm: %s", digestAlg)
         return _verify_single(msg_bytes, sig_bytes, hexPubkey_clean, digestAlg)
         
@@ -785,8 +775,6 @@ def verify(msg, sig, hexPubkey, digestAlg=None):
         logger.error("Unhandled exception in verify: %s", e, exc_info=True)
         logger.debug("=== HIGHLEVELCRYPTO VERIFY DEBUG END ===")
         return False
-
-
 def _verify_single(msg_bytes, sig_bytes, hexPubkey_clean, digestAlg):
     """Internal helper for verification - ULTRA SIMPLE VERSION"""
     logger = logging.getLogger('highlevelcrypto')
