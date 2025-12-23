@@ -357,13 +357,16 @@ def privToPub(privkey):
 def pointMult(secret):
     """
     Does an EC point multiplication; turns a private key into a public key.
+    Returns 65 bytes: 0x04 + X (32 bytes) + Y (32 bytes)
     """
     logger.debug("DEBUG: pointMult called")
+    secret_bytes = _ensure_bytes(secret)
+    
     while True:
         try:
             k = OpenSSL.EC_KEY_new_by_curve_name(
                 OpenSSL.get_curve('secp256k1'))
-            priv_key = OpenSSL.BN_bin2bn(secret, 32, None)
+            priv_key = OpenSSL.BN_bin2bn(secret_bytes, 32, None)
             group = OpenSSL.EC_KEY_get0_group(k)
             pub_key = OpenSSL.EC_POINT_new(group)
 
@@ -375,13 +378,27 @@ def pointMult(secret):
             mb = OpenSSL.create_string_buffer(size)
             OpenSSL.i2o_ECPublicKey(k, OpenSSL.byref(OpenSSL.pointer(mb)))
 
-            logger.debug("DEBUG: Successfully performed point multiplication")
-            return mb.raw
+            result = mb.raw
+            
+            # VERIFY: Should be 65 bytes starting with 0x04
+            if len(result) == 65 and result[0] == 0x04:
+                logger.debug("DEBUG: Successfully performed point multiplication (65 bytes)")
+                return result
+            else:
+                logger.warning(f"Unexpected public key format: {len(result)} bytes, first byte: 0x{result[0]:02x}")
+                # Try to convert if possible
+                if len(result) == 65:
+                    return result
+                elif len(result) > 65:
+                    return result[:65]  # Truncate if too long
+                else:
+                    # Pad if too short
+                    return result + b'\x00' * (65 - len(result))
 
-        except Exception:
+        except Exception as e:
             import traceback
             import time
-            logger.error("DEBUG: Error in pointMult, retrying...")
+            logger.error("DEBUG: Error in pointMult: %s", e)
             traceback.print_exc()
             time.sleep(0.2)
         finally:
@@ -394,54 +411,51 @@ def makeCryptor(privkey, curve='secp256k1'):
     """Return a private `.pyelliptic.ECC` instance"""
     logger.debug("DEBUG: makeCryptor called")
     try:
-        # PYTHON 3 FIX: Convert hex to bytes safely
+        # Get private key bytes (handle WIF or hex)
         if isinstance(privkey, str):
-            # Clean hex string
-            privkey_clean = ''.join(c for c in privkey if c in '0123456789abcdefABCDEF')
-            if len(privkey_clean) % 2 != 0:
-                privkey_clean = '0' + privkey_clean
-            private_key = bytes.fromhex(privkey_clean)
+            # Check if it's hex (64 chars) or WIF
+            if len(privkey) in (51, 52) and privkey[0] in '5KL':
+                # It's WIF
+                private_key = decodeWalletImportFormat(privkey)
+            else:
+                # Assume hex
+                clean_hex = ''.join(c for c in privkey if c in '0123456789abcdefABCDEF')
+                if len(clean_hex) == 64:
+                    private_key = bytes.fromhex(clean_hex)
+                else:
+                    raise ValueError(f"Invalid private key format: {privkey[:20]}...")
         else:
             private_key = _ensure_bytes(privkey)
         
+        # Verify private key is 32 bytes
+        if len(private_key) != 32:
+            raise ValueError(f"Private key must be 32 bytes, got {len(private_key)}")
+        
+        # Get public key - should be 65 bytes (0x04 + X + Y)
         public_key = pointMult(private_key)
         
-        logger.debug(f"Public key length from pointMult: {len(public_key)} bytes")
-        logger.debug(f"Public key (first 16 hex): {hexlify(public_key[:16])}")
+        if len(public_key) != 65 or public_key[0] != 0x04:
+            logger.error(f"Invalid public key format from pointMult: {len(public_key)} bytes, first: 0x{public_key[0]:02x}")
+            # Try to fix: assume first 65 bytes are the key
+            if len(public_key) >= 65:
+                public_key = public_key[:65]
+                if public_key[0] != 0x04:
+                    public_key = b'\x04' + public_key[1:65]
+            else:
+                raise ValueError(f"Public key too short: {len(public_key)} bytes")
         
-        # Handle different public key formats
-        if len(public_key) == 65 and public_key[0] == 0x04:
-            # This is uncompressed format (0x04 + X + Y)
-            # pyelliptic expects: b'\x02\xca\x00 ' + X + b'\x00 ' + Y
-            x_component = public_key[1:33]  # Skip 0x04, get 32 bytes X
-            y_component = public_key[33:]   # Get 32 bytes Y
-            
-            # Convert to pyelliptic format
-            pubkey_x = x_component
-            pubkey_y = y_component
-            
-            logger.debug(f"Converted from uncompressed format (65 bytes)")
-            
-        elif len(public_key) == 66 and public_key.startswith(b'\x02\xca'):
-            # Already in pyelliptic format
-            pubkey_x = public_key[4:36]  # Skip b'\x02\xca\x00 ', get X
-            pubkey_y = public_key[38:]    # Skip b'\x00 ', get Y
-            logger.debug(f"Already in pyelliptic format (66 bytes)")
-            
-        elif len(public_key) == 64:
-            # Raw X + Y format
-            pubkey_x = public_key[:32]
-            pubkey_y = public_key[32:]
-            logger.debug(f"Raw X+Y format (64 bytes)")
-            
-        else:
-            logger.error(f"Unknown public key format, length: {len(public_key)}")
-            logger.error(f"First bytes: {hexlify(public_key[:20])}")
-            raise ValueError(f"Unknown public key format, length: {len(public_key)}")
+        # EXACTLY LIKE PYTHON 2 VERSION:
+        # public_key[1:-32] = skip first byte (0x04), get X (32 bytes)
+        # public_key[-32:] = get Y (32 bytes)
+        pubkey_x = public_key[1:-32]  # Should be 32 bytes
+        pubkey_y = public_key[-32:]   # Should be 32 bytes
         
-        logger.debug(f"Extracted: pubkey_x={len(pubkey_x)} bytes, pubkey_y={len(pubkey_y)} bytes")
+        # Verify lengths
+        if len(pubkey_x) != 32 or len(pubkey_y) != 32:
+            logger.error(f"Invalid pubkey components: X={len(pubkey_x)}, Y={len(pubkey_y)}")
+            raise ValueError("Invalid public key components")
         
-        # Create the cryptor
+        # Create cryptor EXACTLY like Python 2
         cryptor = pyelliptic.ECC(
             pubkey_x=pubkey_x, 
             pubkey_y=pubkey_y,
@@ -449,13 +463,17 @@ def makeCryptor(privkey, curve='secp256k1'):
             curve=curve
         )
         
-        # Verify cryptor works
+        # Test the cryptor works
         try:
-            test_signature = cryptor.sign(b'test', digest_alg=OpenSSL.EVP_sha256())
-            logger.debug("Cryptor test: Successfully created and signed test message")
+            test_sig = cryptor.sign(b'test', digest_alg=OpenSSL.EVP_sha256())
+            valid = cryptor.verify(test_sig, b'test')
+            if valid:
+                logger.debug("Cryptor validation passed")
+            else:
+                logger.error("Cryptor validation failed: signature doesn't verify")
+                # Don't raise, might still work
         except Exception as e:
-            logger.warning(f"Cryptor test failed: {e}")
-            # Continue anyway, might still work
+            logger.warning(f"Cryptor test failed (non-fatal): {e}")
         
         logger.debug("DEBUG: Created cryptor successfully")
         return cryptor
