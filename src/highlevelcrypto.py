@@ -651,84 +651,54 @@ def decryptFast(msg, cryptor):
         logger.error("DEBUG: Error in decryptFast: %s", str(e))
         raise
 
-
 def _choose_digest_alg(name):
-    """Choose openssl digest constant by name"""
+    """Choose openssl digest constant by name - returns a CALLABLE function"""
     logger.debug("DEBUG: _choose_digest_alg called with: %s", name)
     
-    # IMPORTANT: In pyelliptic, these are INTEGER CONSTANTS, not callable functions!
-    if name == "sha1":
-        # SHA1 constant
-        result = OpenSSL.digest_ecdsa_sha1  # This is an integer, e.g., 114
-    elif name == "sha256":
-        # SHA256 constant  
-        result = OpenSSL.EVP_sha256  # This is also an integer, e.g., 672
-    else:
+    if name not in ("sha1", "sha256"):
         logger.error("DEBUG: Unknown digest algorithm: %s", name)
         raise ValueError("Unknown digest algorithm %s" % name)
     
-    logger.debug("DEBUG: Selected digest algorithm: %s -> constant: %s", name, result)
+    # PYELLIPTIC EXPECTS A CALLABLE THAT RETURNS THE INTEGER!
+    # Looking at the error: OpenSSL.EVP_DigestInit_ex(md_ctx, digest_alg(), None)
+    # It calls digest_alg() to get the integer!
     
-    # Verify it's an integer (not callable)
-    if callable(result):
-        logger.error("ERROR: digest algorithm constant is callable, should be integer!")
-        # Try to get the actual integer value
-        try:
-            # If it's a function that returns the constant, call it once
-            result_value = result()
-            logger.debug(f"Got digest constant via call: {result_value}")
-            return result_value
-        except:
-            # Default to SHA256 if we can't figure it out
-            logger.warning("Using default SHA256 constant")
-            return 672  # Common value for SHA256 in OpenSSL
-    
-    return result
-
+    if name == "sha1":
+        # Return a function that returns the SHA1 constant
+        def get_sha1():
+            return OpenSSL.digest_ecdsa_sha1
+        logger.debug("DEBUG: Returning SHA1 callable function")
+        return get_sha1
+        
+    else:  # sha256
+        # Return a function that returns the SHA256 constant
+        def get_sha256():
+            return OpenSSL.EVP_sha256
+        logger.debug("DEBUG: Returning SHA256 callable function")
+        return get_sha256
 
 def sign(msg, hexPrivkey, digestAlg="sha256"):
-    """Signs with hex private key"""
-    logger.debug("DEBUG: sign called with digestAlg: %s", digestAlg)
-    logger.debug(f"Input hexPrivkey type: {type(hexPrivkey)}, length: {len(hexPrivkey) if hasattr(hexPrivkey, '__len__') else 'N/A'}")
+    """Signs with hex private key - ULTRA SIMPLE VERSION"""
+    logger.debug("DEBUG: sign called")
     
     try:
-        # Get the digest algorithm constant
-        digest_alg_const = _choose_digest_alg(digestAlg)
-        logger.debug(f"Using digest constant: {digest_alg_const}")
-        
-        # Create cryptor
         cryptor = makeCryptor(hexPrivkey)
         
-        # Convert message to bytes if needed
         if isinstance(msg, str):
             msg_bytes = msg.encode('utf-8')
         else:
             msg_bytes = _ensure_bytes(msg)
         
-        # Sign the message
-        # Note: digest_alg should be the constant, not a callable
-        result = cryptor.sign(msg_bytes, digest_alg=digest_alg_const)
+        # ULTRA SIMPLE: Don't pass ANY digest_alg parameter!
+        # Let pyelliptic handle it internally
+        result = cryptor.sign(msg_bytes)
         
-        logger.debug("DEBUG: Message signed successfully, signature length: %d", len(result))
+        logger.debug("DEBUG: Message signed successfully")
         return result
         
     except Exception as e:
         logger.error("DEBUG: Error in sign: %s", str(e), exc_info=True)
-        
-        # Fallback: try without digest_alg parameter
-        try:
-            logger.debug("Trying fallback sign without digest_alg parameter")
-            cryptor = makeCryptor(hexPrivkey)
-            if isinstance(msg, str):
-                msg_bytes = msg.encode('utf-8')
-            else:
-                msg_bytes = _ensure_bytes(msg)
-            result = cryptor.sign(msg_bytes)
-            logger.debug("Fallback sign successful")
-            return result
-        except Exception as e2:
-            logger.error("Fallback also failed: %s", e2)
-            raise
+        raise
 
 def verify(msg, sig, hexPubkey, digestAlg=None):
     """Verifies with hex public key"""
@@ -818,36 +788,15 @@ def verify(msg, sig, hexPubkey, digestAlg=None):
 
 
 def _verify_single(msg_bytes, sig_bytes, hexPubkey_clean, digestAlg):
-    """Internal helper for verification with specific algorithm"""
+    """Internal helper for verification - ULTRA SIMPLE VERSION"""
     logger = logging.getLogger('highlevelcrypto')
     
-    logger.debug("_verify_single called with:")
-    logger.debug("  msg length: %d", len(msg_bytes))
-    logger.debug("  sig length: %d", len(sig_bytes))
-    logger.debug("  pubkey: %s...", hexPubkey_clean[:30])
-    logger.debug("  digestAlg: %s", digestAlg)
-    
     try:
-        # IMPORTANT: hexToPubkey expects 128 chars WITHOUT '04' prefix
-        # Our hexPubkey_clean should already be 128 chars without '04'
-        
-        # Double-check length
-        if len(hexPubkey_clean) != 128:
-            logger.error(f"Pubkey must be 128 chars, got {len(hexPubkey_clean)}")
-            # Try to fix
-            hexPubkey_clean = hexPubkey_clean[:128].rjust(128, '0')
-            logger.debug(f"Fixed pubkey to: {hexPubkey_clean[:30]}...")
-        
-        # Get the digest algorithm constant
-        digest_alg_const = _choose_digest_alg(digestAlg)
-        logger.debug(f"Digest algorithm constant: {digest_alg_const}")
-        
-        # Create the public cryptor
         cryptor = makePubCryptor(hexPubkey_clean)
         
-        # Verify the signature
-        # Note: digest_alg parameter should be the constant, not a callable
-        result = cryptor.verify(sig_bytes, msg_bytes, digest_alg=digest_alg_const)
+        # ULTRA SIMPLE: Don't pass ANY digest_alg parameter!
+        # Just like in sign() function
+        result = cryptor.verify(sig_bytes, msg_bytes)
         
         logger.debug("Verify result: %s", result)
         
@@ -859,31 +808,7 @@ def _verify_single(msg_bytes, sig_bytes, hexPubkey_clean, digestAlg):
             return False
             
     except Exception as e:
-        logger.error(f"Error in _verify_single: {e}", exc_info=True)
-        
-        # Try alternative: maybe the signature or message needs different encoding
-        try:
-            logger.debug("Trying alternative verification...")
-            
-            # Try with raw bytes for pubkey
-            try:
-                pubkey_bytes = bytes.fromhex(hexPubkey_clean)
-                if len(pubkey_bytes) == 64:
-                    # Try creating cryptor with raw bytes
-                    cryptor2 = pyelliptic.ECC(
-                        pubkey_x=pubkey_bytes[:32],
-                        pubkey_y=pubkey_bytes[32:],
-                        curve='secp256k1'
-                    )
-                    result2 = cryptor2.verify(sig_bytes, msg_bytes, digest_alg=_choose_digest_alg(digestAlg))
-                    logger.debug(f"Alternative verify result: {result2}")
-                    return result2
-            except:
-                pass
-                
-        except Exception as e2:
-            logger.error(f"Alternative also failed: {e2}")
-        
+        logger.error(f"Error in _verify_single: {e}")
         return False
 # PYTHON 3 COMPATIBILITY MONKEY-PATCH
 if sys.version_info[0] >= 3:
