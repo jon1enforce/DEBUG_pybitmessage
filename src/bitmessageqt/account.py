@@ -25,30 +25,46 @@ from helper_sql import safe_decode
 
 def getSortedSubscriptions(count=False):
     """
-    Return subscriptions grouped by address
-    Compatible with Python 2 version
+    Actually return a grouped dictionary rather than a sorted list
+    COMPATIBLE WITH PYTHON 2 VERSION
+    
+    :param count: Whether to count messages for each fromaddress in the inbox
+    :type count: bool, default False
+    :returns: dict keys are addresses, values are dicts containing settings
+    :rtype: dict, default {}
     """
+    # Hole alle Abonnements
     queryreturn = sqlQuery(
         'SELECT label, address, enabled FROM subscriptions ORDER BY label COLLATE NOCASE ASC')
-    ret = {}
     
+    ret = {}
     for label, address, enabled in queryreturn:
-        ret[address] = {
+        ret[address] = {}
+        ret[address]["inbox"] = {
             'label': label,
             'enabled': enabled,
-            'unread': 0
+            'count': 0  # Wichtig: 'count' Key muss existieren!
         }
+    
+    # Wenn count=True, zähle ungelesene Nachrichten
+    if count:
+        # ACHTUNG: Die Original-Query in Python 2 ist komplexer!
+        # Sie verknüpft subscriptions mit inbox
+        queryreturn = sqlQuery('''
+            SELECT fromaddress, folder, count(msgid) as cnt
+            FROM inbox, subscriptions ON subscriptions.address = inbox.fromaddress
+            WHERE read = 0 AND toaddress = ?
+            GROUP BY inbox.fromaddress, folder
+        ''', '[Broadcast subscribers]')
         
-        if count:
-            # Count unread broadcasts from this address
-            unread = sqlQuery('''
-                SELECT COUNT(*) 
-                FROM inbox 
-                WHERE fromaddress = ? 
-                AND read = 0 
-                AND folder = 'inbox'
-            ''', address)[0][0]
-            ret[address]['unread'] = unread
+        for row in queryreturn:
+            address, folder, cnt = row
+            if folder not in ret[address]:
+                ret[address][folder] = {
+                    'label': ret[address]['inbox']['label'],
+                    'enabled': ret[address]['inbox']['enabled']
+                }
+            ret[address][folder]['count'] = cnt
     
     return ret
 def accountClass(address):
