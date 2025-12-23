@@ -23,40 +23,33 @@ from tr import _translate
 from helper_sql import safe_decode
 
 
-def getSortedSubscriptions(count=False):
-    """
-    Actually return a grouped dictionary rather than a sorted list
-
-    :param count: Whether to count messages for each fromaddress in the inbox
-    :type count: bool, default False
-    :retuns: dict keys are addresses, values are dicts containing settings
-    :rtype: dict, default {}
-    """
-    queryreturn = sqlQuery(
-        'SELECT label, address, enabled FROM subscriptions'
-        ' ORDER BY label COLLATE NOCASE ASC')
+def getSortedSubscriptions(includeDisabled=False):
+    """Return sorted subscriptions as {address: {folder: unread}} dict"""
     ret = {}
-    for label, address, enabled in queryreturn:
-        label = safe_decode(label, "utf-8", "replace")
-        address = safe_decode(address, "utf-8", "replace")
-        ret[address] = {'inbox': {}}
-        ret[address]['inbox'].update(label=label, enabled=enabled, count=0)
-    if count:
-        queryreturn = sqlQuery(
-            'SELECT fromaddress, folder, count(msgid) AS cnt'
-            ' FROM inbox, subscriptions'
-            ' ON subscriptions.address = inbox.fromaddress WHERE read = 0'
-            ' AND toaddress = ? GROUP BY inbox.fromaddress, folder',
-            dbstr(str_broadcast_subscribers))
-        for address, folder, cnt in queryreturn:
-            address = safe_decode(address, "utf-8", "replace")
-            folder = safe_decode(folder, "utf-8", "replace")
-            if folder not in ret[address]:
-                ret[address][folder] = {
-                    'label': ret[address]['inbox']['label'],
-                    'enabled': ret[address]['inbox']['enabled']
-                }
-            ret[address][folder]['count'] = cnt
+    query = ''
+    if includeDisabled:
+        query = 'SELECT address, folder FROM subscriptions'
+    else:
+        query = '''SELECT address, folder FROM subscriptions
+                   WHERE enabled = 1'''
+    
+    for address, folder in sqlQuery(query):
+        # FIX: Initialize dict for address if not exists
+        if address not in ret:
+            ret[address] = {}
+        
+        # FIX: Initialize folder with 0 if not exists
+        if folder not in ret[address]:
+            ret[address][folder] = 0
+        
+        # Count unread messages
+        unread = sqlQuery(
+            '''SELECT COUNT(*) FROM inbox WHERE toaddress = ?
+               AND read = 0 AND folder = ?''',
+            address, folder
+        )[0][0]
+        ret[address][folder] = unread
+    
     return ret
 
 

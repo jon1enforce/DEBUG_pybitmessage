@@ -67,112 +67,69 @@ def decodeWalletImportFormat(WIFstring):
     """
     Convert private key from base58 that's used in the config file to
     8-bit binary string.
+    SIMPLIFIED VERSION without arithmetic.changebase
     """
-    logger.debug("DEBUG: decodeWalletImportFormat called with WIFstring")
+    logger.debug("DEBUG: decodeWalletImportFormat called")
+    
     try:
-        # PYTHON 3 FIX: Ensure string is properly encoded
+        # Ensure we have a string
         if isinstance(WIFstring, bytes):
-            # Convert bytes to string
-            wif_str = WIFstring.decode('ascii')
+            wif = WIFstring.decode('ascii')
         else:
-            wif_str = str(WIFstring)
+            wif = str(WIFstring)
         
-        logger.debug(f"WIF string length: {len(wif_str)}")
-        logger.debug(f"WIF string type: {type(wif_str)}")
+        logger.debug(f"Decoding WIF: {wif[:10]}...")
         
-        # Use base58 library if available (more reliable)
-        try:
-            import base58
-            logger.debug("Using base58 library")
-            # Decode from Base58
-            decoded = base58.b58decode(wif_str)
-            logger.debug(f"Base58 decoded length: {len(decoded)}")
-            
-            # Check for standard WIF format: 1 byte version + 32 bytes key + 4 bytes checksum = 37 bytes
-            if len(decoded) == 37:
-                # Verify checksum
-                privkey_part = decoded[:-4]
-                checksum = decoded[-4:]
-                calculated_checksum = hashlib.sha256(hashlib.sha256(privkey_part).digest()).digest()[:4]
-                
-                if checksum == calculated_checksum:
-                    # Remove version byte (0x80) and return private key
-                    if decoded[0:1] == b'\x80':
-                        logger.debug("WIF checksum valid, returning key")
-                        return decoded[1:-4]
-                    else:
-                        logger.error("WIF missing 0x80 version byte")
-                        raise ValueError('No hex 80 prefix')
-                else:
-                    logger.error("WIF checksum mismatch")
-                    raise ValueError('Checksum failed')
-            else:
-                # Non-standard length, try to extract key anyway
-                logger.warning(f"Non-standard WIF length: {len(decoded)}")
-                if decoded[0:1] == b'\x80':
-                    # Assume last 4 bytes are checksum
-                    return decoded[1:-4]
-                else:
-                    # No version byte, assume entire thing is key
-                    return decoded
+        # Simple base58 decoding without external libraries
+        alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
         
-        except ImportError:
-            logger.debug("base58 not available, using arithmetic.changebase")
-            pass  # Fall through to arithmetic method
+        # Convert from base58 to integer
+        num = 0
+        for char in wif:
+            num = num * 58 + alphabet.index(char)
         
-        # Fallback to original arithmetic method
-        logger.debug("Using arithmetic.changebase fallback")
+        # Convert integer to bytes
+        # Count leading '1's in WIF (which represent leading zeros in base58)
+        leading_zeros = len(wif) - len(wif.lstrip('1'))
         
-        # Ensure proper string encoding for arithmetic.changebase
-        if isinstance(wif_str, str):
-            wif_encoded = wif_str.encode('ascii')
-        else:
-            wif_encoded = wif_str
+        # Convert to hex
+        hex_str = format(num, 'x')
+        if len(hex_str) % 2 != 0:
+            hex_str = '0' + hex_str
         
-        # Try with encoded bytes
-        try:
-            fullString = a.changebase(wif_encoded, 58, 256)
-        except TypeError as e:
-            logger.debug(f"First attempt failed: {e}, trying as string")
-            # Try as plain string
-            fullString = a.changebase(wif_str, 58, 256)
+        # Create bytes with leading zeros
+        result = bytes([0] * leading_zeros) + bytes.fromhex(hex_str)
         
-        logger.debug(f"Full string length from changebase: {len(fullString)}")
+        logger.debug(f"Decoded bytes length: {len(result)}")
         
-        if not fullString:
-            logger.error("Empty result from changebase")
-            raise ValueError('Empty result')
+        # Validate WIF format (should be 37 bytes: 1 version + 32 privkey + 4 checksum)
+        if len(result) < 37:
+            logger.warning(f"Short WIF ({len(result)} bytes), may not be standard")
+            # If it starts with 0x80, assume it's a valid private key
+            if result and result[0] == 0x80:
+                return result[1:]  # Skip version byte
+            return result  # Return as-is
         
-        # Check if we have enough bytes for checksum
-        if len(fullString) >= 5:  # Need at least 1 version + key + 4 checksum
-            privkey = fullString[:-4]
-            checksum = fullString[-4:]
-            
-            calculated_checksum = hashlib.sha256(hashlib.sha256(privkey).digest()).digest()[:4]
-            
-            if checksum == calculated_checksum:
-                if privkey[0:1] == b'\x80':  # checksum passed
-                    logger.debug("Checksum valid, returning key")
-                    return privkey[1:]
-                else:
-                    logger.error("No hex 80 prefix in WIF string")
-                    raise ValueError('No hex 80 prefix')
-            else:
-                logger.error("Checksum failed for WIF string")
-                raise ValueError('Checksum failed')
-        else:
-            # Not enough bytes for standard WIF, return as-is
-            logger.warning(f"Short WIF string ({len(fullString)} bytes), returning as-is")
-            if fullString[0:1] == b'\x80':
-                return fullString[1:]
-            return fullString
-            
+        # Standard WIF validation
+        data = result[:-4]
+        checksum = result[-4:]
+        
+        # Calculate checksum
+        calculated = hashlib.sha256(hashlib.sha256(data).digest()).digest()[:4]
+        
+        if checksum != calculated:
+            raise ValueError("Checksum failed")
+        
+        if data[0] != 0x80:
+            raise ValueError("Missing version byte 0x80")
+        
+        # Return the private key (skip version byte)
+        return data[1:]
+        
     except Exception as e:
-        logger.error("DEBUG: Error in decodeWalletImportFormat: %s", str(e))
-        # Return a dummy key to prevent crash (last resort)
-        logger.warning("Returning dummy key due to error")
-        return b'\x00' * 32
-
+        logger.error("DEBUG: Error in decodeWalletImportFormat: %s", str(e), exc_info=True)
+        # Don't return dummy key - let it crash so we see the error
+        raise
 def encodeWalletImportFormat(privKey):
     """
     Convert private key from binary 8-bit string into base58check WIF string.
