@@ -437,38 +437,96 @@ def makeCryptor(privkey, curve='secp256k1'):
     """Return a private `.pyelliptic.ECC` instance"""
     logger.debug("DEBUG: makeCryptor called")
     try:
-        # PYTHON 3 FIX: Convert hex to bytes safely
+        # Check if privkey is already hex or WIF
         if isinstance(privkey, str):
-            # Clean hex string
-            privkey_clean = ''.join(c for c in privkey if c in '0123456789abcdefABCDEF')
-            if len(privkey_clean) % 2 != 0:
-                privkey_clean = '0' + privkey_clean
-            private_key = bytes.fromhex(privkey_clean)
+            # Check if it looks like a WIF (starts with 5, K, or L and ~51 chars)
+            if len(privkey) in (51, 52) and privkey[0] in '5KL':
+                logger.debug("Detected WIF format, decoding...")
+                # It's a WIF, decode it first
+                privkey_bytes = decodeWalletImportFormat(privkey)
+            else:
+                # Assume it's hex
+                logger.debug("Assuming hex format...")
+                # Clean hex string
+                privkey_clean = ''.join(c for c in privkey if c in '0123456789abcdefABCDEF')
+                if len(privkey_clean) % 2 != 0:
+                    privkey_clean = '0' + privkey_clean
+                
+                if len(privkey_clean) == 64:  # 32 bytes = 64 hex chars
+                    privkey_bytes = bytes.fromhex(privkey_clean)
+                else:
+                    logger.error(f"Invalid hex length: {len(privkey_clean)}")
+                    raise ValueError(f"Invalid private key length: {len(privkey_clean)} chars")
         else:
-            private_key = _ensure_bytes(privkey)
+            # Already bytes
+            privkey_bytes = _ensure_bytes(privkey)
         
-        public_key = pointMult(private_key)
+        logger.debug(f"Private key bytes length: {len(privkey_bytes)}")
+        
+        # Generate public key
+        public_key = pointMult(privkey_bytes)
+        logger.debug(f"Public key length: {len(public_key)}")
         
         # Extract X and Y coordinates from public key
-        # Public key format: b'\x02\xca\x00 ' + X + b'\x00 ' + Y
-        if len(public_key) >= 66:
-            pubkey_x = public_key[1:-32]  # Skip first byte, get X (32 bytes)
-            pubkey_y = public_key[-32:]    # Get Y (32 bytes)
+        # Public key format should be: b'\x02\xca\x00 ' + X + b'\x00 ' + Y
+        if len(public_key) >= 66 and public_key.startswith(b'\x02\xca'):
+            pubkey_x = public_key[4:36]  # Skip b'\x02\xca\x00 ', get X (32 bytes)
+            pubkey_y = public_key[38:]    # Skip b'\x00 ', get Y (32 bytes)
+            logger.debug("Extracted X and Y from standard format")
         else:
-            # Fallback for older format
-            pubkey_x = public_key[1:33]
-            pubkey_y = public_key[33:]
+            # Fallback - try to extract anyway
+            logger.warning(f"Non-standard public key format, length: {len(public_key)}")
+            if len(public_key) >= 65:
+                # Assume uncompressed format (0x04 + X + Y)
+                pubkey_x = public_key[1:33]
+                pubkey_y = public_key[33:]
+            elif len(public_key) >= 33:
+                # Assume compressed or raw format
+                pubkey_x = public_key[:32]
+                pubkey_y = public_key[32:]
+            else:
+                logger.error(f"Public key too short: {len(public_key)} bytes")
+                raise ValueError(f"Public key too short: {len(public_key)} bytes")
         
-        cryptor = pyelliptic.ECC(
-            pubkey_x=pubkey_x, 
-            pubkey_y=pubkey_y,
-            raw_privkey=private_key, 
-            curve=curve
-        )
-        logger.debug("DEBUG: Created cryptor successfully")
-        return cryptor
+        logger.debug(f"pubkey_x length: {len(pubkey_x)}, pubkey_y length: {len(pubkey_y)}")
+        
+        # Create the cryptor
+        try:
+            cryptor = pyelliptic.ECC(
+                pubkey_x=pubkey_x, 
+                pubkey_y=pubkey_y,
+                raw_privkey=privkey_bytes, 
+                curve=curve
+            )
+            logger.debug("DEBUG: Created cryptor successfully")
+            
+            # Verify the cryptor is valid
+            try:
+                # Try to get the public key to verify
+                test_pubkey = cryptor.get_pubkey()
+                logger.debug(f"Cryptor test successful, pubkey length: {len(test_pubkey)}")
+            except Exception as e:
+                logger.warning(f"Cryptor validation failed: {e}")
+            
+            return cryptor
+            
+        except Exception as e:
+            logger.error(f"Failed to create ECC object: {e}")
+            # Try alternative method
+            try:
+                logger.debug("Trying alternative ECC creation...")
+                cryptor = pyelliptic.ECC(
+                    privkey=privkey_bytes,
+                    curve=curve
+                )
+                logger.debug("Alternative ECC creation successful")
+                return cryptor
+            except Exception as e2:
+                logger.error(f"Alternative method also failed: {e2}")
+                raise
+        
     except Exception as e:
-        logger.error("DEBUG: Error in makeCryptor: %s", str(e))
+        logger.error("DEBUG: Error in makeCryptor: %s", str(e), exc_info=True)
         raise
 
 
