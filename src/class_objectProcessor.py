@@ -102,14 +102,21 @@ class objectProcessor(threading.Thread):
         # objectProcessorQueue. Assuming that Bitmessage wasn't closed
         # forcefully, it should have saved the data in the queue into the
         # objectprocessorqueue table. Let's pull it out.
-        queryreturn = sqlQuery(
-            'SELECT objecttype, data FROM objectprocessorqueue')
-        for objectType, data in queryreturn:
-            queues.objectProcessorQueue.put((objectType, data))
-        sqlExecute('DELETE FROM objectprocessorqueue')
-        logger.debug(
-            'Loaded %s objects from disk into the objectProcessorQueue.',
-            len(queryreturn))
+        try:
+            queryreturn = sqlQuery('SELECT objecttype, data FROM objectprocessorqueue')
+            for objectType, data in queryreturn:
+                queues.objectProcessorQueue.put((objectType, data))
+            
+            logger.debug(
+                'Loaded %s objects from disk into the objectProcessorQueue.',
+                len(queryreturn))
+            
+            # Only delete if we successfully loaded something
+            if queryreturn:
+                sqlExecute('DELETE FROM objectprocessorqueue')
+        except Exception as e:
+            logger.debug("Could not load from objectprocessorqueue (table might not exist): %s", e)
+            queryreturn = []
         self.successfullyDecryptMessageTimings = []
 
     def run(self):

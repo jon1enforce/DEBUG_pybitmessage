@@ -38,9 +38,35 @@ def getSortedSubscriptions(count=False):
         'SELECT label, address, enabled FROM subscriptions ORDER BY label COLLATE NOCASE ASC')
     
     ret = {}
-    for label, address, enabled in queryreturn:
-        ret[address] = {}
-        ret[address]["inbox"] = {
+    for row in queryreturn:
+        # SICHERHEIT: Prüfe, dass row genug Werte hat
+        if len(row) < 3:
+            continue
+            
+        label, address, enabled = row
+        
+        # PYTHON 3 KOMPATIBILITÄT: Bytes zu String konvertieren
+        if isinstance(address, bytes):
+            address = address.decode('utf-8', 'replace')
+        if isinstance(label, bytes):
+            label = label.decode('utf-8', 'replace')
+        if isinstance(enabled, bytes):
+            try:
+                enabled = bool(int(enabled.decode('utf-8')))
+            except:
+                enabled = False
+        elif isinstance(enabled, int):
+            enabled = bool(enabled)
+        elif isinstance(enabled, str):
+            try:
+                enabled = bool(int(enabled))
+            except:
+                enabled = False
+        
+        if address not in ret:
+            ret[address] = {}
+        
+        ret[address]['inbox'] = {
             'label': label,
             'enabled': enabled,
             'count': 0  # Wichtig: 'count' Key muss existieren!
@@ -48,23 +74,45 @@ def getSortedSubscriptions(count=False):
     
     # Wenn count=True, zähle ungelesene Nachrichten
     if count:
-        # ACHTUNG: Die Original-Query in Python 2 ist komplexer!
-        # Sie verknüpft subscriptions mit inbox
-        queryreturn = sqlQuery('''
-            SELECT fromaddress, folder, count(msgid) as cnt
-            FROM inbox, subscriptions ON subscriptions.address = inbox.fromaddress
-            WHERE read = 0 AND toaddress = ?
-            GROUP BY inbox.fromaddress, folder
-        ''', '[Broadcast subscribers]')
-        
-        for row in queryreturn:
-            address, folder, cnt = row
-            if folder not in ret[address]:
-                ret[address][folder] = {
-                    'label': ret[address]['inbox']['label'],
-                    'enabled': ret[address]['inbox']['enabled']
-                }
-            ret[address][folder]['count'] = cnt
+        try:
+            # ACHTUNG: Die Original-Query in Python 2 ist komplexer!
+            # Sie verknüpft subscriptions mit inbox
+            queryreturn = sqlQuery('''
+                SELECT fromaddress, folder, count(msgid) as cnt
+                FROM inbox, subscriptions ON subscriptions.address = inbox.fromaddress
+                WHERE read = 0 AND toaddress = ?
+                GROUP BY inbox.fromaddress, folder
+            ''', '[Broadcast subscribers]')
+            
+            for row in queryreturn:
+                if len(row) < 3:
+                    continue
+                    
+                address, folder, cnt = row
+                
+                # PYTHON 3 KOMPATIBILITÄT
+                if isinstance(address, bytes):
+                    address = address.decode('utf-8', 'replace')
+                if isinstance(folder, bytes):
+                    folder = folder.decode('utf-8', 'replace')
+                if isinstance(cnt, bytes):
+                    try:
+                        cnt = int(cnt.decode('utf-8'))
+                    except:
+                        cnt = 0
+                
+                if address in ret:  # Prüfe, ob Adresse existiert
+                    if folder not in ret[address]:
+                        ret[address][folder] = {
+                            'label': ret[address]['inbox']['label'],
+                            'enabled': ret[address]['inbox']['enabled']
+                        }
+                    ret[address][folder]['count'] = cnt
+                    
+        except Exception as e:
+            import logging
+            logger = logging.getLogger('default')
+            logger.error("Fehler beim Zählen der Nachrichten: %s", e)
     
     return ret
 def accountClass(address):
