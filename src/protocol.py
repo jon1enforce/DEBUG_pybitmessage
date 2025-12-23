@@ -309,6 +309,13 @@ def isProofOfWorkSufficient(
 def CreatePacket(command, payload=b''):
     """Construct and return a packet"""
     payload_length = len(payload)
+    
+    # PYTHON 3 FIX: Ensure payload is bytes before hashing
+    if isinstance(payload, str):
+        payload = payload.encode('utf-8')
+    elif isinstance(payload, bytearray):
+        payload = bytes(payload)
+    
     checksum = hashlib.sha512(payload).digest()[0:4]
 
     b = bytearray(Header.size + payload_length)
