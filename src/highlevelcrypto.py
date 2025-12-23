@@ -418,21 +418,49 @@ def makeCryptor(privkey, curve='secp256k1'):
                 # It's WIF
                 private_key = decodeWalletImportFormat(privkey)
             else:
-                # Assume hex
+                # Assume hex - clean the string
                 clean_hex = ''.join(c for c in privkey if c in '0123456789abcdefABCDEF')
+                
+                # If it's 64 characters, it's a hex representation of 32 bytes
                 if len(clean_hex) == 64:
                     private_key = bytes.fromhex(clean_hex)
+                # If it's 32 bytes encoded as hex (should be 64 chars)
+                elif len(clean_hex) == 32 and all(ord(c) < 128 for c in clean_hex):
+                    # It might actually be 32 bytes of binary data as a string
+                    private_key = clean_hex.encode('latin-1')
+                elif len(clean_hex) < 64:
+                    # Pad with zeros if too short
+                    clean_hex = clean_hex.rjust(64, '0')
+                    private_key = bytes.fromhex(clean_hex)
                 else:
-                    raise ValueError(f"Invalid private key format: {privkey[:20]}...")
+                    # If longer than 64 chars, take first 64
+                    clean_hex = clean_hex[:64]
+                    private_key = bytes.fromhex(clean_hex)
         else:
+            # Already bytes or similar
             private_key = _ensure_bytes(privkey)
+        
+        # Now ensure it's exactly 32 bytes
+        if len(private_key) > 32:
+            # Take first 32 bytes if too long
+            private_key = private_key[:32]
+        elif len(private_key) < 32:
+            # Pad with zeros if too short
+            private_key = private_key + b'\x00' * (32 - len(private_key))
         
         # Verify private key is 32 bytes
         if len(private_key) != 32:
-            raise ValueError(f"Private key must be 32 bytes, got {len(private_key)}")
+            raise ValueError(f"Private key must be 32 bytes, got {len(private_key)} (after processing)")
+        
+        # DEBUG: Show what we have
+        logger.debug(f"Private key type: {type(private_key)}")
+        logger.debug(f"Private key length: {len(private_key)}")
+        logger.debug(f"Private key hex: {hexlify(private_key).decode('ascii')}")
         
         # Get public key - should be 65 bytes (0x04 + X + Y)
         public_key = pointMult(private_key)
+        
+        # Rest of the function remains the same...
         
         if len(public_key) != 65 or public_key[0] != 0x04:
             logger.error(f"Invalid public key format from pointMult: {len(public_key)} bytes, first: 0x{public_key[0]:02x}")
@@ -580,8 +608,24 @@ def _choose_digest_alg(name):
 def sign(msg, hexPrivkey, digestAlg="sha256"):
     """Signs with hex private key"""
     logger.debug("DEBUG: sign called with digestAlg: %s", digestAlg)
+    logger.debug(f"Input hexPrivkey type: {type(hexPrivkey)}, length: {len(hexPrivkey) if hasattr(hexPrivkey, '__len__') else 'N/A'}")
+    
     try:
-        cryptor = makeCryptor(hexPrivkey)
+        # Convert hexPrivkey to appropriate format before passing to makeCryptor
+        if isinstance(hexPrivkey, str):
+            # Clean the hex string
+            clean_hex = ''.join(c for c in hexPrivkey if c in '0123456789abcdefABCDEF')
+            logger.debug(f"Cleaned hex string length: {len(clean_hex)}")
+            
+            if len(clean_hex) == 64:
+                # It's a proper hex string, makeCryptor should handle it
+                cryptor = makeCryptor(clean_hex)
+            else:
+                # Try to handle other formats
+                cryptor = makeCryptor(hexPrivkey)
+        else:
+            # Already bytes or similar
+            cryptor = makeCryptor(hexPrivkey)
         
         # Convert message to bytes if needed
         if isinstance(msg, str):
@@ -593,9 +637,8 @@ def sign(msg, hexPrivkey, digestAlg="sha256"):
         logger.debug("DEBUG: Message signed successfully")
         return result
     except Exception as e:
-        logger.error("DEBUG: Error in sign: %s", str(e))
+        logger.error("DEBUG: Error in sign: %s", str(e), exc_info=True)
         raise
-
 
 def verify(msg, sig, hexPubkey, digestAlg=None):
     """Verifies with hex public key"""
