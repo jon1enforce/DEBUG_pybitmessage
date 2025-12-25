@@ -148,8 +148,8 @@ class singleWorker(StoppableThread):
             debug_print("Shutdown angefordert, beende singleWorker")
             return
 
-        # Initialize the neededPubkeys dictionary.
-        debug_print("Initialisiere neededPubkeys dictionary...")
+        # PYTHON2-LOGIK: Initialize the neededPubkeys dictionary
+        debug_print("PYTHON2 STYLE: Initialisiere neededPubkeys dictionary...")
         queryreturn = sqlQuery(
             '''SELECT DISTINCT toaddress FROM sent'''
             ''' WHERE (status='awaitingpubkey' AND folder='sent')''')
@@ -164,18 +164,21 @@ class singleWorker(StoppableThread):
                 debug_print("Adresse decoded: %s...", toAddress[:30])
                 
             try:
-                toAddressVersionNumber, toStreamNumber, toRipe = \
-                    decodeAddress(toAddress)[1:]
-                debug_print("Adresse decodiert: Version=%d, Stream=%d", 
-                          toAddressVersionNumber, toStreamNumber)
+                toStatus, addressVersionNumber, streamNumber, ripe = decodeAddress(toAddress)
+                if toStatus != 'success':
+                    debug_print("  ✗ Kann Adresse nicht dekodieren: %s", toAddress[:30])
+                    continue
+                    
+                debug_print("  Adresse decodiert: Version=%d, Stream=%d", 
+                          addressVersionNumber, streamNumber)
                 
-                if toAddressVersionNumber <= 3:
+                if addressVersionNumber <= 3:
                     state.neededPubkeys[toAddress] = 0
-                    debug_print("Added to neededPubkeys (v3): %s...", toAddress[:20])
-                elif toAddressVersionNumber >= 4:
+                    debug_print("  ✓ Added to neededPubkeys (v3): %s...", toAddress[:20])
+                elif addressVersionNumber >= 4:
                     doubleHashOfAddressData = highlevelcrypto.double_sha512(
-                        encodeVarint(toAddressVersionNumber)
-                        + encodeVarint(toStreamNumber) + toRipe
+                        encodeVarint(addressVersionNumber)
+                        + encodeVarint(streamNumber) + ripe
                     )
                     privEncryptionKey = doubleHashOfAddressData[:32]
                     tag = doubleHashOfAddressData[32:]
@@ -184,13 +187,13 @@ class singleWorker(StoppableThread):
                         toAddress,
                         highlevelcrypto.makeCryptor(hexlify(privEncryptionKey))
                     )
-                    debug_print("Added to neededPubkeys (v4) mit tag: %s...", 
+                    debug_print("  ✓ Added to neededPubkeys (v4) mit tag: %s...", 
                               hexlify(tag_bytes)[:20])
             except Exception as e:
-                debug_print("Fehler bei neededPubkeys init für %s: %s", 
+                debug_print("  ✗ Fehler bei neededPubkeys init für %s: %s", 
                           toAddress[:20] if toAddress else "None", e)
 
-        # Initialize the state.ackdataForWhichImWatching data structure
+        # Der Rest der run() Methode bleibt gleich...
         debug_print("Initialisiere ackdataForWhichImWatching...")
         queryreturn = sqlQuery(
             '''SELECT ackdata FROM sent WHERE status = 'msgsent' AND folder = 'sent' ''')
@@ -272,6 +275,7 @@ class singleWorker(StoppableThread):
                     debug_print("ENDE: sendMsg()")
                 except Exception as e:
                     debug_print("sendMsg failed: %s", e)
+                    import traceback
                     traceback.print_exc()
             elif command == 'sendbroadcast':
                 try:
@@ -280,6 +284,7 @@ class singleWorker(StoppableThread):
                     debug_print("ENDE: sendBroadcast()")
                 except Exception as e:
                     debug_print("sendBroadcast failed: %s", e)
+                    import traceback
                     traceback.print_exc()
             elif command == 'doPOWForMyV2Pubkey':
                 try:
@@ -288,6 +293,7 @@ class singleWorker(StoppableThread):
                     debug_print("ENDE: doPOWForMyV2Pubkey()")
                 except Exception as e:
                     debug_print("doPOWForMyV2Pubkey failed: %s", e)
+                    import traceback
                     traceback.print_exc()
             elif command == 'sendOutOrStoreMyV3Pubkey':
                 try:
@@ -296,6 +302,7 @@ class singleWorker(StoppableThread):
                     debug_print("ENDE: sendOutOrStoreMyV3Pubkey()")
                 except Exception as e:
                     debug_print("sendOutOrStoreMyV3Pubkey failed: %s", e)
+                    import traceback
                     traceback.print_exc()
             elif command == 'sendOutOrStoreMyV4Pubkey':
                 try:
@@ -304,6 +311,7 @@ class singleWorker(StoppableThread):
                     debug_print("ENDE: sendOutOrStoreMyV4Pubkey()")
                 except Exception as e:
                     debug_print("sendOutOrStoreMyV4Pubkey failed: %s", e)
+                    import traceback
                     traceback.print_exc()
             elif command == 'sendOnionPeerObj':
                 try:
@@ -312,6 +320,7 @@ class singleWorker(StoppableThread):
                     debug_print("ENDE: sendOnionPeerObj()")
                 except Exception as e:
                     debug_print("sendOnionPeerObj failed: %s", e)
+                    import traceback
                     traceback.print_exc()
             elif command == 'resetPoW':
                 try:
@@ -320,6 +329,7 @@ class singleWorker(StoppableThread):
                     debug_print("ENDE: resetPoW()")
                 except Exception as e:
                     debug_print("resetPoW failed: %s", e)
+                    import traceback
                     traceback.print_exc()
             elif command == 'stopThread':
                 self.busy = 0
@@ -1515,49 +1525,125 @@ class singleWorker(StoppableThread):
                 continue
         
         debug_print("Nachrichten Verarbeitung abgeschlossen")
-
     def requestPubKey(self, toAddress):
-        """Send a getpubkey object"""
+        """Send a getpubkey object - PROFESSIONAL FIX BASED ON PYTHON2"""
         debug_print("=" * 60)
-        debug_print("REQUESTPUBKEY - Fordere pubkey an für: %s", toAddress)
+        debug_print("REQUESTPUBKEY (PROFESSIONAL FIX) - Start für: %s", toAddress)
         debug_print("=" * 60)
         
+        # 1. EXAKT wie Python2: Adresse dekodieren
         toStatus, addressVersionNumber, streamNumber, ripe = decodeAddress(toAddress)
         if toStatus != 'success':
             debug_print('Ungültige Adresse: %s', toAddress)
             return
 
+        # 2. PROFESSIONELLER ANSATZ: Mehrere Abfrage-Strategien
+        debug_print("PROFESSIONAL FIX: Verwende mehrere Query-Strategien...")
+        
+        retryNumber = 0
+        found = False
+        
+        # Strategie 1: Exakt wie Python2 (mit dbstr)
+        debug_print("Strategie 1: Original Python2 Query (mit dbstr)...")
         queryReturn = sqlQuery(
             '''SELECT retrynumber FROM sent WHERE toaddress=? '''
             ''' AND (status='doingpubkeypow' OR status='awaitingpubkey') '''
             ''' AND folder='sent' LIMIT 1''',
-            toAddress)
+            dbstr(toAddress))  # ← WICHTIG: dbstr() wie in Python2!
         
-        if not queryReturn:
-            debug_print('Keine Nachrichten gefunden für Adresse: %s', toAddress)
+        if queryReturn:
+            retryNumber = queryReturn[0][0]
+            found = True
+            debug_print("  ✓ Strategie 1 erfolgreich, retryNumber: %d", retryNumber)
+        
+        # Strategie 2: Ohne Status-Bedingung (falls Status noch msgqueued ist)
+        if not found:
+            debug_print("Strategie 2: Query OHNE Status-Bedingung...")
+            queryReturn = sqlQuery(
+                '''SELECT retrynumber FROM sent WHERE toaddress=? '''
+                ''' AND folder='sent' LIMIT 1''',
+                dbstr(toAddress))
+            
+            if queryReturn:
+                retryNumber = queryReturn[0][0]
+                found = True
+                debug_print("  ✓ Strategie 2 erfolgreich, retryNumber: %d", retryNumber)
+                
+                # Status prüfen und korrigieren falls nötig
+                status_query = sqlQuery(
+                    '''SELECT status FROM sent WHERE toaddress=? AND folder='sent' LIMIT 1''',
+                    dbstr(toAddress))
+                if status_query:
+                    current_status = status_query[0][0]
+                    debug_print("  Aktueller Status: '%s'", current_status)
+                    
+                    if current_status == 'msgqueued':
+                        debug_print("  Status ist 'msgqueued', korrigiere zu 'doingpubkeypow'...")
+                        sqlExecute(
+                            '''UPDATE sent SET status='doingpubkeypow' '''
+                            ''' WHERE toaddress=? AND folder='sent' ''',
+                            dbstr(toAddress))
+        
+        # Strategie 3: Direkte Suche in allen sent Einträgen
+        if not found:
+            debug_print("Strategie 3: Manuelle Suche in allen sent Einträgen...")
+            all_entries = sqlQuery('''SELECT toaddress, retrynumber, status FROM sent WHERE folder='sent' ''')
+            
+            debug_print("  Durchsuche %d Einträge...", len(all_entries))
+            
+            for addr_in_db, retry, status in all_entries:
+                # Konvertiere bytes zu string falls nötig
+                if isinstance(addr_in_db, bytes):
+                    addr_in_db = addr_in_db.decode('utf-8', 'replace')
+                
+                if addr_in_db.strip() == toAddress.strip():
+                    retryNumber = retry if retry is not None else 0
+                    found = True
+                    debug_print("  ✓ Manuell gefunden: addr='%s', retry=%d, status='%s'", 
+                              addr_in_db[:30], retryNumber, status)
+                    
+                    # Status korrigieren falls nötig
+                    if status == 'msgqueued':
+                        debug_print("  Korrigiere Status von 'msgqueued' zu 'doingpubkeypow'...")
+                        sqlExecute(
+                            '''UPDATE sent SET status='doingpubkeypow' '''
+                            ''' WHERE toaddress=? AND folder='sent' ''',
+                            dbstr(toAddress))
+                    break
+        
+        if not found:
+            debug_print("✗ KRITISCHER FEHLER: Kein Eintrag für %s gefunden!", toAddress)
+            debug_print("  Nachricht scheint nicht in der Datenbank zu existieren!")
+            debug_print("  sendMsg() muss die Nachricht zuerst in 'sent' Tabelle speichern!")
             return
-        
-        retryNumber = queryReturn[0][0]
-        debug_print("Retry Number: %d", retryNumber)
 
+        # 3. Ab hier EXAKTE Python2-Logik (angepasst für Debug)
+        debug_print("Phase 2: Verarbeite Adresse mit retryNumber=%d...", retryNumber)
+        
         if addressVersionNumber <= 3:
             state.neededPubkeys[toAddress] = 0
             debug_print("V3 oder früher, füge zu neededPubkeys hinzu")
         elif addressVersionNumber >= 4:
+            # Python2-Logik: Tag generieren und zu neededPubkeys hinzufügen
             doubleHashOfAddressData = highlevelcrypto.double_sha512(
                 encodeVarint(addressVersionNumber)
-                + encodeVarint(streamNumber) + ripe)
+                + encodeVarint(streamNumber) + ripe
+            )
             privEncryptionKey = doubleHashOfAddressData[:32]
+            # Note that this is the second half of the sha512 hash.
             tag = doubleHashOfAddressData[32:]
             tag_bytes = bytes(tag)
+            
             if tag_bytes not in state.neededPubkeys:
                 state.neededPubkeys[tag_bytes] = (
                     toAddress,
                     highlevelcrypto.makeCryptor(hexlify(privEncryptionKey))
                 )
                 debug_print("V4, füge tag zu neededPubkeys hinzu: %s...", hexlify(tag_bytes)[:20])
+            else:
+                debug_print("Tag bereits in neededPubkeys vorhanden")
 
-        # Calculate TTL
+        # 4. TTL Berechnung (exakt wie Python2)
         TTL = 2.5 * 24 * 60 * 60
         TTL *= 2 ** retryNumber
         if TTL > 28 * 24 * 60 * 60:
@@ -1566,7 +1652,7 @@ class singleWorker(StoppableThread):
         embeddedTime = int(time.time() + TTL)
         debug_print("TTL: %d, embeddedTime: %d", TTL, embeddedTime)
         
-        # Build payload
+        # 5. Payload erstellen (exakt wie Python2)
         payload = pack('>Q', embeddedTime)
         payload += b'\x00\x00\x00\x00'  # object type: getpubkey
         payload += encodeVarint(addressVersionNumber)
@@ -1579,7 +1665,7 @@ class singleWorker(StoppableThread):
             payload += tag
             debug_print('Fordere v4 pubkey an mit tag: %s', hexlify(tag)[:20])
 
-        # Update UI
+        # 6. UI Updates (angepasst mit Debug)
         queues.UISignalQueue.put(('updateStatusBar', 
             'Doing the computations necessary to request the recipient\'s public key.'))
         queues.UISignalQueue.put((
@@ -1590,14 +1676,14 @@ class singleWorker(StoppableThread):
         ))
         debug_print("UI aktualisiert")
 
-        # Perform PoW
+        # 7. PoW durchführen (wie Python2)
         debug_print("Starte PoW für getpubkey request...")
         payload = self._doPOWDefaults(payload, TTL, log_prefix='(For getpubkey)')
         if payload is None:
             debug_print("PoW fehlgeschlagen für getpubkey request")
             return
 
-        # Create inventory
+        # 8. Inventory erstellen (wie Python2)
         inventoryHash = highlevelcrypto.calculateInventoryHash(payload)
         objectType = 1
         state.Inventory[inventoryHash] = (
@@ -1607,17 +1693,18 @@ class singleWorker(StoppableThread):
         debug_print('Sende getpubkey request: %s...', hexlify(inventoryHash)[:32])
         invQueue.put((streamNumber, inventoryHash))
 
-        # Update database
+        # 9. Datenbank aktualisieren (EXAKT wie Python2)
         sleeptill = int(time.time() + TTL * 1.1)
         sqlExecute(
             '''UPDATE sent SET lastactiontime=?, '''
             ''' status='awaitingpubkey', retrynumber=?, sleeptill=? '''
             ''' WHERE toaddress=? AND (status='doingpubkeypow' OR '''
             ''' status='awaitingpubkey') AND folder='sent' ''',
-            int(time.time()), retryNumber + 1, sleeptill, toAddress)
-        debug_print("Datenbank aktualisiert")
+            int(time.time()), retryNumber + 1, sleeptill, dbstr(toAddress))  # ← dbstr()!
+        
+        debug_print("Datenbank aktualisiert (awaitingpubkey)")
 
-        # Final UI update
+        # 10. Finale UI Updates (wie Python2)
         queues.UISignalQueue.put((
             'updateStatusBar', tr._translate(
                 "MainWindow",
@@ -1627,11 +1714,13 @@ class singleWorker(StoppableThread):
             'updateSentItemStatusByToAddress', (
                 toAddress, tr._translate(
                     "MainWindow",
-                    "Sending public key request. Waiting for reply. Requested at {0}"
+                    "Sending public key request. Waiting for reply."
+                    " Requested at {0}"
                 ).format(l10n.formatTimestamp()))
         ))
-        debug_print("RequestPubKey abgeschlossen für %s", toAddress)
-
+        
+        debug_print("REQUESTPUBKEY (Professional Fix) ERFOLGREICH für %s", toAddress)
+        debug_print("=" * 60)
     def generateFullAckMessage(self, ackdata, TTL):
         """Create ACK packet"""
         debug_print("generateFullAckMessage aufgerufen, TTL: %d", TTL)

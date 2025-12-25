@@ -66,3 +66,13 @@ maxnodes = 20000
 [zlib]
 maxsize = 1048576
 
+[BM-2cXJrwe9FWVt6Jyq2eWVvzZBdFp1xbXUvr]
+label = 
+enabled = true
+decoy = false
+noncetrialsperbyte = 1000
+payloadlengthextrabytes = 1000
+privsigningkey = 5K9EwAATixoPQeVgcgnKuSfRBwQtPHue6K4FMCViyzdwLdF19wN
+privencryptionkey = 5JKDctdAxvhP6y4u7K7rgWUHLQjzT7s6z8fFAEP3hxNnjYbm2XC
+lastpubkeysendtime = 1766622890
+
