@@ -319,58 +319,6 @@ class Main(object):
                     except:
                         pass
                 
-                # Ausführliche Überwachung des Threads
-                import threading as thr
-                
-                def monitor_singleworker(worker_thread, worker_name):
-                    """Überwacht den singleWorker Thread"""
-                    print(f"DEBUG [MONITOR {worker_name}]: Monitor thread started")
-                    
-                    # Sofortige Prüfung
-                    time.sleep(1)
-                    print(f"DEBUG [MONITOR {worker_name}]: After 1s - is_alive: {worker_thread.is_alive()}")
-                    
-                    if worker_thread.is_alive():
-                        print(f"DEBUG [MONITOR {worker_name}]: Thread is running")
-                        
-                        # Prüfe alle 5 Sekunden
-                        check_count = 0
-                        while worker_thread.is_alive() and check_count < 12:  # 60 Sekunden max
-                            time.sleep(5)
-                            check_count += 1
-                            print(f"DEBUG [MONITOR {worker_name}]: Check {check_count} - is_alive: {worker_thread.is_alive()}")
-                            
-                            # Thread-Stack prüfen
-                            try:
-                                # Aktive Threads auflisten
-                                if check_count % 2 == 0:  # Alle 10 Sekunden
-                                    print(f"DEBUG [MONITOR {worker_name}]: Active threads ({thr.active_count()}):")
-                                    for i, t in enumerate(thr.enumerate()):
-                                        print(f"  {i+1:2d}. {t.name:30} - Alive: {t.is_alive()}")
-                            except:
-                                pass
-                        
-                        if worker_thread.is_alive():
-                            print(f"DEBUG [MONITOR {worker_name}]: Thread still alive after {check_count*5} seconds")
-                        else:
-                            print(f"DEBUG [MONITOR {worker_name}]: ERROR: Thread died after {check_count*5} seconds!")
-                    else:
-                        print(f"DEBUG [MONITOR {worker_name}]: ERROR: Thread never started or died immediately!")
-                        
-                        # Versuche zu prüfen warum
-                        print(f"DEBUG [MONITOR {worker_name}]: Current threads:")
-                        for i, t in enumerate(thr.enumerate()):
-                            print(f"  {i+1:2d}. {t.name:30} - Alive: {t.is_alive()}")
-                
-                # Monitor-Thread starten
-                monitor_thread = thr.Thread(
-                    target=monitor_singleworker,
-                    args=(singleWorkerThread, "singleWorker"),
-                    name="singleWorkerMonitor",
-                    daemon=True
-                )
-                monitor_thread.start()
-                print(f"DEBUG [MAIN.start]: Monitor thread started for singleWorker")
                 
             except Exception as e:
                 print(f"DEBUG [MAIN.start]: EXCEPTION creating/starting singleWorker: {e}")

@@ -629,9 +629,6 @@ class BMProto(AdvancedDispatcher, ObjectTracker):
                 self.destination):
             try:
                 if not protocol.checkSocksIP(self.destination.host):
-                    self.append_write_buf(protocol.assembleErrorMessage(
-                        errorText="Too many connections from your IP."
-                        " Closing connection.", fatal=2))
                     logger.debug(
                         'Closed connection to %s because we are already'
                         ' connected to that IP.', self.destination)

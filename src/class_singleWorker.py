@@ -70,15 +70,21 @@ class singleWorker(StoppableThread):
         proofofwork.init()
         debug_print("singleWorker initialisiert")
 
-    def _safe_extract(self, value, to_int=False):
+    def _safe_extract(self, value, to_int=False, is_msgid=False):
         """Safely extract and convert values from database for Python 3"""
-        debug_print("_safe_extract: Type des Werts: %s, to_int: %s", type(value), to_int)
+        debug_print("_safe_extract: Type des Werts: %s, to_int: %s, is_msgid: %s", 
+                    type(value), to_int, is_msgid)
         
         if value is None:
             debug_print("_safe_extract: Wert ist None")
             return 0 if to_int else ""
         
         try:
+            # SPEZIALBEHANDLUNG FÜR MSGID: Kein String-Konvertierungsversuch für bytes
+            if is_msgid and isinstance(value, bytes):
+                debug_print("_safe_extract: MSGID als bytes, Länge: %d - direkt zurückgeben", len(value))
+                return value  # msgid als bytes zurückgeben für spätere Verwendung
+            
             # Convert bytes to string if needed
             if isinstance(value, bytes):
                 debug_print("_safe_extract: Wert ist bytes, Länge: %d", len(value))
@@ -1093,55 +1099,125 @@ class singleWorker(StoppableThread):
     def sendMsg(self):
         """Send a message-type object (assemble the object, perform PoW and put it to the inv announcement queue)"""
         # pylint: disable=too-many-nested-blocks
+        print("\n" + "=" * 80)
+        print("🚀 SENDMSG START - Verarbeite gequeued Nachrichten")
+        print("=" * 80)
+        
         debug_print("============================================================")
         debug_print("SENDMSG - Verarbeite gequeued Nachrichten")
         debug_print("============================================================")
         
+        print("\n📋 PHASE 1: Reset doing* Nachrichten")
         # Reset just in case
         try:
-            debug_print("Reset: Setze doing* Nachrichten zurück zu msgqueued")
+            print("  SQL: UPDATE sent SET status='msgqueued' WHERE status IN ('doingpubkeypow', 'doingmsgpow') AND folder='sent'")
             reset_count = sqlExecute(
                 '''UPDATE sent SET status='msgqueued' '''
                 ''' WHERE status IN ('doingpubkeypow', 'doingmsgpow') '''
                 ''' AND folder='sent' ''')
+            print(f"  ✅ Reset {reset_count} Nachrichten von doing* zu msgqueued")
             debug_print("Reset %d Nachrichten von doing* zu msgqueued", reset_count)
         except Exception as e:
+            print(f"  ❌ Fehler beim Reset Status: {e}")
             debug_print("Fehler beim Reset Status: %s", e)
         
+        print("\n📋 PHASE 2: Status Übersicht in sent Tabelle")
         # DEBUG: Überprüfe alle Status in der Tabelle
         try:
-            debug_print("--- DEBUG: Status Übersicht in sent Tabelle ---")
+            print("  SQL: SELECT status, COUNT(*) as count FROM sent WHERE folder='sent' GROUP BY status")
             status_overview = sqlQuery(
                 '''SELECT status, COUNT(*) as count FROM sent WHERE folder='sent' GROUP BY status''')
-            for status_row in status_overview:
-                debug_print("  Status '%s': %d Nachrichten", status_row[0], status_row[1])
+            print(f"  Query Ergebnisse: {len(status_overview)} Status-Typen")
+            
+            debug_print("--- DEBUG: Status Übersicht in sent Tabelle ---")
+            for j, status_row in enumerate(status_overview):
+                if len(status_row) >= 2:
+                    print(f"  Status '{status_row[0]}': {status_row[1]} Nachrichten")
+                    debug_print("  Status '%s': %d Nachrichten", status_row[0], status_row[1])
+                else:
+                    print(f"  ⚠️  Ungültige Status-Zeile {j}: {status_row}")
         except Exception as e:
+            print(f"  ❌ Fehler bei Status Überprüfung: {e}")
             debug_print("Fehler bei Status Überprüfung: %s", e)
         
-        queryreturn = sqlQuery(
-            '''SELECT toaddress, fromaddress, subject, message, '''
-            ''' ackdata, status, ttl, retrynumber, encodingtype FROM '''
-            ''' sent WHERE (status='msgqueued' OR status='forcepow' OR status='awaitingpubkey') '''
-            ''' and folder='sent' ORDER BY lastactiontime ASC LIMIT 5''')
+        print("\n📋 PHASE 3: Haupt-Query für Nachrichten")
+        print("  SQL: SELECT msgid, toaddress, fromaddress, subject, message, ackdata, status, ttl, retrynumber, encodingtype")
+        print("       FROM sent WHERE (status='msgqueued' OR status='forcepow' OR status='awaitingpubkey')")
+        print("       and folder='sent' ORDER BY lastactiontime ASC LIMIT 5")
         
-        debug_print("Gefundene Nachrichten zum Verarbeiten: %d (limit 5)", len(queryreturn))
+        try:
+            queryreturn = sqlQuery(
+                '''SELECT msgid, toaddress, fromaddress, subject, message, '''
+                ''' ackdata, status, ttl, retrynumber, encodingtype FROM '''
+                ''' sent WHERE (status='msgqueued' OR status='forcepow' OR status='awaitingpubkey') '''
+                ''' and folder='sent' ORDER BY lastactiontime ASC LIMIT 5''')
+            
+            print(f"  ✅ Query erfolgreich: {len(queryreturn)} Nachrichten gefunden (limit 5)")
+            debug_print("Gefundene Nachrichten zum Verarbeiten: %d (limit 5)", len(queryreturn))
+            
+            # Debug: Zeige was zurückgegeben wurde
+            if queryreturn:
+                print(f"  Erste Zeile hat {len(queryreturn[0])} Spalten")
+                for i, field in enumerate(queryreturn[0]):
+                    field_type = type(field)
+                    if isinstance(field, bytes):
+                        print(f"    Spalte {i}: bytes, Länge={len(field)}, Hex: {hexlify(field)[:32]}...")
+                    else:
+                        print(f"    Spalte {i}: {field_type}, Wert: {str(field)[:50] if field else 'None'}")
+            
+        except Exception as e:
+            print(f"  ❌ FEHLER bei Haupt-Query: {e}")
+            import traceback
+            traceback.print_exc()
+            debug_print("Fehler bei Haupt-Query: %s", e)
+            print("  Keine Nachrichten zu verarbeiten")
+            return
         
         if not queryreturn:
+            print("  ℹ️  Keine Nachrichten zu verarbeiten")
             debug_print("Keine Nachrichten zu verarbeiten")
             return
         
+        print(f"\n📋 PHASE 4: Verarbeite {len(queryreturn)} Nachricht(en)")
         # while we have a msg that needs some work
         for i, row in enumerate(queryreturn):
+            print(f"\n--- Verarbeite Nachricht {i+1}/{len(queryreturn)} ---")
             debug_print("--- Verarbeite Nachricht %d/%d ---", i+1, len(queryreturn))
-            
+
             try:
-                toaddress, fromaddress, subject, message, \
-                    ackdata_raw, status, TTL, retryNumber, encoding = row
+                print(f"  Zeile Länge: {len(row)} Spalten")
+                
+                # Sicherstellen, dass die Zeile genug Spalten hat
+                if len(row) < 10:
+                    print(f"  ❌ FEHLER: Zeile hat nur {len(row)} Spalten (erwartet: 10)")
+                    print(f"  Zeileninhalt: {row}")
+                    debug_print("FEHLER: Zeile hat nur %d Spalten", len(row))
+                    continue
+                
+                print("  Extrahiere Rohdaten...")
+                msgid = row[0]
+                toaddress = row[1]
+                fromaddress = row[2]
+                subject = row[3]
+                message = row[4]
+                ackdata_raw = row[5]
+                status = row[6]
+                TTL = row[7]
+                retryNumber = row[8]
+                encoding = row[9]
+                
+                print(f"  Raw-Daten:")
+                print(f"    msgid Typ: {type(msgid)}")
+                print(f"    toaddress: {str(toaddress)[:50] if toaddress else 'None'}...")
+                print(f"    fromaddress: {str(fromaddress)[:50] if fromaddress else 'None'}...")
+                print(f"    status: {status}")
                 
                 debug_print("  Raw-Daten: status=%s, toaddress=%s...", 
                           status, str(toaddress)[:30] if toaddress else "None")
                 
-                # Safe conversion
+                print("\n  Konvertiere Daten mit _safe_extract...")
+                # Safe conversion - WICHTIG: msgid muss auch konvertiert werden!
+                msgid = self._safe_extract(msgid, to_int=False, is_msgid=True)  # msgid ist ein Hash, keine Zahl!
                 toaddress = self._safe_extract(toaddress)
                 fromaddress = self._safe_extract(fromaddress)
                 subject = self._safe_extract(subject)
@@ -1151,16 +1227,37 @@ class singleWorker(StoppableThread):
                 retryNumber = int(retryNumber) if retryNumber is not None else 0
                 encoding = int(encoding) if encoding is not None else 0
                 
-                # Convert ackdata to bytes if needed
+                print(f"  Nach Konvertierung:")
+                print(f"    msgid Typ: {type(msgid)}, Länge: {len(msgid) if isinstance(msgid, bytes) else 'N/A'}")
+                if isinstance(msgid, bytes):
+                    print(f"    msgid Hex: {hexlify(msgid)[:32]}...")
+                print(f"    toaddress: {toaddress[:50] if toaddress else 'None'}...")
+                print(f"    status: {status}")
+                print(f"    TTL: {TTL}, Retry: {retryNumber}, Encoding: {encoding}")
+                
+                debug_print("  Nach Konvertierung: msgid=%s, status=%s, toaddress=%s...", 
+                          msgid, status, toaddress[:30] if toaddress else "None")
+                
+                print("\n  Verarbeite ackdata...")
                 if ackdata_raw is None:
                     ackdata = os.urandom(32)
+                    print(f"    ⚠️  ackdata war None, generiere neuen: {hexlify(ackdata)[:32]}...")
                     debug_print("  WARNUNG: ackdata war None, generiere neuen")
                 elif isinstance(ackdata_raw, str):
                     ackdata = ackdata_raw.encode('latin-1')
+                    print(f"    ackdata war string, konvertiert zu bytes: {hexlify(ackdata)[:32]}...")
                 elif isinstance(ackdata_raw, bytes):
                     ackdata = ackdata_raw
+                    print(f"    ackdata ist bytes: {hexlify(ackdata)[:32]}...")
                 else:
                     ackdata = bytes(ackdata_raw) if ackdata_raw else os.urandom(32)
+                    print(f"    ackdata konvertiert zu bytes: {hexlify(ackdata)[:32]}...")
+                
+                print(f"\n  Nachrichten-Details:")
+                print(f"    An: {toaddress[:50] if toaddress else 'None'}...")
+                print(f"    Von: {fromaddress[:50] if fromaddress else 'None'}...")
+                print(f"    Betreff: {subject[:30] if subject else 'None'}...")
+                print(f"    Status: {status}, TTL: {TTL}, Retry: {retryNumber}")
                 
                 debug_print("  An: %s...", toaddress[:50] if toaddress else "None")
                 debug_print("  Von: %s...", fromaddress[:50] if fromaddress else "None")
@@ -1169,9 +1266,11 @@ class singleWorker(StoppableThread):
                 
                 # Check if addresses are valid
                 if not toaddress or not fromaddress:
+                    print(f"  ❌ FEHLER: Ungültige Adresse")
                     debug_print("  FEHLER: Ungültige Adresse")
                     continue
-                    
+                
+                print("\n  Dekodiere Adressen...")
                 try:
                     # toStatus
                     _, toAddressVersionNumber, toStreamNumber, toRipe = \
@@ -1180,12 +1279,21 @@ class singleWorker(StoppableThread):
                     _, fromAddressVersionNumber, fromStreamNumber, _ = \
                         decodeAddress(fromaddress)
                         
+                    print(f"  ✅ Adressen erfolgreich dekodiert:")
+                    print(f"    An Version: {toAddressVersionNumber}, Stream: {toStreamNumber}")
+                    print(f"    Von Version: {fromAddressVersionNumber}, Stream: {fromStreamNumber}")
+                    print(f"    toRipe Länge: {len(toRipe)} bytes")
+                    print(f"    toRipe Hex: {hexlify(toRipe)[:32]}...")
+                    
                     debug_print("  An Version: %d, Stream: %d", toAddressVersionNumber, toStreamNumber)
                     debug_print("  Von Version: %d, Stream: %d", fromAddressVersionNumber, fromStreamNumber)
                 except Exception as e:
+                    print(f"  ❌ FEHLER beim Decodieren der Adressen: {e}")
                     debug_print("  FEHLER beim Decodieren der Adressen: %s", e)
                     continue
 
+                print(f"\n📋 PHASE 5: Prüfe Status und Pubkey ({status})")
+                
                 # We may or may not already have the pubkey
                 # for this toAddress. Let's check.
                 if status == 'forcepow':
@@ -1194,12 +1302,14 @@ class singleWorker(StoppableThread):
                     # because the user could not have overridden the message
                     # about the POW being too difficult without knowing
                     # the required difficulty.
+                    print("  Status ist 'forcepow' - fahre fort")
                     debug_print("  Status ist 'forcepow' - fahre fort")
                     pass
                 elif status == 'doingmsgpow':
                     # We wouldn't have set the status to doingmsgpow
                     # if we didn't already have the pubkey so let's assume
                     # that we have it.
+                    print("  Status ist 'doingmsgpow' - bereits in Arbeit")
                     debug_print("  Status ist 'doingmsgpow' - bereits in Arbeit")
                     pass
                 # If we are sending a message to ourselves or a chan
@@ -1207,45 +1317,57 @@ class singleWorker(StoppableThread):
                 # we can calculate the needed pubkey using the private keys
                 # in our keys.dat file.
                 elif config.has_section(toaddress):
+                    print(f"  Sende an sich selbst/chan: {toaddress}")
                     debug_print("  Sende an sich selbst/chan: %s", toaddress)
                     try:
+                        print(f"  Setze Status auf 'doingmsgpow'...")
                         update_result = sqlExecute(
                             '''UPDATE sent SET status='doingmsgpow' '''
                             ''' WHERE toaddress=? AND status='msgqueued' AND folder='sent' ''',
                             toaddress)
+                        print(f"  Update Result: {update_result} Zeilen aktualisiert")
                         debug_print("  Update Result: %d Zeilen aktualisiert", update_result)
                         if update_result <= 0:
+                            print(f"  ⚠️  Konnte Status nicht aktualisieren, setze manuell")
                             debug_print("  Konnte Status nicht aktualisieren")
                             # Setze Status manuell für weitere Verarbeitung
                             status = 'doingmsgpow'
                         else:
                             status = 'doingmsgpow'
+                        print(f"  ✅ Status auf 'doingmsgpow' aktualisiert")
                         debug_print("  Status auf 'doingmsgpow' aktualisiert")
                     except Exception as e:
+                        print(f"  ❌ Fehler beim Aktualisieren: {e}")
                         debug_print("  Fehler beim Aktualisieren: %s", e)
                         status = 'doingmsgpow'  # Fortfahren trotz Fehler
                 elif status == 'msgqueued':
-                    # Let's see if we already have the pubkey in our pubkeys table
+                    print("  Status ist 'msgqueued' - prüfe auf existierenden pubkey...")
                     debug_print("  Prüfe auf existierenden pubkey...")
+                    
                     queryreturn_pubkey = sqlQuery(
                         '''SELECT address FROM pubkeys WHERE address=?''',
                         toaddress)
                     
                     # If we have the needed pubkey in the pubkey table already,
                     if queryreturn_pubkey:
+                        print(f"  ✅ Pubkey gefunden in Datenbank")
                         debug_print("  Pubkey gefunden in Datenbank")
                         # set the status of this msg to doingmsgpow
                         try:
+                            print(f"  Setze Status auf 'doingmsgpow'...")
                             update_rows = sqlExecute(
                                 '''UPDATE sent SET status='doingmsgpow' '''
                                 ''' WHERE toaddress=? AND status='msgqueued' AND folder='sent' ''',
                                 toaddress)
+                            print(f"  Update Result: {update_rows} Zeilen aktualisiert")
                             debug_print("  Update Result: %d Zeilen aktualisiert", update_rows)
                             if update_rows <= 0:
+                                print(f"  ⚠️  Konnte Status nicht aktualisieren, setze manuell")
                                 debug_print("  Konnte Status nicht aktualisieren, setze manuell")
                                 status = 'doingmsgpow'
                             else:
                                 status = 'doingmsgpow'
+                            print(f"  ✅ Status auf 'doingmsgpow' aktualisiert")
                             debug_print("  Status auf 'doingmsgpow' aktualisiert")
                             # mark the pubkey as 'usedpersonally' so that
                             # we don't delete it later.
@@ -1253,11 +1375,14 @@ class singleWorker(StoppableThread):
                                 '''UPDATE pubkeys SET usedpersonally='yes' '''
                                 ''' WHERE address=?''',
                                 toaddress)
+                            print(f"  ✅ Pubkey als 'usedpersonally' markiert")
                         except Exception as e:
+                            print(f"  ❌ Fehler beim Aktualisieren: {e}")
                             debug_print("  Fehler beim Aktualisieren: %s", e)
                             status = 'doingmsgpow'  # Fortfahren
                     # We don't have the needed pubkey in the pubkeys table already.
                     else:
+                        print(f"  ❌ KEIN PUBKEY GEFUNDEN für {toaddress[:20]}...")
                         debug_print("  KEIN PUBKEY GEFUNDEN für %s...", toaddress[:20])
                         if toAddressVersionNumber <= 3:
                             toTag = b''
@@ -1274,6 +1399,7 @@ class singleWorker(StoppableThread):
                         if toaddress_str in state.neededPubkeys or \
                                 toTag_bytes in state.neededPubkeys:
                             # We already sent a request for the pubkey
+                            print(f"  ℹ️  Pubkey wurde bereits angefordert")
                             debug_print("  Pubkey wurde bereits angefordert")
                             sqlExecute(
                                 '''UPDATE sent SET status='awaitingpubkey', '''
@@ -1289,18 +1415,21 @@ class singleWorker(StoppableThread):
                                         "MainWindow",
                                         "Encryption key was requested earlier."))
                             ))
+                            print(f"  ✅ Status auf 'awaitingpubkey' gesetzt")
                             debug_print("  Status auf 'awaitingpubkey' gesetzt")
                             # on with the next msg on which we can do some work
                             continue
                         else:
                             # We have not yet sent a request for the pubkey
                             needToRequestPubkey = True
+                            print(f"  ℹ️  Pubkey noch nicht angefordert")
                             debug_print("  Pubkey noch nicht angefordert")
                             
                             # If we are trying to send to address
                             # version >= 4 then the needed pubkey might be
                             # encrypted in the inventory.
                             if toAddressVersionNumber >= 4:
+                                print(f"  V4+ Adresse, suche in Inventory...")
                                 debug_print("  V4+ Adresse, suche in Inventory...")
                                 doubleHashOfToAddressData = \
                                     highlevelcrypto.double_sha512(
@@ -1335,11 +1464,13 @@ class singleWorker(StoppableThread):
                                             ''' folder='sent' ''',
                                             toaddress)
                                         del state.neededPubkeys[tag]
+                                        print(f"  ✅ Pubkey aus Inventory dekodiert")
                                         debug_print("  Pubkey aus Inventory dekodiert")
                                         status = 'doingmsgpow'
                                         break
                                         
                             if needToRequestPubkey:
+                                print(f"  Fordere Pubkey an für: {toaddress}")
                                 debug_print("  Fordere Pubkey an für: %s", toaddress)
                                 sqlExecute(
                                     '''UPDATE sent SET '''
@@ -1355,12 +1486,15 @@ class singleWorker(StoppableThread):
                                             "Sending a request for the"
                                             " recipient\'s encryption key."))
                                 ))
+                                print(f"  Starte requestPubKey...")
                                 self.requestPubKey(toaddress)
+                                print(f"  ⏭️  Weiter zur nächsten Nachricht")
                                 # on with the next msg on which we can do some work
                                 continue
                 
                 # NEU: Behandlung von 'awaitingpubkey' Status
                 elif status == 'awaitingpubkey':
+                    print(f"  Status ist 'awaitingpubkey' - prüfe ob Pubkey verfügbar")
                     debug_print("  Status ist 'awaitingpubkey' - prüfe ob Pubkey verfügbar")
                     
                     # Prüfe ob Pubkey jetzt in Datenbank ist
@@ -1369,46 +1503,133 @@ class singleWorker(StoppableThread):
                         toaddress)
                     
                     if queryreturn_pubkey:
+                        print(f"  ✅ Pubkey jetzt verfügbar! Aktualisiere Status zu 'doingmsgpow'")
                         debug_print("  Pubkey jetzt verfügbar! Aktualisiere Status zu 'doingmsgpow'")
                         try:
-                            update_result = sqlExecute(
-                                '''UPDATE sent SET status='doingmsgpow' '''
-                                ''' WHERE toaddress=? AND status='awaitingpubkey' AND folder='sent' ''',
-                                toaddress)
-                            debug_print("  Update Result: %d Zeilen aktualisiert", update_result)
-                            status = 'doingmsgpow'
-                            debug_print("  Status auf 'doingmsgpow' aktualisiert")
+                            # VERBESSERT: Suche nach KOMBINATION aus msgid UND toaddress für Sicherheit
+                            print(f"  Update mit msgid + toaddress...")
+                            if isinstance(msgid, bytes):
+                                update_result = sqlExecute(
+                                    '''UPDATE sent SET status='doingmsgpow' '''
+                                    ''' WHERE msgid=? AND toaddress=? AND status='awaitingpubkey' ''',
+                                    sqlite3.Binary(msgid), toaddress)
+                            else:
+                                update_result = sqlExecute(
+                                    '''UPDATE sent SET status='doingmsgpow' '''
+                                    ''' WHERE msgid=? AND toaddress=? AND status='awaitingpubkey' ''',
+                                    msgid, toaddress)
+                            
+                            print(f"  Update Result (mit msgid+toaddress): {update_result} Zeilen aktualisiert")
+                            debug_print("  Update Result (mit msgid+toaddress): %d Zeilen aktualisiert", update_result)
+                            
+                            if update_result <= 0:
+                                # Alternative 1: Nur mit toaddress
+                                print(f"  ⚠️  Keine Zeilen mit msgid+toaddress, versuche nur mit toaddress...")
+                                debug_print("  Keine Zeilen mit msgid+toaddress, versuche nur mit toaddress...")
+                                update_result = sqlExecute(
+                                    '''UPDATE sent SET status='doingmsgpow' '''
+                                    ''' WHERE toaddress=? AND status='awaitingpubkey' ''',
+                                    toaddress)
+                                print(f"  Update nur mit toaddress: {update_result} Zeilen")
+                                debug_print("  Update nur mit toaddress: %d Zeilen", update_result)
+                                
+                                # Alternative 2: Nur mit msgid
+                                if update_result <= 0 and isinstance(msgid, bytes):
+                                    print(f"  ⚠️  Versuche nur mit msgid...")
+                                    debug_print("  Versuche nur mit msgid...")
+                                    try:
+                                        update_result = sqlExecute(
+                                            '''UPDATE sent SET status='doingmsgpow' '''
+                                            ''' WHERE msgid=? AND status='awaitingpubkey' ''',
+                                            sqlite3.Binary(msgid))
+                                        print(f"  Update nur mit msgid: {update_result} Zeilen")
+                                        debug_print("  Update nur mit msgid: %d Zeilen", update_result)
+                                    except Exception as e:
+                                        print(f"  ❌ Fehler bei Update mit msgid: {e}")
+                                        debug_print("  Fehler bei Update mit msgid: %s", e)
+                            
+                            if update_result <= 0:
+                                print(f"  ⚠️  WARNUNG: Konnte keine Zeile updaten, setze Status manuell")
+                                debug_print("  WARNUNG: Konnte keine Zeile updaten, setze Status manuell")
+                                status = 'doingmsgpow'
+                            else:
+                                status = 'doingmsgpow'
+                                print(f"  ✅ Status erfolgreich auf 'doingmsgpow' aktualisiert")
+                                debug_print("  ✅ Status erfolgreich auf 'doingmsgpow' aktualisiert")
                             
                             # Mark pubkey as used
                             sqlExecute(
                                 '''UPDATE pubkeys SET usedpersonally='yes' '''
                                 ''' WHERE address=?''',
                                 toaddress)
+                            print(f"  ✅ Pubkey als 'usedpersonally' markiert")
                         except Exception as e:
+                            print(f"  ❌ Fehler beim Aktualisieren: {e}")
                             debug_print("  Fehler beim Aktualisieren: %s", e)
-                            status = 'doingmsgpow'  # Fortfahren
+                            status = 'doingmsgpow'  # Fortfahren trotz Fehler
                     else:
-                        debug_print("  Pubkey noch nicht verfügbar, überspringe Nachricht")
+                        print(f"  ❌ KEIN PUBKEY GEFUNDEN - starte erneute Pubkey-Anfrage")
+                        debug_print("  KEIN PUBKEY GEFUNDEN - starte erneute Pubkey-Anfrage")
+                        print(f"  Setze Status auf 'doingpubkeypow' für erneute Anfrage")
+                        debug_print("  Setze Status auf 'doingpubkeypow' für erneute Anfrage")
+                        
+                        try:
+                            # Setze Status zurück zu 'doingpubkeypow' für erneute Anfrage
+                            if isinstance(msgid, bytes):
+                                update_result = sqlExecute(
+                                    '''UPDATE sent SET status='doingpubkeypow', retrynumber=retrynumber+1 '''
+                                    ''' WHERE msgid=? AND status='awaitingpubkey' ''',
+                                    sqlite3.Binary(msgid))
+                            else:
+                                update_result = sqlExecute(
+                                    '''UPDATE sent SET status='doingpubkeypow', retrynumber=retrynumber+1 '''
+                                    ''' WHERE msgid=? AND status='awaitingpubkey' ''',
+                                    msgid)
+                            
+                            print(f"  Update Result: {update_result} Zeilen aktualisiert für erneute Pubkey-Anfrage")
+                            debug_print("  Update Result: %d Zeilen aktualisiert für erneute Pubkey-Anfrage", update_result)
+                            
+                            # Auch das letzte Aktualisierungsdatum zurücksetzen
+                            sqlExecute(
+                                '''UPDATE sent SET lastactiontime=? '''
+                                ''' WHERE msgid=?''',
+                                int(time.time()), msgid)
+                            
+                            print(f"  ✅ Status auf 'doingpubkeypow' zurückgesetzt - wird in nächster Runde verarbeitet")
+                            debug_print("  Status auf 'doingpubkeypow' zurückgesetzt - wird in nächster Runde verarbeitet")
+                        except Exception as e:
+                            print(f"  ❌ Fehler beim Zurücksetzen des Status: {e}")
+                            debug_print("  Fehler beim Zurücksetzen des Status: %s", e)
+                        
+                        print(f"  ⏭️  Weiter zur nächsten Nachricht")
                         continue
 
-                # At this point we know that we have the necessary pubkey
-                # in the pubkeys table.
+                print(f"\n📋 PHASE 6: Fortfahren mit Nachrichtenverarbeitung (Status: {status})")
                 debug_print("  Fortfahren mit Nachrichtenverarbeitung...")
                 
-                # Rest of the code remains exactly as you had it...
-                # [Hier kommt der REST deines Codes - unverändert!]
-                
+                # TTL Berechnung
+                original_ttl = TTL
                 TTL *= 2**retryNumber
                 if TTL > 28 * 24 * 60 * 60:
                     TTL = 28 * 24 * 60 * 60
+                
                 # add some randomness to the TTL
-                TTL = int(TTL + helper_random.randomrandrange(-300, 300))
+                random_variation = helper_random.randomrandrange(-300, 300)
+                TTL = int(TTL + random_variation)
                 embeddedTime = int(time.time() + TTL)
+                
+                print(f"  TTL Berechnung:")
+                print(f"    Original TTL: {original_ttl}")
+                print(f"    Nach retryNumber ({retryNumber}): {TTL // (2**retryNumber) if retryNumber > 0 else TTL}")
+                print(f"    Mit Zufalls-Variation ({random_variation}): {TTL}")
+                print(f"    embeddedTime: {embeddedTime} (UTC: {time.ctime(embeddedTime)})")
+                
                 debug_print("  Original TTL: %d, Finale TTL: %d, embeddedTime: %d", 
-                          TTL // (2**retryNumber) if retryNumber > 0 else TTL, TTL, embeddedTime)
+                          original_ttl, TTL, embeddedTime)
 
                 # if we aren't sending this to ourselves or a chan
                 if not config.has_section(toaddress):
+                    print(f"\n📋 PHASE 7: Sende Nachricht an andere")
                     state.ackdataForWhichImWatching[ackdata] = 0
                     queues.UISignalQueue.put((
                         'updateSentItemStatusByAckdata', (
@@ -1417,174 +1638,237 @@ class singleWorker(StoppableThread):
                                 "MainWindow",
                                 "Looking up the receiver\'s public key"))
                     ))
+                    print('  Sending a message.')
+                    print(f"  First 150 characters of message: {repr(message[:150])}")
                     debug_print('Sending a message.')
-                    debug_print(
-                        'First 150 characters of message: %s',
-                        repr(message[:150])
-                    )
+                    debug_print('First 150 characters of message: %s', repr(message[:150]))
 
                     # Let us fetch the recipient's public key out of
                     # our database.
+                    print(f"  Hole Pubkey aus Datenbank für: {toaddress}")
                     queryreturn_pubkey = sqlQuery(
                         'SELECT transmitdata FROM pubkeys WHERE address=?',
                         toaddress)
                     
                     if not queryreturn_pubkey:
+                        print(f"  ❌ FEHLER: Kein pubkey in Datenbank für %s", toaddress)
                         debug_print("  FEHLER: Kein pubkey in Datenbank für %s", toaddress)
                         continue
                     
+                    print(f"  ✅ Pubkey gefunden, verarbeite...")
                     for row in queryreturn_pubkey:
-                        pubkeyPayload, = row
-
-                    # to bypass the address version whose length is definitely 1
-                    readPosition = 1
-                    _, streamNumberLength = decodeVarint(
-                        pubkeyPayload[readPosition:readPosition + 10])
-                    readPosition += streamNumberLength
-                    behaviorBitfield = pubkeyPayload[readPosition:readPosition + 4]
-                    
-                    # if receiver is a mobile device who expects that their
-                    # address RIPE is included unencrypted on the front of
-                    # the message..
-                    if protocol.isBitSetWithinBitfield(behaviorBitfield, 30):
-                        # if we are Not willing to include the receiver's
-                        # RIPE hash on the message..
-                        if not config.safeGetBoolean(
-                                'bitmessagesettings', 'willinglysendtomobile'
-                        ):
-                            debug_print(
-                                'The receiver is a mobile user but the'
-                                ' sender (you) has not selected that you'
-                                ' are willing to send to mobiles. Aborting'
-                                ' send.'
-                            )
-                            queues.UISignalQueue.put((
-                                'updateSentItemStatusByAckdata', (
-                                    ackdata,
-                                    tr._translate(
-                                        "MainWindow",
-                                        "Problem: Destination is a mobile"
-                                        " device who requests that the"
-                                        " destination be included in the"
-                                        " message but this is disallowed in"
-                                        " your settings.  %1"
-                                    ).arg(l10n.formatTimestamp()))
-                            ))
+                        pubkeyPayload_raw = row[0]
+                        
+                        # KRITISCHES DEBUGGING FÜR PUBKEYPAYLOAD
+                        print(f"  pubkeyPayload_raw Typ: {type(pubkeyPayload_raw)}")
+                        
+                        # Konvertiere pubkeyPayload zu bytes
+                        pubkeyPayload = None
+                        if isinstance(pubkeyPayload_raw, bytes):
+                            pubkeyPayload = pubkeyPayload_raw
+                            print(f"  ✅ pubkeyPayload ist bytes, Länge: {len(pubkeyPayload)}")
+                        elif isinstance(pubkeyPayload_raw, str):
+                            print(f"  pubkeyPayload ist string, konvertiere zu bytes...")
+                            try:
+                                # Versuche hex decoding zuerst
+                                pubkeyPayload = unhexlify(pubkeyPayload_raw)
+                                print(f"  ✅ Als hex string decodiert, Länge: {len(pubkeyPayload)}")
+                            except:
+                                # Sonst normale string zu bytes
+                                pubkeyPayload = pubkeyPayload_raw.encode('latin-1')
+                                print(f"  ✅ Als latin-1 string konvertiert, Länge: {len(pubkeyPayload)}")
+                        elif isinstance(pubkeyPayload_raw, int):
+                            print(f"  ⚠️  WARNUNG: pubkeyPayload ist int! Wert: {pubkeyPayload_raw}")
+                            try:
+                                byte_length = (pubkeyPayload_raw.bit_length() + 7) // 8
+                                pubkeyPayload = pubkeyPayload_raw.to_bytes(byte_length, 'big')
+                                print(f"  ✅ Int zu bytes konvertiert, Länge: {len(pubkeyPayload)}")
+                            except Exception as e:
+                                print(f"  ❌ Konnte int nicht zu bytes konvertieren: {e}")
+                                continue
+                        else:
+                            print(f"  ❌ UNBEKANNTER Typ für pubkeyPayload: {type(pubkeyPayload_raw)}")
                             continue
-                    readPosition += 4
-                    readPosition += 64  # Skip signing key
-                    pubEncryptionKeyBase256 = pubkeyPayload[
-                        readPosition:readPosition + 64]
-                    readPosition += 64
-
-                    # Let us fetch the amount of work required by the recipient.
-                    if toAddressVersionNumber == 2:
-                        requiredAverageProofOfWorkNonceTrialsPerByte = \
-                            defaults.networkDefaultProofOfWorkNonceTrialsPerByte
-                        requiredPayloadLengthExtraBytes = \
-                            defaults.networkDefaultPayloadLengthExtraBytes
-                        queues.UISignalQueue.put((
-                            'updateSentItemStatusByAckdata', (
-                                ackdata,
-                                tr._translate(
-                                    "MainWindow",
-                                    "Doing work necessary to send message.\n"
-                                    "There is no required difficulty for"
-                                    " version 2 addresses like this."))
-                        ))
-                    elif toAddressVersionNumber >= 3:
-                        requiredAverageProofOfWorkNonceTrialsPerByte, \
-                            varintLength = decodeVarint(
+                        
+                        if not pubkeyPayload:
+                            print(f"  ❌ pubkeyPayload ist None oder leer!")
+                            continue
+                        
+                        print(f"  Finales pubkeyPayload Länge: {len(pubkeyPayload)} bytes")
+                        print(f"  Erste 32 bytes: {hexlify(pubkeyPayload[:32])[:64]}")
+                        
+                        # to bypass the address version whose length is definitely 1
+                        readPosition = 1
+                        
+                        # Debug vor decodeVarint
+                        print(f"  Vor decodeVarint: readPosition={readPosition}")
+                        
+                        try:
+                            _, streamNumberLength = decodeVarint(
                                 pubkeyPayload[readPosition:readPosition + 10])
-                        readPosition += varintLength
-                        requiredPayloadLengthExtraBytes, varintLength = \
-                            decodeVarint(
-                                pubkeyPayload[readPosition:readPosition + 10])
-                        readPosition += varintLength
-                        # We still have to meet a minimum POW difficulty
-                        if requiredAverageProofOfWorkNonceTrialsPerByte < \
-                                defaults.networkDefaultProofOfWorkNonceTrialsPerByte:
-                            requiredAverageProofOfWorkNonceTrialsPerByte = \
-                                defaults.networkDefaultProofOfWorkNonceTrialsPerByte
-                        if requiredPayloadLengthExtraBytes < \
-                                defaults.networkDefaultPayloadLengthExtraBytes:
-                            requiredPayloadLengthExtraBytes = \
-                                defaults.networkDefaultPayloadLengthExtraBytes
-                        debug_print(
-                            'Using averageProofOfWorkNonceTrialsPerByte: %s'
-                            ' and payloadLengthExtraBytes: %s.',
-                            requiredAverageProofOfWorkNonceTrialsPerByte,
-                            requiredPayloadLengthExtraBytes
-                        )
-
-                        queues.UISignalQueue.put(
-                            (
-                                'updateSentItemStatusByAckdata',
-                                (
-                                    ackdata,
-                                    tr._translate(
-                                        "MainWindow",
-                                        "Doing work necessary to send message.\n"
-                                        "Receiver\'s required difficulty: %1"
-                                        " and %2"
-                                    ).arg(
-                                        str(
-                                            float(requiredAverageProofOfWorkNonceTrialsPerByte)
-                                            / defaults.networkDefaultProofOfWorkNonceTrialsPerByte
-                                        )
-                                    ).arg(
-                                        str(
-                                            float(requiredPayloadLengthExtraBytes)
-                                            / defaults.networkDefaultPayloadLengthExtraBytes
-                                        )
-                                    )
+                            readPosition += streamNumberLength
+                            print(f"  Nach decodeVarint: readPosition={readPosition}, streamNumberLength={streamNumberLength}")
+                        except Exception as e:
+                            print(f"  ❌ Fehler bei decodeVarint: {e}")
+                            continue
+                        
+                        behaviorBitfield = pubkeyPayload[readPosition:readPosition + 4]
+                        print(f"  behaviorBitfield: {hexlify(behaviorBitfield)}")
+                        
+                        # if receiver is a mobile device who expects that their
+                        # address RIPE is included unencrypted on the front of
+                        # the message..
+                        if protocol.isBitSetWithinBitfield(behaviorBitfield, 30):
+                            # if we are Not willing to include the receiver's
+                            # RIPE hash on the message..
+                            if not config.safeGetBoolean(
+                                    'bitmessagesettings', 'willinglysendtomobile'
+                            ):
+                                print(f'  ❌ The receiver is a mobile user but you are not willing to send to mobiles')
+                                debug_print(
+                                    'The receiver is a mobile user but the'
+                                    ' sender (you) has not selected that you'
+                                    ' are willing to send to mobiles. Aborting'
+                                    ' send.'
                                 )
-                            )
-                        )
-
-                        if status != 'forcepow':
-                            maxacceptablenoncetrialsperbyte = config.getint(
-                                'bitmessagesettings', 'maxacceptablenoncetrialsperbyte')
-                            maxacceptablepayloadlengthextrabytes = config.getint(
-                                'bitmessagesettings', 'maxacceptablepayloadlengthextrabytes')
-                            cond1 = maxacceptablenoncetrialsperbyte and \
-                                requiredAverageProofOfWorkNonceTrialsPerByte > maxacceptablenoncetrialsperbyte
-                            cond2 = maxacceptablepayloadlengthextrabytes and \
-                                requiredPayloadLengthExtraBytes > maxacceptablepayloadlengthextrabytes
-
-                            if cond1 or cond2:
-                                # The demanded difficulty is more than
-                                # we are willing to do.
-                                sqlExecute(
-                                    '''UPDATE sent SET status='toodifficult' '''
-                                    ''' WHERE ackdata=? AND folder='sent' ''',
-                                    sqlite3.Binary(ackdata))
                                 queues.UISignalQueue.put((
                                     'updateSentItemStatusByAckdata', (
                                         ackdata,
                                         tr._translate(
                                             "MainWindow",
-                                            "Problem: The work demanded by"
-                                            " the recipient (%1 and %2) is"
-                                            " more difficult than you are"
-                                            " willing to do. %3"
-                                        ).arg(str(float(requiredAverageProofOfWorkNonceTrialsPerByte)
-                                              / defaults.networkDefaultProofOfWorkNonceTrialsPerByte)
-                                              ).arg(str(float(requiredPayloadLengthExtraBytes)
-                                                    / defaults.networkDefaultPayloadLengthExtraBytes)
-                                                    ).arg(l10n.formatTimestamp()))))
-                                debug_print("  PoW zu schwierig, abgebrochen")
+                                            "Problem: Destination is a mobile"
+                                            " device who requests that the"
+                                            " destination be included in the"
+                                            " message but this is disallowed in"
+                                            " your settings.  %1"
+                                        ).arg(l10n.formatTimestamp()))
+                                ))
                                 continue
+                        
+                        readPosition += 4
+                        readPosition += 64  # Skip signing key
+                        pubEncryptionKeyBase256 = pubkeyPayload[
+                            readPosition:readPosition + 64]
+                        readPosition += 64
+                        
+                        print(f"  pubEncryptionKeyBase256 Länge: {len(pubEncryptionKeyBase256)}")
+                        print(f"  pubEncryptionKeyBase256 Hex: {hexlify(pubEncryptionKeyBase256)[:64]}...")
+
+                        # Let us fetch the amount of work required by the recipient.
+                        if toAddressVersionNumber == 2:
+                            requiredAverageProofOfWorkNonceTrialsPerByte = \
+                                defaults.networkDefaultProofOfWorkNonceTrialsPerByte
+                            requiredPayloadLengthExtraBytes = \
+                                defaults.networkDefaultPayloadLengthExtraBytes
+                            queues.UISignalQueue.put((
+                                'updateSentItemStatusByAckdata', (
+                                    ackdata,
+                                    tr._translate(
+                                        "MainWindow",
+                                        "Doing work necessary to send message.\n"
+                                        "There is no required difficulty for"
+                                        " version 2 addresses like this."))
+                            ))
+                        elif toAddressVersionNumber >= 3:
+                            requiredAverageProofOfWorkNonceTrialsPerByte, \
+                                varintLength = decodeVarint(
+                                    pubkeyPayload[readPosition:readPosition + 10])
+                            readPosition += varintLength
+                            requiredPayloadLengthExtraBytes, varintLength = \
+                                decodeVarint(
+                                    pubkeyPayload[readPosition:readPosition + 10])
+                            readPosition += varintLength
+                            # We still have to meet a minimum POW difficulty
+                            if requiredAverageProofOfWorkNonceTrialsPerByte < \
+                                    defaults.networkDefaultProofOfWorkNonceTrialsPerByte:
+                                requiredAverageProofOfWorkNonceTrialsPerByte = \
+                                    defaults.networkDefaultProofOfWorkNonceTrialsPerByte
+                            if requiredPayloadLengthExtraBytes < \
+                                    defaults.networkDefaultPayloadLengthExtraBytes:
+                                requiredPayloadLengthExtraBytes = \
+                                    defaults.networkDefaultPayloadLengthExtraBytes
+                            
+                            print(f"  PoW Anforderungen vom Empfänger:")
+                            print(f"    requiredAverageProofOfWorkNonceTrialsPerByte: {requiredAverageProofOfWorkNonceTrialsPerByte}")
+                            print(f"    requiredPayloadLengthExtraBytes: {requiredPayloadLengthExtraBytes}")
+                            
+                            debug_print(
+                                'Using averageProofOfWorkNonceTrialsPerByte: %s'
+                                ' and payloadLengthExtraBytes: %s.',
+                                requiredAverageProofOfWorkNonceTrialsPerByte,
+                                requiredPayloadLengthExtraBytes
+                            )
+
+                            queues.UISignalQueue.put(
+                                (
+                                    'updateSentItemStatusByAckdata',
+                                    (
+                                        ackdata,
+                                        tr._translate(
+                                            "MainWindow",
+                                            "Doing work necessary to send message.\n"
+                                            "Receiver\'s required difficulty: %1"
+                                            " and %2"
+                                        ).arg(
+                                            str(
+                                                float(requiredAverageProofOfWorkNonceTrialsPerByte)
+                                                / defaults.networkDefaultProofOfWorkNonceTrialsPerByte
+                                            )
+                                        ).arg(
+                                            str(
+                                                float(requiredPayloadLengthExtraBytes)
+                                                / defaults.networkDefaultPayloadLengthExtraBytes
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+
+                            if status != 'forcepow':
+                                maxacceptablenoncetrialsperbyte = config.getint(
+                                    'bitmessagesettings', 'maxacceptablenoncetrialsperbyte')
+                                maxacceptablepayloadlengthextrabytes = config.getint(
+                                    'bitmessagesettings', 'maxacceptablepayloadlengthextrabytes')
+                                cond1 = maxacceptablenoncetrialsperbyte and \
+                                    requiredAverageProofOfWorkNonceTrialsPerByte > maxacceptablenoncetrialsperbyte
+                                cond2 = maxacceptablepayloadlengthextrabytes and \
+                                    requiredPayloadLengthExtraBytes > maxacceptablepayloadlengthextrabytes
+
+                                if cond1 or cond2:
+                                    # The demanded difficulty is more than
+                                    # we are willing to do.
+                                    print(f"  ❌ PoW zu schwierig, abgebrochen")
+                                    sqlExecute(
+                                        '''UPDATE sent SET status='toodifficult' '''
+                                        ''' WHERE ackdata=? AND folder='sent' ''',
+                                        sqlite3.Binary(ackdata))
+                                    queues.UISignalQueue.put((
+                                        'updateSentItemStatusByAckdata', (
+                                            ackdata,
+                                            tr._translate(
+                                                "MainWindow",
+                                                "Problem: The work demanded by"
+                                                " the recipient (%1 and %2) is"
+                                                " more difficult than you are"
+                                                " willing to do. %3"
+                                            ).arg(str(float(requiredAverageProofOfWorkNonceTrialsPerByte)
+                                                  / defaults.networkDefaultProofOfWorkNonceTrialsPerByte)
+                                                  ).arg(str(float(requiredPayloadLengthExtraBytes)
+                                                        / defaults.networkDefaultPayloadLengthExtraBytes)
+                                                        ).arg(l10n.formatTimestamp()))))
+                                    debug_print("  PoW zu schwierig, abgebrochen")
+                                    continue
                 else:  # if we are sending a message to ourselves or a chan..
+                    print(f"\n📋 PHASE 7: Sende Nachricht an sich selbst/chan")
                     debug_print('Sending a message to self/chan.')
-                    debug_print(
-                        'First 150 characters of message: %r', message[:150])
+                    debug_print('First 150 characters of message: %r', message[:150])
                     behaviorBitfield = protocol.getBitfield(fromaddress)
 
                     try:
                         privEncryptionKeyBase58 = config.get(
                             toaddress, 'privencryptionkey')
                     except (configparser.NoSectionError, configparser.NoOptionError) as err:
+                        print(f"  ❌ Fehler: Konnte privEncryptionKey nicht lesen: {err}")
                         queues.UISignalQueue.put((
                             'updateSentItemStatusByAckdata', (
                                 ackdata,
@@ -1632,7 +1916,9 @@ class singleWorker(StoppableThread):
                                 "MainWindow",
                                 "Doing work necessary to send message."))
                     ))
+                    print(f"  ✅ Für Selbst/Chan: Default PoW Parameter verwendet")
 
+                print(f"\n📋 PHASE 8: Assembliere Nachricht")
                 # Now we can start to assemble our message.
                 payload = encodeVarint(fromAddressVersionNumber)
                 payload += encodeVarint(fromStreamNumber)
@@ -1644,7 +1930,9 @@ class singleWorker(StoppableThread):
                     privSigningKeyHex, privEncryptionKeyHex, \
                         pubSigningKey, pubEncryptionKey = self._getKeysForAddress(
                             fromaddress)
+                    print(f"  ✅ Schlüssel für Absender geholt")
                 except ValueError:
+                    print(f"  ❌ Fehler: Absender Adresse nicht in keys.dat gefunden")
                     queues.UISignalQueue.put((
                         'updateSentItemStatusByAckdata', (
                             ackdata,
@@ -1655,6 +1943,7 @@ class singleWorker(StoppableThread):
                     ))
                     continue
                 except Exception as err:
+                    print(f"  ❌ Fehler beim Holen der Schlüssel: {err}")
                     debug_print(
                         'Error within sendMsg. Could not read'
                         ' the keys from the keys.dat file for a requested'
@@ -1681,11 +1970,13 @@ class singleWorker(StoppableThread):
                             defaults.networkDefaultProofOfWorkNonceTrialsPerByte)
                         payload += encodeVarint(
                             defaults.networkDefaultPayloadLengthExtraBytes)
+                        print(f"  ✅ Empfänger in Adressbuch/Whitelist - verwende Default PoW")
                     else:
                         payload += encodeVarint(config.getint(
                             fromaddress, 'noncetrialsperbyte'))
                         payload += encodeVarint(config.getint(
                             fromaddress, 'payloadlengthextrabytes'))
+                        print(f"  ✅ Verwende Absender PoW Parameter")
 
                 # This hash will be checked by the receiver of the message
                 # to verify that toRipe belongs to them.
@@ -1696,12 +1987,16 @@ class singleWorker(StoppableThread):
                 )
                 payload += encodeVarint(encodedMessage.length)
                 payload += encodedMessage.data
+                
+                print(f"  Payload Basis zusammengebaut, Länge: {len(payload)} bytes")
+                
                 if config.has_section(toaddress):
                     debug_print(
                         'Not bothering to include ackdata because we are'
                         ' sending to ourselves or a chan.'
                     )
                     fullAckPayload = b''
+                    print(f"  Kein ackdata für Selbst/Chan")
                 elif not protocol.checkBitfield(
                         behaviorBitfield, protocol.BITFIELD_DOESACK):
                     debug_print(
@@ -1709,11 +2004,15 @@ class singleWorker(StoppableThread):
                         ' the receiver said that they won\'t relay it anyway.'
                     )
                     fullAckPayload = b''
+                    print(f"  Kein ackdata (Empfänger will nicht relayen)")
                 else:
                     # The fullAckPayload is a normal msg protocol message
                     # with the proof of work already completed
+                    print(f"  Generiere fullAckPayload...")
                     fullAckPayload = self.generateFullAckMessage(
                         ackdata, toStreamNumber, TTL)
+                    print(f"  fullAckPayload Länge: {len(fullAckPayload)}")
+                
                 payload += encodeVarint(len(fullAckPayload))
                 payload += fullAckPayload
                 
@@ -1721,17 +2020,26 @@ class singleWorker(StoppableThread):
                 dataToSign = pack('>Q', embeddedTime) + b'\x00\x00\x00\x02' + \
                     encodeVarint(1) + encodeVarint(toStreamNumber) + payload
                     
+                print(f"  dataToSign Länge: {len(dataToSign)}")
+                
                 signature = highlevelcrypto.sign(
                     dataToSign, privSigningKeyHex, self.digestAlg)
                 payload += encodeVarint(len(signature))
                 payload += signature
+                
+                print(f"  Signatur hinzugefügt, Länge: {len(signature)}")
+                print(f"  Finales Payload vor Verschlüsselung: {len(payload)} bytes")
 
                 # We have assembled the data that will be encrypted.
+                print(f"\n📋 PHASE 9: Verschlüssele Payload")
                 try:
                     encrypted = highlevelcrypto.encrypt(
                         payload, "04" + hexlify(pubEncryptionKeyBase256).decode('utf-8')
                     )
+                    print(f"  ✅ Verschlüsselung erfolgreich")
+                    print(f"  Verschlüsselte Daten Länge: {len(encrypted)}")
                 except Exception as e:
+                    print(f"  ❌ highlevelcrypto.encrypt didn't work: {e}")
                     debug_print("highlevelcrypto.encrypt didn't work: %s", e)
                     sqlExecute(
                         '''UPDATE sent SET status='badkey' WHERE ackdata=? AND folder='sent' ''',
@@ -1753,6 +2061,10 @@ class singleWorker(StoppableThread):
                 encryptedPayload += encodeVarint(1)  # msg version
                 encryptedPayload += encodeVarint(toStreamNumber) + encrypted
 
+                print(f"\n📋 PHASE 10: Proof of Work")
+                print(f"  Starte PoW für Nachricht...")
+                print(f"  encryptedPayload Länge vor PoW: {len(encryptedPayload)}")
+                
                 encryptedPayload = self._doPOWDefaults(
                     encryptedPayload, TTL,
                     requiredAverageProofOfWorkNonceTrialsPerByte,
@@ -1761,11 +2073,16 @@ class singleWorker(StoppableThread):
                 )
 
                 if encryptedPayload is None:
+                    print(f"  ❌ PoW fehlgeschlagen")
                     debug_print("  PoW fehlgeschlagen")
                     continue
+                
+                print(f"  ✅ PoW erfolgreich")
+                print(f"  encryptedPayload Länge nach PoW: {len(encryptedPayload)}")
 
                 # Sanity check
                 if len(encryptedPayload) > 2 ** 18:
+                    print(f"  ❌ This msg object is too large to send: {len(encryptedPayload)} bytes")
                     debug_print(
                         'This msg object is too large to send. This should'
                         ' never happen. Object size: %i',
@@ -1778,6 +2095,8 @@ class singleWorker(StoppableThread):
                 state.Inventory[inventoryHash] = (
                     objectType, toStreamNumber, encryptedPayload, embeddedTime, b'')
                     
+                print(f"  ✅ Inventory Hash berechnet: {hexlify(inventoryHash)}")
+                
                 if config.has_section(toaddress) or \
                    not protocol.checkBitfield(behaviorBitfield, protocol.BITFIELD_DOESACK):
                     queues.UISignalQueue.put((
@@ -1787,6 +2106,7 @@ class singleWorker(StoppableThread):
                                 "MainWindow",
                                 "Message sent. Sent at %1"
                             ).arg(l10n.formatTimestamp()))))
+                    print(f"  ✅ Nachricht gesendet (kein ACK erwartet)")
                 else:
                     queues.UISignalQueue.put((
                         'updateSentItemStatusByAckdata', (
@@ -1797,27 +2117,35 @@ class singleWorker(StoppableThread):
                                 " Sent on %1"
                             ).arg(l10n.formatTimestamp()))
                     ))
+                    print(f"  ✅ Nachricht gesendet, warte auf ACK")
                     
+                print(f"  Broadcasting inv for my msg: {hexlify(inventoryHash)[:64]}...")
                 debug_print(
                     'Broadcasting inv for my msg(within sendmsg function): %s',
                     hexlify(inventoryHash).decode('utf-8')
                 )
                 invQueue.put((toStreamNumber, inventoryHash))
 
+                print(f"\n📋 PHASE 11: Datenbank aktualisieren")
                 # Update the sent message in the sent table
                 if config.has_section(toaddress) or \
                    not protocol.checkBitfield(behaviorBitfield, protocol.BITFIELD_DOESACK):
                     newStatus = 'msgsentnoackexpected'
                 else:
                     newStatus = 'msgsent'
+                
                 # wait 10% past expiration
                 sleepTill = int(time.time() + TTL * 1.1)
+                print(f"  sleepTill: {sleepTill} (UTC: {time.ctime(sleeptill)})")
+                
                 sqlExecute(
                     '''UPDATE sent SET msgid=?, status=?, retrynumber=?, '''
                     ''' sleeptill=?, lastactiontime=? WHERE ackdata=? AND folder='sent' ''',
                     sqlite3.Binary(inventoryHash), newStatus, retryNumber + 1,
                     sleepTill, int(time.time()), sqlite3.Binary(ackdata)
                 )
+                
+                print(f"  ✅ Datenbank aktualisiert: Status={newStatus}")
 
                 # If we are sending to ourselves or a chan, put in inbox
                 if config.has_section(toaddress):
@@ -1828,212 +2156,382 @@ class singleWorker(StoppableThread):
 
                     queues.UISignalQueue.put(('displayNewInboxMessage', (
                         inventoryHash, toaddress, fromaddress, subject, message)))
+                    
+                    print(f"  ✅ Nachricht in inbox eingefügt (Selbst/Chan)")
 
+                print(f"\n✅ Nachricht {i+1} erfolgreich gesendet!")
                 debug_print("  Nachricht %d erfolgreich gesendet", i+1)
                 
             except Exception as e:
-                debug_print("Fehler beim Verarbeiten von Nachricht row %d: %s", i, e)
+                print(f"\n❌ FEHLER beim Verarbeiten von Nachricht row {i}: {e}")
                 import traceback
                 traceback.print_exc()
+                debug_print("Fehler beim Verarbeiten von Nachricht row %d: %s", i, e)
                 continue
+        
+        print(f"\n" + "=" * 80)
+        print(f"✅ SENDMSG ABGESCHLOSSEN")
+        print(f"   Verarbeitete Nachrichten: {len(queryreturn)}")
+        print("=" * 80)
         
         debug_print("Nachrichten Verarbeitung abgeschlossen")
     def requestPubKey(self, toAddress):
         """Send a getpubkey object - PROFESSIONAL FIX BASED ON PYTHON2"""
-        debug_print("=" * 60)
-        debug_print("REQUESTPUBKEY (PROFESSIONAL FIX) - Start für: %s", toAddress)
-        debug_print("=" * 60)
+        print("=" * 80)
+        print("🚀 REQUESTPUBKEY START für Adresse:", toAddress[:50] + "..." if len(toAddress) > 50 else toAddress)
+        print("=" * 80)
         
         # 1. EXAKT wie Python2: Adresse dekodieren
-        toStatus, addressVersionNumber, streamNumber, ripe = decodeAddress(toAddress)
+        print("\n📋 PHASE 1: Adresse dekodieren")
+        print("  toAddress:", repr(toAddress))
+        
+        try:
+            toStatus, addressVersionNumber, streamNumber, ripe = decodeAddress(toAddress)
+            print(f"  ✅ Dekodierung erfolgreich:")
+            print(f"    Status: {toStatus}")
+            print(f"    Version: {addressVersionNumber}")
+            print(f"    Stream: {streamNumber}")
+            print(f"    RIPE Länge: {len(ripe)} bytes")
+            print(f"    RIPE Hex: {hexlify(ripe)[:32]}...")
+        except Exception as e:
+            print(f"  ❌ FEHLER bei decodeAddress: {e}")
+            debug_print('Ungültige Adresse: %s', toAddress)
+            return
+
         if toStatus != 'success':
+            print(f"  ❌ Ungültige Adresse, Status: {toStatus}")
             debug_print('Ungültige Adresse: %s', toAddress)
             return
 
         # 2. PROFESSIONELLER ANSATZ: Mehrere Abfrage-Strategien
-        debug_print("PROFESSIONAL FIX: Verwende mehrere Query-Strategien...")
+        print("\n📋 PHASE 2: Finde Nachricht in Datenbank")
+        print("  PROFI-FIX: Verwende mehrere Query-Strategien...")
         
         retryNumber = 0
         found = False
         
         # Strategie 1: Exakt wie Python2 (mit dbstr)
-        debug_print("Strategie 1: Original Python2 Query (mit dbstr)...")
-        queryReturn = sqlQuery(
-            '''SELECT retrynumber FROM sent WHERE toaddress=? '''
-            ''' AND (status='doingpubkeypow' OR status='awaitingpubkey') '''
-            ''' AND folder='sent' LIMIT 1''',
-            dbstr(toAddress))  # ← WICHTIG: dbstr() wie in Python2!
+        print("\n  🔍 Strategie 1: Original Python2 Query (mit dbstr)")
+        print(f"    SQL: SELECT retrynumber FROM sent WHERE toaddress=? AND (status='doingpubkeypow' OR status='awaitingpubkey') AND folder='sent' LIMIT 1")
+        print(f"    Parameter: dbstr(toAddress) = {repr(dbstr(toAddress))}")
         
-        if queryReturn:
-            retryNumber = queryReturn[0][0]
-            found = True
-            debug_print("  ✓ Strategie 1 erfolgreich, retryNumber: %d", retryNumber)
-        
-        # Strategie 2: Ohne Status-Bedingung (falls Status noch msgqueued ist)
-        if not found:
-            debug_print("Strategie 2: Query OHNE Status-Bedingung...")
+        try:
             queryReturn = sqlQuery(
                 '''SELECT retrynumber FROM sent WHERE toaddress=? '''
+                ''' AND (status='doingpubkeypow' OR status='awaitingpubkey') '''
                 ''' AND folder='sent' LIMIT 1''',
                 dbstr(toAddress))
+            
+            print(f"    Query Ergebnis: {len(queryReturn)} Zeilen")
             
             if queryReturn:
                 retryNumber = queryReturn[0][0]
                 found = True
-                debug_print("  ✓ Strategie 2 erfolgreich, retryNumber: %d", retryNumber)
-                
-                # Status prüfen und korrigieren falls nötig
-                status_query = sqlQuery(
-                    '''SELECT status FROM sent WHERE toaddress=? AND folder='sent' LIMIT 1''',
+                print(f"    ✅ Strategie 1 erfolgreich")
+                print(f"    retryNumber: {retryNumber} (Typ: {type(retryNumber)})")
+            else:
+                print("    ℹ️  Keine Ergebnisse mit Strategie 1")
+        except Exception as e:
+            print(f"    ❌ Fehler bei Strategie 1 Query: {e}")
+        
+        # Strategie 2: Ohne Status-Bedingung (falls Status noch msgqueued ist)
+        if not found:
+            print("\n  🔍 Strategie 2: Query OHNE Status-Bedingung")
+            print(f"    SQL: SELECT retrynumber FROM sent WHERE toaddress=? AND folder='sent' LIMIT 1")
+            
+            try:
+                queryReturn = sqlQuery(
+                    '''SELECT retrynumber FROM sent WHERE toaddress=? '''
+                    ''' AND folder='sent' LIMIT 1''',
                     dbstr(toAddress))
-                if status_query:
-                    current_status = status_query[0][0]
-                    debug_print("  Aktueller Status: '%s'", current_status)
+                
+                print(f"    Query Ergebnis: {len(queryReturn)} Zeilen")
+                
+                if queryReturn:
+                    retryNumber = queryReturn[0][0]
+                    found = True
+                    print(f"    ✅ Strategie 2 erfolgreich")
+                    print(f"    retryNumber: {retryNumber}")
                     
-                    if current_status == 'msgqueued':
-                        debug_print("  Status ist 'msgqueued', korrigiere zu 'doingpubkeypow'...")
-                        sqlExecute(
-                            '''UPDATE sent SET status='doingpubkeypow' '''
-                            ''' WHERE toaddress=? AND folder='sent' ''',
-                            dbstr(toAddress))
+                    # Status prüfen und korrigieren falls nötig
+                    print("    📊 Prüfe aktuellen Status...")
+                    status_query = sqlQuery(
+                        '''SELECT status FROM sent WHERE toaddress=? AND folder='sent' LIMIT 1''',
+                        dbstr(toAddress))
+                    
+                    if status_query:
+                        current_status = status_query[0][0]
+                        print(f"    Aktueller Status: '{current_status}'")
+                        
+                        if current_status == 'msgqueued':
+                            print("    ⚠️  Status ist 'msgqueued', korrigiere zu 'doingpubkeypow'...")
+                            try:
+                                rows_updated = sqlExecute(
+                                    '''UPDATE sent SET status='doingpubkeypow' '''
+                                    ''' WHERE toaddress=? AND folder='sent' ''',
+                                    dbstr(toAddress))
+                                print(f"    ✅ {rows_updated} Zeilen aktualisiert")
+                            except Exception as e:
+                                print(f"    ❌ Fehler beim Update: {e}")
+                    else:
+                        print("    ℹ️  Kein Status gefunden")
+                else:
+                    print("    ℹ️  Keine Ergebnisse mit Strategie 2")
+            except Exception as e:
+                print(f"    ❌ Fehler bei Strategie 2 Query: {e}")
         
         # Strategie 3: Direkte Suche in allen sent Einträgen
         if not found:
-            debug_print("Strategie 3: Manuelle Suche in allen sent Einträgen...")
-            all_entries = sqlQuery('''SELECT toaddress, retrynumber, status FROM sent WHERE folder='sent' ''')
+            print("\n  🔍 Strategie 3: Manuelle Suche in allen sent Einträgen")
             
-            debug_print("  Durchsuche %d Einträge...", len(all_entries))
-            
-            for addr_in_db, retry, status in all_entries:
-                # Konvertiere bytes zu string falls nötig
-                if isinstance(addr_in_db, bytes):
-                    addr_in_db = addr_in_db.decode('utf-8', 'replace')
+            try:
+                all_entries = sqlQuery('''SELECT toaddress, retrynumber, status FROM sent WHERE folder='sent' ''')
+                print(f"    Durchsuche {len(all_entries)} Einträge...")
                 
-                if addr_in_db.strip() == toAddress.strip():
-                    retryNumber = retry if retry is not None else 0
-                    found = True
-                    debug_print("  ✓ Manuell gefunden: addr='%s', retry=%d, status='%s'", 
-                              addr_in_db[:30], retryNumber, status)
+                match_count = 0
+                for addr_in_db, retry, status in all_entries:
+                    # Konvertiere bytes zu string falls nötig
+                    original_addr = addr_in_db
+                    if isinstance(addr_in_db, bytes):
+                        try:
+                            addr_in_db = addr_in_db.decode('utf-8', 'replace')
+                        except:
+                            addr_in_db = str(addr_in_db)
                     
-                    # Status korrigieren falls nötig
-                    if status == 'msgqueued':
-                        debug_print("  Korrigiere Status von 'msgqueued' zu 'doingpubkeypow'...")
-                        sqlExecute(
-                            '''UPDATE sent SET status='doingpubkeypow' '''
-                            ''' WHERE toaddress=? AND folder='sent' ''',
-                            dbstr(toAddress))
-                    break
+                    # Debug Ausgabe für ersten Eintrag
+                    if match_count == 0:
+                        print(f"    Beispiel-Eintrag: addr='{addr_in_db[:50]}...' (Original: {type(original_addr)}), retry={retry}, status='{status}'")
+                    
+                    if addr_in_db.strip() == toAddress.strip():
+                        retryNumber = retry if retry is not None else 0
+                        found = True
+                        match_count += 1
+                        print(f"    ✅ Treffer {match_count}:")
+                        print(f"      addr='{addr_in_db[:50]}...'")
+                        print(f"      retry={retryNumber}")
+                        print(f"      status='{status}'")
+                        
+                        # Status korrigieren falls nötig
+                        if status == 'msgqueued':
+                            print("      ⚠️  Korrigiere Status von 'msgqueued' zu 'doingpubkeypow'...")
+                            try:
+                                rows_updated = sqlExecute(
+                                    '''UPDATE sent SET status='doingpubkeypow' '''
+                                    ''' WHERE toaddress=? AND folder='sent' ''',
+                                    dbstr(toAddress))
+                                print(f"      ✅ {rows_updated} Zeilen aktualisiert")
+                            except Exception as e:
+                                print(f"      ❌ Fehler beim Update: {e}")
+                
+                if match_count > 0:
+                    print(f"    ✅ {match_count} Treffer gefunden")
+                else:
+                    print("    ℹ️  Keine Treffer gefunden")
+                    
+            except Exception as e:
+                print(f"    ❌ Fehler bei Strategie 3: {e}")
         
         if not found:
+            print("\n❌ KRITISCHER FEHLER: Kein Eintrag für diese Adresse gefunden!")
+            print(f"  Adresse: {toAddress}")
+            print("  Mögliche Ursachen:")
+            print("  1. Nachricht wurde noch nicht in 'sent' Tabelle gespeichert")
+            print("  2. Adresse ist falsch geschrieben")
+            print("  3. Datenbank ist korrupt")
             debug_print("✗ KRITISCHER FEHLER: Kein Eintrag für %s gefunden!", toAddress)
-            debug_print("  Nachricht scheint nicht in der Datenbank zu existieren!")
-            debug_print("  sendMsg() muss die Nachricht zuerst in 'sent' Tabelle speichern!")
             return
+        
+        print(f"\n✅ Nachricht gefunden: retryNumber = {retryNumber}")
 
         # 3. Ab hier EXAKTE Python2-Logik (angepasst für Debug)
-        debug_print("Phase 2: Verarbeite Adresse mit retryNumber=%d...", retryNumber)
+        print("\n📋 PHASE 3: Verarbeite Adresse")
+        print(f"  addressVersionNumber: {addressVersionNumber}")
+        print(f"  streamNumber: {streamNumber}")
+        print(f"  retryNumber: {retryNumber}")
         
         if addressVersionNumber <= 3:
+            print(f"  ✅ V3 oder früher - füge zu neededPubkeys hinzu")
             state.neededPubkeys[toAddress] = 0
-            debug_print("V3 oder früher, füge zu neededPubkeys hinzu")
+            print(f"    neededPubkeys Größe: {len(state.neededPubkeys)}")
         elif addressVersionNumber >= 4:
-            # Python2-Logik: Tag generieren und zu neededPubkeys hinzufügen
-            doubleHashOfAddressData = highlevelcrypto.double_sha512(
-                encodeVarint(addressVersionNumber)
-                + encodeVarint(streamNumber) + ripe
-            )
-            privEncryptionKey = doubleHashOfAddressData[:32]
-            # Note that this is the second half of the sha512 hash.
-            tag = doubleHashOfAddressData[32:]
-            tag_bytes = bytes(tag)
+            print(f"  ✅ V4 Adresse - generiere Tag für neededPubkeys")
             
-            if tag_bytes not in state.neededPubkeys:
-                state.neededPubkeys[tag_bytes] = (
-                    toAddress,
-                    highlevelcrypto.makeCryptor(hexlify(privEncryptionKey))
+            # Python2-Logik: Tag generieren und zu neededPubkeys hinzufügen
+            try:
+                doubleHashOfAddressData = highlevelcrypto.double_sha512(
+                    encodeVarint(addressVersionNumber)
+                    + encodeVarint(streamNumber) + ripe
                 )
-                debug_print("V4, füge tag zu neededPubkeys hinzu: %s...", hexlify(tag_bytes)[:20])
-            else:
-                debug_print("Tag bereits in neededPubkeys vorhanden")
-
-        # 4. TTL Berechnung (exakt wie Python2)
-        TTL = 2.5 * 24 * 60 * 60
+                privEncryptionKey = doubleHashOfAddressData[:32]
+                tag = doubleHashOfAddressData[32:]
+                tag_bytes = bytes(tag)
+                
+                print(f"    doubleHashOfAddressData Länge: {len(doubleHashOfAddressData)}")
+                print(f"    privEncryptionKey Länge: {len(privEncryptionKey)}")
+                print(f"    tag Länge: {len(tag)}")
+                print(f"    tag Hex: {hexlify(tag_bytes)[:32]}...")
+                
+                if tag_bytes not in state.neededPubkeys:
+                    state.neededPubkeys[tag_bytes] = (
+                        toAddress,
+                        highlevelcrypto.makeCryptor(hexlify(privEncryptionKey))
+                    )
+                    print(f"    ✅ Tag zu neededPubkeys hinzugefügt")
+                    print(f"    neededPubkeys Größe: {len(state.neededPubkeys)}")
+                else:
+                    print(f"    ℹ️  Tag bereits in neededPubkeys vorhanden")
+            except Exception as e:
+                print(f"    ❌ Fehler bei Tag-Generierung: {e}")
+        
+        print("\n📋 PHASE 4: TTL Berechnung")
+        TTL = 2.5 * 24 * 60 * 60  # 2.5 Tage in Sekunden
+        print(f"  Basis TTL: {TTL} Sekunden ({TTL/86400:.1f} Tage)")
+        
         TTL *= 2 ** retryNumber
+        print(f"  Nach retryNumber ({retryNumber}): {TTL} Sekunden")
+        
         if TTL > 28 * 24 * 60 * 60:
             TTL = 28 * 24 * 60 * 60
-        TTL = TTL + helper_random.randomrandrange(-300, 300)
-        embeddedTime = int(time.time() + TTL)
-        debug_print("TTL: %d, embeddedTime: %d", TTL, embeddedTime)
+            print(f"  Auf Maximum gekappt: {TTL} Sekunden (28 Tage)")
         
-        # 5. Payload erstellen (exakt wie Python2)
+        # Zufällige Variation
+        random_variation = helper_random.randomrandrange(-300, 300)
+        TTL = TTL + random_variation
+        print(f"  Mit Zufalls-Variation ({random_variation}): {TTL} Sekunden")
+        
+        embeddedTime = int(time.time() + TTL)
+        print(f"  embeddedTime: {embeddedTime} (UTC: {time.ctime(embeddedTime)})")
+        print(f"  Aktuelle Zeit: {int(time.time())} (UTC: {time.ctime()})")
+        
+        print("\n📋 PHASE 5: Payload erstellen")
         payload = pack('>Q', embeddedTime)
+        print(f"  embeddedTime (8 bytes): {hexlify(payload)}")
+        
         payload += b'\x00\x00\x00\x00'  # object type: getpubkey
+        print(f"  + object type getpubkey (4 bytes): {hexlify(payload[-4:])}")
+        
         payload += encodeVarint(addressVersionNumber)
+        print(f"  + addressVersionNumber (varint): {hexlify(encodeVarint(addressVersionNumber))}")
+        
         payload += encodeVarint(streamNumber)
+        print(f"  + streamNumber (varint): {hexlify(encodeVarint(streamNumber))}")
         
         if addressVersionNumber <= 3:
             payload += ripe
-            debug_print('Fordere pubkey an mit ripe: %s', hexlify(ripe)[:20])
+            print(f"  + ripe ({len(ripe)} bytes): {hexlify(ripe)[:32]}...")
+            print(f"  ✅ Fordere pubkey an mit ripe")
         else:
             payload += tag
-            debug_print('Fordere v4 pubkey an mit tag: %s', hexlify(tag)[:20])
-
-        # 6. UI Updates (angepasst mit Debug)
-        queues.UISignalQueue.put(('updateStatusBar', 
-            'Doing the computations necessary to request the recipient\'s public key.'))
-        queues.UISignalQueue.put((
-            'updateSentItemStatusByToAddress', (
-                toAddress, tr._translate(
-                    "MainWindow",
-                    "Doing work necessary to request encryption key."))
-        ))
-        debug_print("UI aktualisiert")
-
-        # 7. PoW durchführen (wie Python2)
-        debug_print("Starte PoW für getpubkey request...")
-        payload = self._doPOWDefaults(payload, TTL, log_prefix='(For getpubkey)')
-        if payload is None:
-            debug_print("PoW fehlgeschlagen für getpubkey request")
+            print(f"  + tag ({len(tag)} bytes): {hexlify(tag)[:32]}...")
+            print(f"  ✅ Fordere v4 pubkey an mit tag")
+        
+        print(f"  Gesamt Payload Länge: {len(payload)} bytes")
+        
+        print("\n📋 PHASE 6: UI Updates")
+        try:
+            queues.UISignalQueue.put(('updateStatusBar', 
+                'Doing the computations necessary to request the recipient\'s public key.'))
+            queues.UISignalQueue.put((
+                'updateSentItemStatusByToAddress', (
+                    toAddress, tr._translate(
+                        "MainWindow",
+                        "Doing work necessary to request encryption key."))
+            ))
+            print("  ✅ UI Updates in Queue gesetzt")
+        except Exception as e:
+            print(f"  ⚠️  Fehler bei UI Updates: {e}")
+        
+        print("\n📋 PHASE 7: Proof of Work durchführen")
+        print(f"  Starte PoW für getpubkey request...")
+        print(f"  TTL: {TTL} Sekunden")
+        print(f"  Payload Länge vor PoW: {len(payload)} bytes")
+        
+        try:
+            payload = self._doPOWDefaults(payload, TTL, log_prefix='(For getpubkey)')
+            if payload is None:
+                print("  ❌ PoW fehlgeschlagen!")
+                debug_print("PoW fehlgeschlagen für getpubkey request")
+                return
+            print(f"  ✅ PoW erfolgreich")
+            print(f"  Payload Länge nach PoW: {len(payload)} bytes")
+        except Exception as e:
+            print(f"  ❌ Fehler bei PoW: {e}")
             return
-
-        # 8. Inventory erstellen (wie Python2)
-        inventoryHash = highlevelcrypto.calculateInventoryHash(payload)
-        objectType = 1
-        state.Inventory[inventoryHash] = (
-            objectType, streamNumber, payload, embeddedTime, b'')
-        debug_print("Inventory Hash: %s", hexlify(inventoryHash))
         
-        debug_print('Sende getpubkey request: %s...', hexlify(inventoryHash)[:32])
-        invQueue.put((streamNumber, inventoryHash))
-
-        # 9. Datenbank aktualisieren (EXAKT wie Python2)
+        print("\n📋 PHASE 8: Inventory erstellen")
+        try:
+            inventoryHash = highlevelcrypto.calculateInventoryHash(payload)
+            objectType = 1
+            state.Inventory[inventoryHash] = (
+                objectType, streamNumber, payload, embeddedTime, b'')
+            print(f"  ✅ Inventory Hash berechnet: {hexlify(inventoryHash)}")
+            print(f"  ✅ Inventory gespeichert")
+        except Exception as e:
+            print(f"  ❌ Fehler bei Inventory Erstellung: {e}")
+            return
+        
+        print("\n📋 PHASE 9: Sende getpubkey request")
+        print(f"  Sende inv mit hash: {hexlify(inventoryHash)[:64]}...")
+        
+        try:
+            invQueue.put((streamNumber, inventoryHash))
+            print(f"  ✅ inv in Queue gestellt (Stream: {streamNumber})")
+        except Exception as e:
+            print(f"  ❌ Fehler beim Senden: {e}")
+        
+        print("\n📋 PHASE 10: Datenbank aktualisieren")
         sleeptill = int(time.time() + TTL * 1.1)
-        sqlExecute(
-            '''UPDATE sent SET lastactiontime=?, '''
-            ''' status='awaitingpubkey', retrynumber=?, sleeptill=? '''
-            ''' WHERE toaddress=? AND (status='doingpubkeypow' OR '''
-            ''' status='awaitingpubkey') AND folder='sent' ''',
-            int(time.time()), retryNumber + 1, sleeptill, dbstr(toAddress))  # ← dbstr()!
+        print(f"  sleeptill: {sleeptill} (UTC: {time.ctime(sleeptill)})")
+        print(f"  retryNumber neu: {retryNumber + 1}")
         
-        debug_print("Datenbank aktualisiert (awaitingpubkey)")
-
-        # 10. Finale UI Updates (wie Python2)
-        queues.UISignalQueue.put((
-            'updateStatusBar', tr._translate(
-                "MainWindow",
-                "Broadcasting the public key request. This program will auto-retry if they are offline.")
-        ))
-        queues.UISignalQueue.put((
-            'updateSentItemStatusByToAddress', (
-                toAddress, tr._translate(
+        try:
+            rows_updated = sqlExecute(
+                '''UPDATE sent SET lastactiontime=?, '''
+                ''' status='awaitingpubkey', retrynumber=?, sleeptill=? '''
+                ''' WHERE toaddress=? AND (status='doingpubkeypow' OR '''
+                ''' status='awaitingpubkey') AND folder='sent' ''',
+                int(time.time()), retryNumber + 1, sleeptill, dbstr(toAddress))
+            
+            print(f"  ✅ Datenbank aktualisiert: {rows_updated} Zeilen geändert")
+            if rows_updated <= 0:
+                print(f"  ⚠️  WARNUNG: Keine Zeilen aktualisiert!")
+                print(f"    Mögliche Ursachen:")
+                print(f"    1. Status war nicht 'doingpubkeypow' oder 'awaitingpubkey'")
+                print(f"    2. Adresse nicht gefunden")
+                print(f"    3. WHERE-Bedingung zu strikt")
+        except Exception as e:
+            print(f"  ❌ Fehler bei Datenbank Update: {e}")
+        
+        print("\n📋 PHASE 11: Finale UI Updates")
+        try:
+            queues.UISignalQueue.put((
+                'updateStatusBar', tr._translate(
                     "MainWindow",
-                    "Sending public key request. Waiting for reply."
-                    " Requested at {0}"
-                ).format(l10n.formatTimestamp()))
-        ))
+                    "Broadcasting the public key request. This program will auto-retry if they are offline.")
+            ))
+            queues.UISignalQueue.put((
+                'updateSentItemStatusByToAddress', (
+                    toAddress, tr._translate(
+                        "MainWindow",
+                        "Sending public key request. Waiting for reply."
+                        " Requested at {0}"
+                    ).format(l10n.formatTimestamp()))
+            ))
+            print("  ✅ Finale UI Updates gesendet")
+        except Exception as e:
+            print(f"  ⚠️  Fehler bei finalen UI Updates: {e}")
         
+        print("\n" + "=" * 80)
+        print("✅ REQUESTPUBKEY ERFOLGREICH ABGESCHLOSSEN")
+        print(f"📨 Getpubkey request gesendet für: {toAddress[:50]}...")
+        print(f"🔑 Adresse Version: {addressVersionNumber}")
+        print(f"🔄 Stream: {streamNumber}")
+        print(f"🔄 Retry Nummer: {retryNumber + 1}")
+        print(f"⏰ Gültig bis: {time.ctime(sleeptill)}")
+        print("=" * 80)
+        
+        # Auch debug_print für Datei-Log
         debug_print("REQUESTPUBKEY (Professional Fix) ERFOLGREICH für %s", toAddress)
-        debug_print("=" * 60)
     def generateFullAckMessage(self, ackdata, TTL):
         """Create ACK packet"""
         debug_print("generateFullAckMessage aufgerufen, TTL: %d", TTL)

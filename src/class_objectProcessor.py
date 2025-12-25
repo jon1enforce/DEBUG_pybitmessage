@@ -240,11 +240,14 @@ class objectProcessor(threading.Thread):
     @staticmethod
     def processgetpubkey(data):
         """Process getpubkey object"""
+        
         if len(data) > 200:
             return logger.info(
                 'getpubkey is abnormally long. Sanity check failed.'
                 ' Ignoring object.')
+        
         readPosition = 20  # bypass the nonce, time, and object type
+        
         requestedAddressVersionNumber, addressVersionLength = decodeVarint(
             data[readPosition:readPosition + 10])
         readPosition += addressVersionLength
@@ -252,95 +255,154 @@ class objectProcessor(threading.Thread):
             data[readPosition:readPosition + 10])
         readPosition += streamNumberLength
 
+
         if requestedAddressVersionNumber == 0:
+            print("ERROR: Address version is 0 - ignoring")
             return logger.debug(
                 'The requestedAddressVersionNumber of the pubkey request'
                 ' is zero. That doesn\'t make any sense. Ignoring it.')
         if requestedAddressVersionNumber == 1:
+            print("ERROR: Address version 1 not supported - ignoring")
             return logger.debug(
                 'The requestedAddressVersionNumber of the pubkey request'
                 ' is 1 which isn\'t supported anymore. Ignoring it.')
         if requestedAddressVersionNumber > 4:
+            print(f"ERROR: Address version {requestedAddressVersionNumber} too high - ignoring")
             return logger.debug(
                 'The requestedAddressVersionNumber of the pubkey request'
                 ' is too high. Can\'t understand. Ignoring it.')
 
         myAddress = ''
+        requestedHash_hex = ''
+        requestedTag_hex = ''
+        
         if requestedAddressVersionNumber <= 3:
             requestedHash = data[readPosition:readPosition + 20]
             if len(requestedHash) != 20:
+                print(f"ERROR: Hash length incorrect ({len(requestedHash)} != 20) - ignoring")
                 return logger.debug(
                     'The length of the requested hash is not 20 bytes.'
                     ' Something is wrong. Ignoring.')
+            
+            requestedHash_hex = to_hex_string(requestedHash)
+            
             logger.info(
                 'the hash requested in this getpubkey request is: %s',
                 hexlify(requestedHash))
-            # Konvertiere zu hex-String für Kompatibilität
-            requestedHash_hex = to_hex_string(requestedHash)
+            
+            # Debug: Print all my hashes
+            for hash_hex, addr in list(shared.myAddressesByHash.items())[:5]:  # Show first 5
+                print(f"  {hash_hex} -> {addr}")
+            if len(shared.myAddressesByHash) > 5:
+                print(f"  ... and {len(shared.myAddressesByHash) - 5} more")
+            
             # if this address hash is one of mine
             if requestedHash_hex in shared.myAddressesByHash:
                 myAddress = shared.myAddressesByHash[requestedHash_hex]
+            else:
+                print(f"INFO: Hash not found in my addresses")
+                
         elif requestedAddressVersionNumber >= 4:
             requestedTag = data[readPosition:readPosition + 32]
             if len(requestedTag) != 32:
+                print(f"ERROR: Tag length incorrect ({len(requestedTag)} != 32) - ignoring")
                 return logger.debug(
                     'The length of the requested tag is not 32 bytes.'
                     ' Something is wrong. Ignoring.')
+            
+            requestedTag_hex = to_hex_string(requestedTag)
+            
             logger.debug(
                 'the tag requested in this getpubkey request is: %s',
                 hexlify(requestedTag))
-            # Konvertiere zu hex-String für Kompatibilität
-            requestedTag_hex = to_hex_string(requestedTag)
+            
+            # Debug: Print all my tags
+            for tag_hex, addr in list(shared.myAddressesByTag.items())[:5]:  # Show first 5
+                print(f"  {tag_hex} -> {addr}")
+            if len(shared.myAddressesByTag) > 5:
+                print(f"  ... and {len(shared.myAddressesByTag) - 5} more")
+            
             if requestedTag_hex in shared.myAddressesByTag:
                 myAddress = shared.myAddressesByTag[requestedTag_hex]
+            else:
+                pass
 
         if myAddress == '':
             logger.info('This getpubkey request is not for any of my keys.')
             return
 
-        if decodeAddress(myAddress)[1] != requestedAddressVersionNumber:
+        print(f"\nFound matching address: {myAddress}")
+        
+        # Decode the address to check version and stream
+        decoded = decodeAddress(myAddress)
+        myAddressVersion = decoded[1]
+        myStreamNumber = decoded[2]
+        myRipe = decoded[3]
+        
+
+        if myAddressVersion != requestedAddressVersionNumber:
+            print(f"ERROR: Version mismatch: {myAddressVersion} != {requestedAddressVersionNumber}")
             return logger.warning(
                 '(Within the processgetpubkey function) Someone requested'
                 ' one of my pubkeys but the requestedAddressVersionNumber'
                 ' doesn\'t match my actual address version number.'
                 ' Ignoring.')
-        if decodeAddress(myAddress)[2] != streamNumber:
+        
+        if myStreamNumber != streamNumber:
+            print(f"ERROR: Stream mismatch: {myStreamNumber} != {streamNumber}")
             return logger.warning(
                 '(Within the processgetpubkey function) Someone requested'
                 ' one of my pubkeys but the stream number on which we'
                 ' heard this getpubkey object doesn\'t match this'
                 ' address\' stream number. Ignoring.')
-        if config.safeGetBoolean(myAddress, 'chan'):
+        
+        # Check if it's a chan address
+        chan_status = config.safeGetBoolean(myAddress, 'chan')
+        
+        if chan_status:
             return logger.info(
                 'Ignoring getpubkey request because it is for one of my'
                 ' chan addresses. The other party should already have'
                 ' the pubkey.')
-        lastPubkeySendTime = config.safeGetInt(
-            myAddress, 'lastpubkeysendtime')
-        # If the last time we sent our pubkey was more recent than
-        # 28 days ago...
-        if lastPubkeySendTime > time.time() - 2419200:
+        
+        # Check last pubkey send time
+        lastPubkeySendTime = config.safeGetInt(myAddress, 'lastpubkeysendtime')
+        current_time = time.time()
+        twenty_eight_days = 2419200  # 28 days in seconds
+        
+
+        
+        # If the last time we sent our pubkey was more recent than 28 days ago...
+        if lastPubkeySendTime > current_time - twenty_eight_days:
             return logger.info(
                 'Found getpubkey-requested-item in my list of EC hashes'
                 ' BUT we already sent it recently. Ignoring request.'
                 ' The lastPubkeySendTime is: %s', lastPubkeySendTime)
+        
         logger.info(
             'Found getpubkey-requested-hash in my list of EC hashes.'
             ' Telling Worker thread to do the POW for a pubkey message'
             ' and send it out.')
+        
+        # Queue the appropriate task
         if requestedAddressVersionNumber == 2:
             queues.workerQueue.put(('doPOWForMyV2Pubkey', requestedHash))
         elif requestedAddressVersionNumber == 3:
             queues.workerQueue.put(('sendOutOrStoreMyV3Pubkey', requestedHash))
         elif requestedAddressVersionNumber == 4:
             queues.workerQueue.put(('sendOutOrStoreMyV4Pubkey', myAddress))
+        else:
+            print(f"ERROR: Unknown address version {requestedAddressVersionNumber}")
 
+            
     def processpubkey(self, data):
         """Process a pubkey object"""
+        
         pubkeyProcessingStartTime = time.time()
         state.numberOfPubkeysProcessed += 1
         queues.UISignalQueue.put((
             'updateNumberOfPubkeysProcessed', 'no data'))
+        
         readPosition = 20  # bypass the nonce, time, and object type
         addressVersion, varintLength = decodeVarint(
             data[readPosition:readPosition + 10])
@@ -348,17 +410,23 @@ class objectProcessor(threading.Thread):
         streamNumber, varintLength = decodeVarint(
             data[readPosition:readPosition + 10])
         readPosition += varintLength
+        
+        
         if addressVersion == 0:
+            print("ERROR: Address version is 0 - ignoring")
             return logger.debug(
                 '(Within processpubkey) addressVersion of 0 doesn\'t'
                 ' make sense.')
         if addressVersion > 4 or addressVersion == 1:
+            print(f"ERROR: Unsupported address version {addressVersion} - ignoring")
             return logger.info(
                 'This version of Bitmessage cannot handle version %s'
                 ' addresses.', addressVersion)
+        
         if addressVersion == 2:
             # sanity check. This is the minimum possible length.
             if len(data) < 146:
+                print(f"ERROR: Data too short ({len(data)} < 146) - ignoring")
                 return logger.debug(
                     '(within processpubkey) payloadLength less than 146.'
                     ' Sanity check failed.')
@@ -370,6 +438,7 @@ class objectProcessor(threading.Thread):
             readPosition += 64
             pubEncryptionKey = b'\x04' + data[readPosition:readPosition + 64]
             if len(pubEncryptionKey) < 65:
+                print(f"ERROR: Encryption key too short ({len(pubEncryptionKey)}) - ignoring")
                 return logger.debug(
                     'publicEncryptionKey length less than 64. Sanity check'
                     ' failed.')
@@ -377,6 +446,7 @@ class objectProcessor(threading.Thread):
             # The data we'll store in the pubkeys table.
             dataToStore = data[20:readPosition]
             ripe = highlevelcrypto.to_ripe(pubSigningKey, pubEncryptionKey)
+
 
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug(
@@ -400,15 +470,19 @@ class objectProcessor(threading.Thread):
                 t = (dbstr(address), addressVersion, sqlite3.Binary(dataToStore),
                      int(time.time()), 'yes')
             else:
+                print("INFO: We have NOT used this pubkey personally. Inserting in database.")
                 logger.info(
                     'We have NOT used this pubkey personally. Inserting'
                     ' in database.')
                 t = (dbstr(address), addressVersion, sqlite3.Binary(dataToStore),
                      int(time.time()), 'no')
+            
             sqlExecute('''INSERT INTO pubkeys VALUES (?,?,?,?,?)''', *t)
             self.possibleNewPubkey(address)
-        if addressVersion == 3:
+            
+        elif addressVersion == 3:
             if len(data) < 170:  # sanity check.
+                print(f"ERROR: Data too short ({len(data)} < 170) - ignoring")
                 logger.warning(
                     '(within processpubkey) payloadLength less than 170.'
                     ' Sanity check failed.')
@@ -431,6 +505,7 @@ class objectProcessor(threading.Thread):
                 data[readPosition:readPosition + 10])
             readPosition += signatureLengthLength
             signature = data[readPosition:readPosition + signatureLength]
+            
             if highlevelcrypto.verify(
                     data[8:endOfSignedDataPosition],
                     signature, hexlify(pubSigningKey)):
@@ -440,6 +515,7 @@ class objectProcessor(threading.Thread):
                 return
 
             ripe = highlevelcrypto.to_ripe(pubSigningKey, pubEncryptionKey)
+            print(f"RIPE: {hexlify(ripe)}")
 
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug(
@@ -451,6 +527,7 @@ class objectProcessor(threading.Thread):
                 )
 
             address = encodeAddress(addressVersion, streamNumber, ripe)
+
             queryreturn = sqlQuery(
                 "SELECT usedpersonally FROM pubkeys WHERE address=?"
                 " AND usedpersonally='yes'", dbstr(address))
@@ -467,11 +544,14 @@ class objectProcessor(threading.Thread):
                     ' in database.')
                 t = (dbstr(address), addressVersion, sqlite3.Binary(dataToStore),
                      int(time.time()), dbstr('no'))
+            
             sqlExecute('''INSERT INTO pubkeys VALUES (?,?,?,?,?)''', *t)
+            print("Calling possibleNewPubkey...")
             self.possibleNewPubkey(address)
-
-        if addressVersion == 4:
+            
+        elif addressVersion == 4:
             if len(data) < 350:  # sanity check.
+                print(f"ERROR: Data too short ({len(data)} < 350) - ignoring")
                 return logger.debug(
                     '(within processpubkey) payloadLength less than 350.'
                     ' Sanity check failed.')
@@ -479,23 +559,33 @@ class objectProcessor(threading.Thread):
             tag = data[readPosition:readPosition + 32]
             # WICHTIG: Konvertiere zu hex-String für bidirektionale Kompatibilität
             tag_hex = to_hex_string(tag)
+            
             if tag_hex not in state.neededPubkeys:
                 return logger.info(
                     'We don\'t need this v4 pubkey. We didn\'t ask for it.')
-
-            # Let us try to decrypt the pubkey
+            
             toAddress = state.neededPubkeys[tag_hex][0]
-            if protocol.decryptAndCheckPubkeyPayload(data, toAddress) == \
-                    'successful':
+            
+            # Let us try to decrypt the pubkey
+            result = protocol.decryptAndCheckPubkeyPayload(data, toAddress)
+            
+            if result == 'successful':
                 # At this point we know that we have been waiting on this
                 # pubkey. This function will command the workerThread
                 # to start work on the messages that require it.
+                print(f"Calling possibleNewPubkey with address: {toAddress}")
                 self.possibleNewPubkey(toAddress)
+            else:
+                print(f"ERROR: Pubkey decryption failed: {result}")
+        else:
+            print(f"ERROR: Unknown address version: {addressVersion}")
 
         # Display timing data
+        processing_time = time.time() - pubkeyProcessingStartTime
         logger.debug(
             'Time required to process this pubkey: %s',
-            time.time() - pubkeyProcessingStartTime)
+            processing_time)
+
 
     def processmsg(self, data):
         """Process a message object"""
@@ -1065,12 +1155,23 @@ class objectProcessor(threading.Thread):
         from a pubkey, msg, or broadcast message. It might be one that we
         have been waiting for. Let's check.
         """
-
+        print(f"\n{'='*60}")
+        print(f"POSSIBLENEWPUBKEY called with address: {address}")
+        
         # For address versions <= 3, we wait on a key with the correct
         # address version, stream number and RIPE hash.
         addressVersion, streamNumber, ripe = decodeAddress(address)[1:]
+        
+        print(f"Address details:")
+        print(f"  Version: {addressVersion}")
+        print(f"  Stream: {streamNumber}")
+        print(f"  RIPE: {hexlify(ripe)}")
+        
         if addressVersion <= 3:
+            print(f"Checking for address in neededPubkeys (v{addressVersion})")
             if address in state.neededPubkeys:
+                print(f"SUCCESS: Found address in neededPubkeys!")
+                print(f"  Removing from neededPubkeys and sending messages")
                 del state.neededPubkeys[address]
                 self.sendMessages(address)
             else:
@@ -1087,10 +1188,16 @@ class objectProcessor(threading.Thread):
             )[32:]
             # WICHTIG: Konvertiere zu hex-String für Kompatibilität
             tag_hex = to_hex_string(tag)
+            
+            print(f"Calculated tag for v{addressVersion}: {tag_hex}")
+            print(f"Current neededPubkeys keys: {list(state.neededPubkeys.keys())}")
+            
             if tag_hex in state.neededPubkeys:
                 del state.neededPubkeys[tag_hex]
                 self.sendMessages(address)
-
+            else:
+                pass
+        
     @staticmethod
     def sendMessages(address):
         """
