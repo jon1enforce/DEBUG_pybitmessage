@@ -1605,13 +1605,26 @@ class singleWorker(StoppableThread):
                                 int(time.time()) + 2.5 * 24 * 60 * 60,
                                 toaddress
                             )
+                            # KORREKTUR: .arg() durch .format() ersetzen
+                            try:
+                                message_text = tr._translate(
+                                    "MainWindow",
+                                    "Encryption key was requested earlier."
+                                )
+                                if hasattr(message_text, 'format'):
+                                    # Python 3 format
+                                    message_text = message_text
+                                elif hasattr(message_text, 'arg'):
+                                    # Qt/Python 2 style
+                                    message_text = message_text.arg("")
+                            except:
+                                message_text = "Encryption key was requested earlier."
+                            
                             queues.UISignalQueue.put((
                                 'updateSentItemStatusByToAddress', (
                                     toaddress,
-                                    tr._translate(
-                                        "MainWindow",
-                                        "Encryption key was requested earlier."))
-                            ))
+                                    message_text))
+                            )
                             print(f"  ✅ Status auf 'awaitingpubkey' gesetzt")
                             debug_print("  Status auf 'awaitingpubkey' gesetzt")
                             # on with the next msg on which we can do some work
@@ -1675,14 +1688,26 @@ class singleWorker(StoppableThread):
                                     ''' toaddress=? AND status='msgqueued' AND folder='sent' ''',
                                     toaddress
                                 )
+                                # KORREKTUR: .arg() durch .format() ersetzen
+                                try:
+                                    message_text = tr._translate(
+                                        "MainWindow",
+                                        "Sending a request for the recipient\'s encryption key."
+                                    )
+                                    if hasattr(message_text, 'format'):
+                                        # Python 3 format
+                                        message_text = message_text
+                                    elif hasattr(message_text, 'arg'):
+                                        # Qt/Python 2 style
+                                        message_text = message_text.arg("")
+                                except:
+                                    message_text = "Sending a request for the recipient's encryption key."
+                                
                                 queues.UISignalQueue.put((
                                     'updateSentItemStatusByToAddress', (
                                         toaddress,
-                                        tr._translate(
-                                            "MainWindow",
-                                            "Sending a request for the"
-                                            " recipient\'s encryption key."))
-                                ))
+                                        message_text))
+                                )
                                 print(f"  Starte requestPubKey...")
                                 self.requestPubKey(toaddress)
                                 print(f"  ⏭️  Weiter zur nächsten Nachricht")
@@ -1828,13 +1853,28 @@ class singleWorker(StoppableThread):
                 if not config.has_section(toaddress):
                     print(f"\n📋 PHASE 7: Sende Nachricht an andere")
                     state.ackdataForWhichImWatching[ackdata] = 0
+                    
+                    # KORREKTUR: .arg() durch .format() ersetzen
+                    try:
+                        message_text = tr._translate(
+                            "MainWindow",
+                            "Looking up the receiver\'s public key"
+                        )
+                        if hasattr(message_text, 'format'):
+                            # Python 3 format
+                            message_text = message_text
+                        elif hasattr(message_text, 'arg'):
+                            # Qt/Python 2 style
+                            message_text = message_text.arg("")
+                    except:
+                        message_text = "Looking up the receiver's public key"
+                    
                     queues.UISignalQueue.put((
                         'updateSentItemStatusByAckdata', (
                             ackdata,
-                            tr._translate(
-                                "MainWindow",
-                                "Looking up the receiver\'s public key"))
-                    ))
+                            message_text))
+                    )
+                    
                     print('  Sending a message.')
                     print(f"  First 150 characters of message: {repr(message[:150])}")
                     debug_print('Sending a message.')
@@ -1848,7 +1888,7 @@ class singleWorker(StoppableThread):
                         toaddress)
                     
                     if not queryreturn_pubkey:
-                        print(f"  ❌ FEHLER: Kein pubkey in Datenbank für %s", toaddress)
+                        print(f"  ❌ FEHLER: Kein pubkey in Datenbank für {toaddress}")
                         debug_print("  FEHLER: Kein pubkey in Datenbank für %s", toaddress)
                         continue
                     
@@ -1928,18 +1968,31 @@ class singleWorker(StoppableThread):
                                     ' are willing to send to mobiles. Aborting'
                                     ' send.'
                                 )
+                                
+                                # KORREKTUR: .arg() durch .format() ersetzen
+                                try:
+                                    timestamp = l10n.formatTimestamp()
+                                    message_text = tr._translate(
+                                        "MainWindow",
+                                        "Problem: Destination is a mobile device who requests that the destination be included in the message but this is disallowed in your settings.  {timestamp}"
+                                    )
+                                    if hasattr(message_text, 'format'):
+                                        # Python 3 format
+                                        message_text = message_text.format(timestamp=timestamp)
+                                    elif hasattr(message_text, 'arg'):
+                                        # Qt/Python 2 style
+                                        message_text = message_text.arg(timestamp)
+                                    else:
+                                        message_text = f"Problem: Destination is a mobile device who requests that the destination be included in the message but this is disallowed in your settings.  {timestamp}"
+                                except:
+                                    timestamp = l10n.formatTimestamp()
+                                    message_text = f"Problem: Destination is a mobile device who requests that the destination be included in the message but this is disallowed in your settings.  {timestamp}"
+                                
                                 queues.UISignalQueue.put((
                                     'updateSentItemStatusByAckdata', (
                                         ackdata,
-                                        tr._translate(
-                                            "MainWindow",
-                                            "Problem: Destination is a mobile"
-                                            " device who requests that the"
-                                            " destination be included in the"
-                                            " message but this is disallowed in"
-                                            " your settings.  %1"
-                                        ).arg(l10n.formatTimestamp()))
-                                ))
+                                        message_text))
+                                )
                                 continue
                         
                         readPosition += 4
@@ -1957,15 +2010,28 @@ class singleWorker(StoppableThread):
                                 defaults.networkDefaultProofOfWorkNonceTrialsPerByte
                             requiredPayloadLengthExtraBytes = \
                                 defaults.networkDefaultPayloadLengthExtraBytes
+                            
+                            # KORREKTUR: .arg() durch .format() ersetzen
+                            try:
+                                message_text = tr._translate(
+                                    "MainWindow",
+                                    "Doing work necessary to send message.\nThere is no required difficulty for version 2 addresses like this."
+                                )
+                                if hasattr(message_text, 'format'):
+                                    # Python 3 format
+                                    message_text = message_text
+                                elif hasattr(message_text, 'arg'):
+                                    # Qt/Python 2 style
+                                    message_text = message_text.arg("")
+                            except:
+                                message_text = "Doing work necessary to send message.\nThere is no required difficulty for version 2 addresses like this."
+                            
                             queues.UISignalQueue.put((
                                 'updateSentItemStatusByAckdata', (
                                     ackdata,
-                                    tr._translate(
-                                        "MainWindow",
-                                        "Doing work necessary to send message.\n"
-                                        "There is no required difficulty for"
-                                        " version 2 addresses like this."))
-                            ))
+                                    message_text))
+                            )
+                            
                         elif toAddressVersionNumber >= 3:
                             requiredAverageProofOfWorkNonceTrialsPerByte, \
                                 varintLength = decodeVarint(
@@ -1996,28 +2062,37 @@ class singleWorker(StoppableThread):
                                 requiredPayloadLengthExtraBytes
                             )
 
+                            # KORREKTUR: Komplexe .arg() Kette durch .format() ersetzen
+                            try:
+                                ratio1 = float(requiredAverageProofOfWorkNonceTrialsPerByte) / defaults.networkDefaultProofOfWorkNonceTrialsPerByte
+                                ratio2 = float(requiredPayloadLengthExtraBytes) / defaults.networkDefaultPayloadLengthExtraBytes
+                                
+                                message_text = tr._translate(
+                                    "MainWindow",
+                                    "Doing work necessary to send message.\nReceiver\'s required difficulty: {ratio1} and {ratio2}"
+                                )
+                                
+                                if hasattr(message_text, 'format'):
+                                    # Python 3 format
+                                    message_text = message_text.format(ratio1=str(ratio1), ratio2=str(ratio2))
+                                elif hasattr(message_text, 'arg'):
+                                    # Qt/Python 2 style - kann mehrere .arg() Aufrufe haben
+                                    try:
+                                        # Versuche zuerst mit zwei Argumenten
+                                        message_text = message_text.arg(str(ratio1)).arg(str(ratio2))
+                                    except:
+                                        # Fallback
+                                        message_text = f"Doing work necessary to send message.\nReceiver's required difficulty: {ratio1} and {ratio2}"
+                                else:
+                                    message_text = f"Doing work necessary to send message.\nReceiver's required difficulty: {ratio1} and {ratio2}"
+                            except Exception as format_err:
+                                print(f"  ⚠️  Fehler beim Formatieren der Nachricht: {format_err}")
+                                message_text = f"Doing work necessary to send message.\nReceiver's required difficulty"
+                            
                             queues.UISignalQueue.put(
                                 (
                                     'updateSentItemStatusByAckdata',
-                                    (
-                                        ackdata,
-                                        tr._translate(
-                                            "MainWindow",
-                                            "Doing work necessary to send message.\n"
-                                            "Receiver\'s required difficulty: %1"
-                                            " and %2"
-                                        ).arg(
-                                            str(
-                                                float(requiredAverageProofOfWorkNonceTrialsPerByte)
-                                                / defaults.networkDefaultProofOfWorkNonceTrialsPerByte
-                                            )
-                                        ).arg(
-                                            str(
-                                                float(requiredPayloadLengthExtraBytes)
-                                                / defaults.networkDefaultPayloadLengthExtraBytes
-                                            )
-                                        )
-                                    )
+                                    (ackdata, message_text)
                                 )
                             )
 
@@ -2039,20 +2114,42 @@ class singleWorker(StoppableThread):
                                         '''UPDATE sent SET status='toodifficult' '''
                                         ''' WHERE ackdata=? AND folder='sent' ''',
                                         sqlite3.Binary(ackdata))
+                                    
+                                    # KORREKTUR: Komplexe .arg() Kette durch .format() ersetzen
+                                    try:
+                                        ratio1 = float(requiredAverageProofOfWorkNonceTrialsPerByte) / defaults.networkDefaultProofOfWorkNonceTrialsPerByte
+                                        ratio2 = float(requiredPayloadLengthExtraBytes) / defaults.networkDefaultPayloadLengthExtraBytes
+                                        timestamp = l10n.formatTimestamp()
+                                        
+                                        message_text = tr._translate(
+                                            "MainWindow",
+                                            "Problem: The work demanded by the recipient ({ratio1} and {ratio2}) is more difficult than you are willing to do. {timestamp}"
+                                        )
+                                        
+                                        if hasattr(message_text, 'format'):
+                                            # Python 3 format
+                                            message_text = message_text.format(
+                                                ratio1=str(ratio1), 
+                                                ratio2=str(ratio2), 
+                                                timestamp=timestamp
+                                            )
+                                        elif hasattr(message_text, 'arg'):
+                                            # Qt/Python 2 style
+                                            try:
+                                                message_text = message_text.arg(str(ratio1)).arg(str(ratio2)).arg(timestamp)
+                                            except:
+                                                message_text = f"Problem: The work demanded by the recipient ({ratio1} and {ratio2}) is more difficult than you are willing to do. {timestamp}"
+                                        else:
+                                            message_text = f"Problem: The work demanded by the recipient ({ratio1} and {ratio2}) is more difficult than you are willing to do. {timestamp}"
+                                    except Exception as format_err:
+                                        print(f"  ⚠️  Fehler beim Formatieren der Fehlernachricht: {format_err}")
+                                        message_text = "Problem: The work demanded by the recipient is more difficult than you are willing to do."
+                                    
                                     queues.UISignalQueue.put((
                                         'updateSentItemStatusByAckdata', (
                                             ackdata,
-                                            tr._translate(
-                                                "MainWindow",
-                                                "Problem: The work demanded by"
-                                                " the recipient (%1 and %2) is"
-                                                " more difficult than you are"
-                                                " willing to do. %3"
-                                            ).arg(str(float(requiredAverageProofOfWorkNonceTrialsPerByte)
-                                                  / defaults.networkDefaultProofOfWorkNonceTrialsPerByte)
-                                                  ).arg(str(float(requiredPayloadLengthExtraBytes)
-                                                        / defaults.networkDefaultPayloadLengthExtraBytes)
-                                                        ).arg(l10n.formatTimestamp()))))
+                                            message_text))
+                                    )
                                     debug_print("  PoW zu schwierig, abgebrochen")
                                     continue
                 else:  # if we are sending a message to ourselves or a chan..
@@ -2066,18 +2163,32 @@ class singleWorker(StoppableThread):
                             toaddress, 'privencryptionkey')
                     except (configparser.NoSectionError, configparser.NoOptionError) as err:
                         print(f"  ❌ Fehler: Konnte privEncryptionKey nicht lesen: {err}")
+                        
+                        # KORREKTUR: .arg() durch .format() ersetzen
+                        try:
+                            timestamp = l10n.formatTimestamp()
+                            message_text = tr._translate(
+                                "MainWindow",
+                                "Problem: You are trying to send a message to yourself or a chan but your encryption key could not be found in the keys.dat file. Could not encrypt message. {timestamp}"
+                            )
+                            
+                            if hasattr(message_text, 'format'):
+                                # Python 3 format
+                                message_text = message_text.format(timestamp=timestamp)
+                            elif hasattr(message_text, 'arg'):
+                                # Qt/Python 2 style
+                                message_text = message_text.arg(timestamp)
+                            else:
+                                message_text = f"Problem: You are trying to send a message to yourself or a chan but your encryption key could not be found in the keys.dat file. Could not encrypt message. {timestamp}"
+                        except:
+                            timestamp = l10n.formatTimestamp()
+                            message_text = f"Problem: You are trying to send a message to yourself or a chan but your encryption key could not be found in the keys.dat file. Could not encrypt message. {timestamp}"
+                        
                         queues.UISignalQueue.put((
                             'updateSentItemStatusByAckdata', (
                                 ackdata,
-                                tr._translate(
-                                    "MainWindow",
-                                    "Problem: You are trying to send a"
-                                    " message to yourself or a chan but your"
-                                    " encryption key could not be found in"
-                                    " the keys.dat file. Could not encrypt"
-                                    " message. %1"
-                                ).arg(l10n.formatTimestamp()))
-                        ))
+                                message_text))
+                        )
                         debug_print(
                             'Error within sendMsg. Could not read the keys'
                             ' from the keys.dat file for our own address. %s\n',
@@ -2106,13 +2217,27 @@ class singleWorker(StoppableThread):
                         defaults.networkDefaultProofOfWorkNonceTrialsPerByte
                     requiredPayloadLengthExtraBytes = \
                         defaults.networkDefaultPayloadLengthExtraBytes
+                    
+                    # KORREKTUR: .arg() durch .format() ersetzen
+                    try:
+                        message_text = tr._translate(
+                            "MainWindow",
+                            "Doing work necessary to send message."
+                        )
+                        if hasattr(message_text, 'format'):
+                            # Python 3 format
+                            message_text = message_text
+                        elif hasattr(message_text, 'arg'):
+                            # Qt/Python 2 style
+                            message_text = message_text.arg("")
+                    except:
+                        message_text = "Doing work necessary to send message."
+                    
                     queues.UISignalQueue.put((
                         'updateSentItemStatusByAckdata', (
                             ackdata,
-                            tr._translate(
-                                "MainWindow",
-                                "Doing work necessary to send message."))
-                    ))
+                            message_text))
+                    )
                     print(f"  ✅ Für Selbst/Chan: Default PoW Parameter verwendet")
 
                 print(f"\n📋 PHASE 8: Assembliere Nachricht")
@@ -2130,14 +2255,27 @@ class singleWorker(StoppableThread):
                     print(f"  ✅ Schlüssel für Absender geholt")
                 except ValueError:
                     print(f"  ❌ Fehler: Absender Adresse nicht in keys.dat gefunden")
+                    
+                    # KORREKTUR: .arg() durch .format() ersetzen
+                    try:
+                        message_text = tr._translate(
+                            "MainWindow",
+                            "Error! Could not find sender address (your address) in the keys.dat file."
+                        )
+                        if hasattr(message_text, 'format'):
+                            # Python 3 format
+                            message_text = message_text
+                        elif hasattr(message_text, 'arg'):
+                            # Qt/Python 2 style
+                            message_text = message_text.arg("")
+                    except:
+                        message_text = "Error! Could not find sender address (your address) in the keys.dat file."
+                    
                     queues.UISignalQueue.put((
                         'updateSentItemStatusByAckdata', (
                             ackdata,
-                            tr._translate(
-                                "MainWindow",
-                                "Error! Could not find sender address"
-                                " (your address) in the keys.dat file."))
-                    ))
+                            message_text))
+                    )
                     continue
                 except Exception as err:
                     print(f"  ❌ Fehler beim Holen der Schlüssel: {err}")
@@ -2146,13 +2284,27 @@ class singleWorker(StoppableThread):
                         ' the keys from the keys.dat file for a requested'
                         ' address. %s\n', err
                     )
+                    
+                    # KORREKTUR: .arg() durch .format() ersetzen
+                    try:
+                        message_text = tr._translate(
+                            "MainWindow",
+                            "Error, can't send."
+                        )
+                        if hasattr(message_text, 'format'):
+                            # Python 3 format
+                            message_text = message_text
+                        elif hasattr(message_text, 'arg'):
+                            # Qt/Python 2 style
+                            message_text = message_text.arg("")
+                    except:
+                        message_text = "Error, can't send."
+                    
                     queues.UISignalQueue.put((
                         'updateSentItemStatusByAckdata', (
                             ackdata,
-                            tr._translate(
-                                "MainWindow",
-                                "Error, can't send."))
-                    ))
+                            message_text))
+                    )
                     continue
 
                 payload += pubSigningKey + pubEncryptionKey
@@ -2242,15 +2394,32 @@ class singleWorker(StoppableThread):
                         '''UPDATE sent SET status='badkey' WHERE ackdata=? AND folder='sent' ''',
                         sqlite3.Binary(ackdata)
                     )
+                    
+                    # KORREKTUR: .arg() durch .format() ersetzen
+                    try:
+                        timestamp = l10n.formatTimestamp()
+                        message_text = tr._translate(
+                            "MainWindow",
+                            "Problem: The recipient\'s encryption key is no good. Could not encrypt message. {timestamp}"
+                        )
+                        
+                        if hasattr(message_text, 'format'):
+                            # Python 3 format
+                            message_text = message_text.format(timestamp=timestamp)
+                        elif hasattr(message_text, 'arg'):
+                            # Qt/Python 2 style
+                            message_text = message_text.arg(timestamp)
+                        else:
+                            message_text = f"Problem: The recipient's encryption key is no good. Could not encrypt message. {timestamp}"
+                    except:
+                        timestamp = l10n.formatTimestamp()
+                        message_text = f"Problem: The recipient's encryption key is no good. Could not encrypt message. {timestamp}"
+                    
                     queues.UISignalQueue.put((
                         'updateSentItemStatusByAckdata', (
                             ackdata,
-                            tr._translate(
-                                "MainWindow",
-                                "Problem: The recipient\'s encryption key is"
-                                " no good. Could not encrypt message. %1"
-                            ).arg(l10n.formatTimestamp()))
-                    ))
+                            message_text))
+                    )
                     continue
 
                 encryptedPayload = pack('>Q', embeddedTime)
@@ -2294,26 +2463,64 @@ class singleWorker(StoppableThread):
                     
                 print(f"  ✅ Inventory Hash berechnet: {hexlify(inventoryHash)}")
                 
+                # KORREKTUR: Die zwei Problemstellen mit .arg() (Zeile ~2305)
                 if config.has_section(toaddress) or \
                    not protocol.checkBitfield(behaviorBitfield, protocol.BITFIELD_DOESACK):
+                    
+                    # KORREKTUR 1: Erste .arg() Stelle
+                    try:
+                        timestamp = l10n.formatTimestamp()
+                        message_text = tr._translate(
+                            "MainWindow",
+                            "Message sent. Sent at {timestamp}"
+                        )
+                        
+                        if hasattr(message_text, 'format'):
+                            # Python 3 format
+                            message_text = message_text.format(timestamp=timestamp)
+                        elif hasattr(message_text, 'arg'):
+                            # Qt/Python 2 style
+                            message_text = message_text.arg(timestamp)
+                        else:
+                            message_text = f"Message sent. Sent at {timestamp}"
+                    except Exception as format_err:
+                        print(f"  ⚠️  Fehler beim Formatieren (kein ACK): {format_err}")
+                        timestamp = l10n.formatTimestamp()
+                        message_text = f"Message sent. Sent at {timestamp}"
+                    
                     queues.UISignalQueue.put((
                         'updateSentItemStatusByAckdata', (
                             ackdata,
-                            tr._translate(
-                                "MainWindow",
-                                "Message sent. Sent at %1"
-                            ).arg(l10n.formatTimestamp()))))
+                            message_text))
+                    )
                     print(f"  ✅ Nachricht gesendet (kein ACK erwartet)")
                 else:
+                    # KORREKTUR 2: Zweite .arg() Stelle (die im Traceback gezeigt wird)
+                    try:
+                        timestamp = l10n.formatTimestamp()
+                        message_text = tr._translate(
+                            "MainWindow",
+                            "Message sent. Waiting for acknowledgement. Sent on {timestamp}"
+                        )
+                        
+                        if hasattr(message_text, 'format'):
+                            # Python 3 format
+                            message_text = message_text.format(timestamp=timestamp)
+                        elif hasattr(message_text, 'arg'):
+                            # Qt/Python 2 style
+                            message_text = message_text.arg(timestamp)
+                        else:
+                            message_text = f"Message sent. Waiting for acknowledgement. Sent on {timestamp}"
+                    except Exception as format_err:
+                        print(f"  ⚠️  Fehler beim Formatieren (mit ACK): {format_err}")
+                        timestamp = l10n.formatTimestamp()
+                        message_text = f"Message sent. Waiting for acknowledgement. Sent on {timestamp}"
+                    
                     queues.UISignalQueue.put((
                         'updateSentItemStatusByAckdata', (
                             ackdata,
-                            tr._translate(
-                                "MainWindow",
-                                "Message sent. Waiting for acknowledgement."
-                                " Sent on %1"
-                            ).arg(l10n.formatTimestamp()))
-                    ))
+                            message_text))
+                    )
                     print(f"  ✅ Nachricht gesendet, warte auf ACK")
                     
                 print(f"  Broadcasting inv for my msg: {hexlify(inventoryHash)[:64]}...")
@@ -2333,7 +2540,7 @@ class singleWorker(StoppableThread):
                 
                 # wait 10% past expiration
                 sleepTill = int(time.time() + TTL * 1.1)
-                print(f"  sleepTill: {sleepTill} (UTC: {time.ctime(sleeptill)})")
+                print(f"  sleepTill: {sleepTill} (UTC: {time.ctime(sleepTill)})")
                 
                 sqlExecute(
                     '''UPDATE sent SET msgid=?, status=?, retrynumber=?, '''
