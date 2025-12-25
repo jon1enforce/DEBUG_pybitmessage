@@ -263,19 +263,42 @@ def checkSensitiveFilePermissions(filename):
         logger.debug("FreeBSD permissions check result: %s", result)
         return result
 
-    try:
-        fstype = subprocess.check_output(
-            ['/usr/bin/stat', '-f', '-c', '%T', filename],
-            stderr=subprocess.STDOUT
-        )  # nosec B603
-        if b'fuseblk' in fstype:
-            logger.info(
-                'Skipping permissions check for fuseblk filesystem: %s',
-                filename)
-            return True
-    except Exception as e:
-        logger.error('Could not determine filesystem type for %s: %s',
-                   filename, str(e))
+    # Try multiple stat locations with fallback
+    stat_paths = ['/usr/bin/stat', '/bin/stat', 'stat']
+    
+    for stat_path in stat_paths:
+        try:
+            logger.debug("Trying stat at: %s", stat_path)
+            fstype = subprocess.check_output(
+                [stat_path, '-f', '-c', '%T', filename],
+                stderr=subprocess.STDOUT
+            )  # nosec B603
+            
+            if b'fuseblk' in fstype:
+                logger.info(
+                    'Skipping permissions check for fuseblk filesystem: %s',
+                    filename)
+                return True
+            break  # Success, exit loop
+        except FileNotFoundError as e:
+            if stat_path == stat_paths[-1]:  # Last option failed
+                logger.error('Could not find stat command at any location: %s',
+                           ', '.join(stat_paths))
+                raise
+            else:
+                logger.debug('stat not found at %s, trying next location...', 
+                           stat_path)
+                continue
+        except Exception as e:
+            # If it's the last path, re-raise the exception
+            if stat_path == stat_paths[-1]:
+                logger.error('Could not determine filesystem type for %s: %s',
+                           filename, str(e))
+                raise
+            else:
+                logger.debug('Error with stat at %s: %s, trying next...',
+                           stat_path, str(e))
+                continue
 
     present_permissions = os.stat(filename)[0]
     disallowed_permissions = stat.S_IRWXG | stat.S_IRWXO
