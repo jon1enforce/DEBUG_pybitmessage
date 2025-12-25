@@ -1,0 +1,68 @@
+[bitmessagesettings]
+maxaddrperstreamsend = 500
+maxbootstrapconnections = 20
+maxdownloadrate = 0
+maxoutboundconnections = 8
+maxtotalconnections = 200
+maxuploadrate = 0
+apiinterface = 127.0.0.1
+apiport = 8442
+udp = True
+port = 8444
+timeformat = %%c
+blackwhitelist = black
+startonlogon = False
+showtraynotifications = True
+startintray = False
+socksproxytype = none
+sockshostname = localhost
+socksport = 9050
+socksauthentication = False
+socksusername = 
+sockspassword = 
+keysencrypted = False
+messagesencrypted = False
+minimizeonclose = False
+replybelow = False
+stopresendingafterxdays = 
+stopresendingafterxmonths = 
+opencl = 
+settingsversion = 10
+minimizetotray = false
+defaultnoncetrialsperbyte = 1000
+defaultpayloadlengthextrabytes = 1000
+sockslisten = false
+userlocale = system
+sendoutgoingconnections = True
+useidenticons = True
+identiconsuffix = FP25Eg2SKDWW
+maxacceptablenoncetrialsperbyte = 20000000000
+maxacceptablepayloadlengthextrabytes = 20000000000
+onionport = 8444
+onionbindip = 127.0.0.1
+smtpdeliver = 
+hidetrayconnectionnotifications = false
+ttl = 367200
+namecoinrpctype = namecoind
+namecoinrpchost = localhost
+namecoinrpcuser = 
+namecoinrpcpassword = 
+namecoinrpcport = 8336
+
+[threads]
+receive = 3
+
+[network]
+bind = 
+dandelion = 90
+
+[inventory]
+storage = sqlite
+acceptmismatch = False
+
+[knownnodes]
+maxnodes = 20000
+
+[zlib]
+maxsize = 1048576
+
