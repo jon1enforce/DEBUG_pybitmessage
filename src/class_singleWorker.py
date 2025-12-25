@@ -366,40 +366,105 @@ class singleWorker(StoppableThread):
             return str(value)
 
     def _getKeysForAddress(self, address):
+        print(f"\n[KEYS] _GETKEYSFORADDRESS für: {address}")
+        print(f"[KEYS] {'-'*60}")
+        
         debug_print("_getKeysForAddress für %s...", address[:30])
+        
         try:
+            # 1. Schlüssel aus Config lesen
+            print(f"[KEYS] 1. SCHLÜSSEL AUS CONFIG LESEN:")
             privSigningKeyBase58 = config.get(address, 'privsigningkey')
             privEncryptionKeyBase58 = config.get(address, 'privencryptionkey')
+            
+            print(f"[KEYS]   privSigningKeyBase58: {privSigningKeyBase58}")
+            print(f"[KEYS]   privSigningKeyBase58 Länge: {len(privSigningKeyBase58)} chars")
+            print(f"[KEYS]   privEncryptionKeyBase58: {privEncryptionKeyBase58}")
+            print(f"[KEYS]   privEncryptionKeyBase58 Länge: {len(privEncryptionKeyBase58)} chars")
+            
             debug_print("Schlüssel aus Config gelesen - Sign: %s..., Enc: %s...", 
                       privSigningKeyBase58[:20], privEncryptionKeyBase58[:20])
+
+            # 2. Base58 zu String konvertieren (Python 3)
+            print(f"\n[KEYS] 2. BASE58 KONVERTIERUNG:")
+            if isinstance(privSigningKeyBase58, bytes):
+                privSigningKeyBase58 = privSigningKeyBase58.decode('utf-8')
+                print(f"[KEYS]   privSigningKeyBase58 war bytes → string")
+            if isinstance(privEncryptionKeyBase58, bytes):
+                privEncryptionKeyBase58 = privEncryptionKeyBase58.decode('utf-8')
+                print(f"[KEYS]   privEncryptionKeyBase58 war bytes → string")
+            
+            print(f"[KEYS]   privSigningKeyBase58 (nach Konv): {privSigningKeyBase58}")
+            print(f"[KEYS]   privEncryptionKeyBase58 (nach Konv): {privEncryptionKeyBase58}")
+
+            # 3. Wallet Import Format dekodieren
+            print(f"\n[KEYS] 3. WALLET IMPORT FORMAT DEKODIEREN:")
+            print(f"[KEYS]   Dekodiere Signing Key...")
+            privSigningKeyHex = hexlify(highlevelcrypto.decodeWalletImportFormat(
+                privSigningKeyBase58.encode('utf-8')))
+            
+            print(f"[KEYS]   Dekodiere Encryption Key...")
+            privEncryptionKeyHex = hexlify(
+                highlevelcrypto.decodeWalletImportFormat(
+                    privEncryptionKeyBase58.encode('utf-8')))
+            
+            print(f"[KEYS]   privSigningKeyHex Länge: {len(privSigningKeyHex)} chars")
+            print(f"[KEYS]   privSigningKeyHex: {privSigningKeyHex.decode()}")
+            print(f"[KEYS]   privEncryptionKeyHex Länge: {len(privEncryptionKeyHex)} chars")
+            print(f"[KEYS]   privEncryptionKeyHex: {privEncryptionKeyHex.decode()}")
+
+            # 4. Public Keys berechnen
+            print(f"\n[KEYS] 4. PUBLIC KEYS BERECHNEN:")
+            print(f"[KEYS]   Berechne pubSigningKey aus privSigningKeyHex...")
+            pubSigningKey_raw = highlevelcrypto.privToPub(privSigningKeyHex)
+            pubSigningKey = unhexlify(pubSigningKey_raw)[1:]
+            
+            print(f"[KEYS]   Berechne pubEncryptionKey aus privEncryptionKeyHex...")
+            pubEncryptionKey_raw = highlevelcrypto.privToPub(privEncryptionKeyHex)
+            pubEncryptionKey = unhexlify(pubEncryptionKey_raw)[1:]
+            
+            print(f"[KEYS]   pubSigningKey Länge: {len(pubSigningKey)} bytes")
+            print(f"[KEYS]   pubSigningKey (hex, erste 64): {hexlify(pubSigningKey[:64]).decode()}")
+            print(f"[KEYS]   pubEncryptionKey Länge: {len(pubEncryptionKey)} bytes")
+            print(f"[KEYS]   pubEncryptionKey (hex, erste 64): {hexlify(pubEncryptionKey[:64]).decode()}")
+            
+            # 5. Schlüssel-Validierungstest
+            print(f"\n[KEYS] 5. SCHLÜSSEL-VALIDIERUNG:")
+            print(f"[KEYS]   Teste ob Public Keys gültig sind...")
+            
+            # Test: Können wir mit den Schlüsseln signieren/verifizieren?
+            test_data = b"BitMessageKeyTest123"
+            try:
+                # Signatur mit Signing Key
+                test_signature = highlevelcrypto.sign(test_data, privSigningKeyHex, "sha256")
+                print(f"[KEYS]   ✓ Test-Signatur erstellt: {len(test_signature)} bytes")
+                
+                # Verifikation mit Public Key
+                verify_result = highlevelcrypto.verify(test_data, test_signature, pubSigningKey_raw)
+                print(f"[KEYS]   ✓ Test-Verifikation: {verify_result}")
+                
+                if not verify_result:
+                    print(f"[KEYS]   ⚠️  WARNUNG: Signatur-Verifikation fehlgeschlagen!")
+            except Exception as e:
+                print(f"[KEYS]   ❌ SCHLÜSSEL-VALIDIERUNG FEHLGESCHLAGEN: {e}")
+
+            debug_print("_getKeysForAddress erfolgreich - Signing Key Länge: %d, Encryption Key Länge: %d", 
+                      len(pubSigningKey), len(pubEncryptionKey))
+            
+            print(f"\n[KEYS] ✅ _GETKEYSFORADDRESS ERFOLGREICH für {address}")
+            print(f"[KEYS] {'-'*60}")
+            
+            return privSigningKeyHex, privEncryptionKeyHex, pubSigningKey, pubEncryptionKey
+            
         except (configparser.NoSectionError, configparser.NoOptionError) as e:
+            print(f"\n[KEYS] ❌ CONFIG FEHLER: {e}")
             debug_print('Konnte privkey für Adresse %s nicht lesen: %s', address, e)
             raise ValueError
-
-        # Python 3: Ensure strings are properly encoded
-        if isinstance(privSigningKeyBase58, bytes):
-            privSigningKeyBase58 = privSigningKeyBase58.decode('utf-8')
-            debug_print("privSigningKeyBase58 von bytes zu string konvertiert")
-        if isinstance(privEncryptionKeyBase58, bytes):
-            privEncryptionKeyBase58 = privEncryptionKeyBase58.decode('utf-8')
-            debug_print("privEncryptionKeyBase58 von bytes zu string konvertiert")
-        
-        debug_print("Decode Wallet Import Format für Signing Key...")
-        privSigningKeyHex = hexlify(highlevelcrypto.decodeWalletImportFormat(
-            privSigningKeyBase58.encode('utf-8')))
-        debug_print("Decode Wallet Import Format für Encryption Key...")
-        privEncryptionKeyHex = hexlify(
-            highlevelcrypto.decodeWalletImportFormat(
-                privEncryptionKeyBase58.encode('utf-8')))
-
-        debug_print("Berechne Public Keys aus Private Keys...")
-        pubSigningKey = unhexlify(highlevelcrypto.privToPub(privSigningKeyHex))[1:]
-        pubEncryptionKey = unhexlify(highlevelcrypto.privToPub(privEncryptionKeyHex))[1:]
-        
-        debug_print("_getKeysForAddress erfolgreich - Signing Key Länge: %d, Encryption Key Länge: %d", 
-                  len(pubSigningKey), len(pubEncryptionKey))
-
-        return privSigningKeyHex, privEncryptionKeyHex, pubSigningKey, pubEncryptionKey
+        except Exception as e:
+            print(f"\n[KEYS] ❌ UNERWARTETER FEHLER: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
 
     @classmethod
     def _doPOWDefaults(
@@ -671,88 +736,220 @@ class singleWorker(StoppableThread):
             debug_print("config.set nicht erfolgreich: %s", e)
 
     def sendOutOrStoreMyV4Pubkey(self, myAddress):
+        print("\n" + "="*80)
+        print("🔑 SENDOUTORSTOREMYV4PUBKEY - SCHLÜSSEL WIRD GESENDET")
+        print(f"  Adresse: {myAddress}")
+        print(f"  Zeit: {time.ctime()}")
+        print("="*80)
+        
         debug_print("sendOutOrStoreMyV4Pubkey für Adresse: %s", myAddress)
-        if not config.has_section(myAddress):
+        
+        # 1. Config Section prüfen
+        print(f"\n[1] CONFIG SECTION PRÜFEN:")
+        has_section = config.has_section(myAddress)
+        print(f"  Config hat Section für {myAddress}? {has_section}")
+        if not has_section:
+            print("  ❌ KEINE CONFIG SECTION - ABBRUCH!")
             debug_print("Keine Config Section für Adresse")
             return
-        if config.safeGetBoolean(myAddress, 'chan'):
+        
+        # 2. Chan Status prüfen
+        print(f"\n[2] CHAN STATUS PRÜFEN:")
+        chan_status = config.safeGetBoolean(myAddress, 'chan')
+        print(f"  Chan Status: {chan_status}")
+        if chan_status:
+            print("  ❌ IST CHAN ADRESSE - ABBRUCH!")
             debug_print('Dies ist eine chan Adresse. Sende kein pubkey.')
             return
-            
-        _, addressVersionNumber, streamNumber, addressHash = decodeAddress(myAddress)
-        debug_print("Adresse Version: %d, Stream: %d", addressVersionNumber, streamNumber)
+        
+        # 3. Adresse dekodieren
+        print(f"\n[3] ADRESSE DEKODIEREN:")
+        try:
+            _, addressVersionNumber, streamNumber, addressHash = decodeAddress(myAddress)
+            print(f"  Version: {addressVersionNumber}")
+            print(f"  Stream: {streamNumber}")
+            print(f"  addressHash (RIPE) Länge: {len(addressHash)} bytes")
+            print(f"  addressHash (hex): {hexlify(addressHash).decode()}")
+            debug_print("Adresse Version: %d, Stream: %d", addressVersionNumber, streamNumber)
+        except Exception as e:
+            print(f"  ❌ FEHLER BEI ADRESSDEKODIERUNG: {e}")
+            return
 
+        # 4. TTL und Zeit berechnen
+        print(f"\n[4] TTL BERECHNEN:")
         TTL = int(28 * 24 * 60 * 60 + helper_random.randomrandrange(-300, 300))
         embeddedTime = int(time.time() + TTL)
+        print(f"  TTL: {TTL} Sekunden ({TTL/86400:.1f} Tage)")
+        print(f"  embeddedTime: {embeddedTime} ({time.ctime(embeddedTime)})")
+        
+        # 5. Payload Basis bauen
+        print(f"\n[5] PAYLOAD BASIS:")
         payload = pack('>Q', embeddedTime)
-        payload += b'\x00\x00\x00\x01'
+        payload += b'\x00\x00\x00\x01'  # object type: pubkey
         payload += encodeVarint(addressVersionNumber)
         payload += encodeVarint(streamNumber)
+        print(f"  embeddedTime (8 bytes): {hexlify(pack('>Q', embeddedTime)).decode()}")
+        print(f"  object type: 0x00000001 (pubkey)")
+        print(f"  Version varint: {hexlify(encodeVarint(addressVersionNumber)).decode()}")
+        print(f"  Stream varint: {hexlify(encodeVarint(streamNumber)).decode()}")
+        print(f"  Payload Basis Länge: {len(payload)} bytes")
+        
         dataToEncrypt = protocol.getBitfield(myAddress)
+        print(f"  Bitfield Länge: {len(dataToEncrypt)} bytes")
         debug_print("Payload Basis: %d bytes", len(payload))
         debug_print("DataToEncrypt nach Bitfield: %d bytes", len(dataToEncrypt))
 
+        # 6. Schlüssel holen
+        print(f"\n[6] SCHLÜSSEL HOLEN:")
         try:
             privSigningKeyHex, _, pubSigningKey, pubEncryptionKey = self._getKeysForAddress(myAddress)
+            print(f"  ✅ Schlüssel erfolgreich geholt")
+            print(f"  privSigningKeyHex Länge: {len(privSigningKeyHex)}")
+            print(f"  privSigningKeyHex (erste 64): {privSigningKeyHex[:64]}")
+            print(f"  pubSigningKey Länge: {len(pubSigningKey)} bytes")
+            print(f"  pubEncryptionKey Länge: {len(pubEncryptionKey)} bytes")
             debug_print("Schlüssel erhalten")
         except ValueError:
+            print("  ❌ VALUERROR BEI _GETKEYSFORADDRESS")
             debug_print("ValueError bei _getKeysForAddress")
             return
-        except Exception:
+        except Exception as e:
+            print(f"  ❌ FEHLER: {e}")
             debug_print('Fehler in sendOutOrStoreMyV4Pubkey')
             traceback.print_exc()
             return
 
+        # 7. DataToEncrypt erweitern
+        print(f"\n[7] DATATOENCRYPT ERWEITERN:")
         dataToEncrypt += pubSigningKey + pubEncryptionKey
-        dataToEncrypt += encodeVarint(config.getint(myAddress, 'noncetrialsperbyte'))
-        dataToEncrypt += encodeVarint(config.getint(myAddress, 'payloadlengthextrabytes'))
+        print(f"  Nach pubKeys: {len(dataToEncrypt)} bytes")
+        
+        try:
+            noncetrials = config.getint(myAddress, 'noncetrialsperbyte')
+            payloadlength = config.getint(myAddress, 'payloadlengthextrabytes')
+            dataToEncrypt += encodeVarint(noncetrials)
+            dataToEncrypt += encodeVarint(payloadlength)
+            print(f"  noncetrialsperbyte: {noncetrials}")
+            print(f"  payloadlengthextrabytes: {payloadlength}")
+            print(f"  Nach PoW Parametern: {len(dataToEncrypt)} bytes")
+        except Exception as e:
+            print(f"  ⚠️  Konnte PoW Parameter nicht lesen: {e}")
+        
         debug_print("DataToEncrypt nach PoW Parametern: %d bytes", len(dataToEncrypt))
 
+        # 8. Tag berechnen
+        print(f"\n[8] TAG BERECHNEN:")
         doubleHashOfAddressData = highlevelcrypto.double_sha512(
             encodeVarint(addressVersionNumber) + encodeVarint(streamNumber) + addressHash
         )
-        debug_print("doubleHashOfAddressData berechnet, Länge: %d", len(doubleHashOfAddressData))
-        payload += doubleHashOfAddressData[32:]  # the tag
-        debug_print("Tag hinzugefügt: %s...", hexlify(doubleHashOfAddressData[32:])[:20])
+        print(f"  doubleHashOfAddressData Länge: {len(doubleHashOfAddressData)} bytes")
+        print(f"  doubleHashOfAddressData (erste 64): {hexlify(doubleHashOfAddressData[:64]).decode()}")
         
-        debug_print("Erstelle Signatur für Payload + dataToEncrypt")
-        signature = highlevelcrypto.sign(payload + dataToEncrypt, privSigningKeyHex, self.digestAlg)
+        payload += doubleHashOfAddressData[32:]  # the tag
+        tag_bytes = doubleHashOfAddressData[32:]
+        print(f"  Tag (letzte 32 bytes): {hexlify(tag_bytes).decode()}")
+        print(f"  Tag Länge: {len(tag_bytes)} bytes")
+        debug_print("Tag hinzugefügt: %s...", hexlify(doubleHashOfAddressData[32:])[:20])
+
+        # 9. Signatur erstellen
+        print(f"\n[9] SIGNATUR ERSTELLEN:")
+        print(f"  Digest Algorithmus: {self.digestAlg}")
+        
+        data_to_sign = payload + dataToEncrypt
+        print(f"  Zu signierende Daten Länge: {len(data_to_sign)} bytes")
+        print(f"  payload Länge: {len(payload)}")
+        print(f"  dataToEncrypt Länge: {len(dataToEncrypt)}")
+        print(f"  privSigningKeyHex Typ: {type(privSigningKeyHex)}")
+        
+        # Test-Signatur zuerst
+        print(f"\n  🔧 TEST-SIGNATUR:")
+        test_data = b"BitMessageTestSignature123"
+        try:
+            test_sig = highlevelcrypto.sign(test_data, privSigningKeyHex, self.digestAlg)
+            print(f"    Test erfolgreich: {len(test_sig)} bytes")
+            # Verifiziere Test
+            pub_key_test = highlevelcrypto.privToPub(privSigningKeyHex)
+            verify_test = highlevelcrypto.verify(test_data, test_sig, pub_key_test)
+            print(f"    Test-Verifikation: {verify_test}")
+        except Exception as e:
+            print(f"    ❌ TEST-SIGNATUR FEHLGESCHLAGEN: {e}")
+        
+        # Eigentliche Signatur
+        print(f"\n  ✍️  ECHTE SIGNATUR:")
+        signature = highlevelcrypto.sign(data_to_sign, privSigningKeyHex, self.digestAlg)
+        print(f"    Signatur Länge: {len(signature)} bytes")
+        print(f"    Signatur (hex): {hexlify(signature).decode()}")
+        
         dataToEncrypt += encodeVarint(len(signature))
         dataToEncrypt += signature
+        print(f"  DataToEncrypt nach Signatur: {len(dataToEncrypt)} bytes")
         debug_print("DataToEncrypt nach Signatur: %d bytes", len(dataToEncrypt))
 
+        # 10. Verschlüsselung vorbereiten
+        print(f"\n[10] VERSCHLÜSSELUNG:")
         privEncryptionKey = doubleHashOfAddressData[:32]
-        debug_print("PrivEncryptionKey aus doubleHash: %d bytes", len(privEncryptionKey))
-        pubEncryptionKey = highlevelcrypto.pointMult(privEncryptionKey)
-        debug_print("PubEncryptionKey berechnet: %d bytes", len(pubEncryptionKey))
+        print(f"  privEncryptionKey Länge: {len(privEncryptionKey)} bytes")
+        print(f"  privEncryptionKey (hex): {hexlify(privEncryptionKey).decode()}")
         
-        debug_print("Verschlüssele dataToEncrypt")
+        pubEncryptionKey = highlevelcrypto.pointMult(privEncryptionKey)
+        print(f"  pubEncryptionKey (berechnet) Länge: {len(pubEncryptionKey)} bytes")
+        print(f"  pubEncryptionKey (hex, erste 64): {hexlify(pubEncryptionKey[:64]).decode()}")
+        
+        # 11. Verschlüsseln
+        print(f"\n[11] VERSCHLÜSSELN:")
+        print(f"  dataToEncrypt Länge vor Verschlüsselung: {len(dataToEncrypt)}")
         encryptedData = highlevelcrypto.encrypt(dataToEncrypt, hexlify(pubEncryptionKey))
+        print(f"  encryptedData Länge nach Verschlüsselung: {len(encryptedData)}")
+        
         payload += encryptedData
+        print(f"  Finale Payload Länge vor PoW: {len(payload)} bytes")
         debug_print("Payload nach Verschlüsselung: %d bytes", len(payload))
 
+        # 12. Proof of Work
+        print(f"\n[12] PROOF OF WORK:")
         payload = self._doPOWDefaults(payload, TTL, log_prefix='(For pubkey message)')
         if payload is None:
+            print("  ❌ PoW FEHLGESCHLAGEN!")
             debug_print("PoW fehlgeschlagen für V4 pubkey")
             return
+        
+        print(f"  ✅ PoW ERFOLGREICH")
+        print(f"  Payload Länge nach PoW: {len(payload)} bytes")
 
+        # 13. Inventory erstellen
+        print(f"\n[13] INVENTORY ERSTELLEN:")
         inventoryHash = highlevelcrypto.calculateInventoryHash(payload)
+        print(f"  Inventory Hash: {hexlify(inventoryHash).decode()}")
+        print(f"  Inventory Hash Länge: {len(inventoryHash)} bytes")
+        
         objectType = 1
         state.Inventory[inventoryHash] = (
             objectType, streamNumber, payload, embeddedTime, doubleHashOfAddressData[32:]
         )
         debug_print("Inventory Hash: %s", hexlify(inventoryHash))
 
+        # 14. Senden
+        print(f"\n[14] SENDEN:")
+        print(f"  Sende inv mit hash: {hexlify(inventoryHash).decode()[:64]}...")
+        print(f"  Stream: {streamNumber}")
         debug_print('Sende inv mit hash: %s', hexlify(inventoryHash))
+        
         invQueue.put((streamNumber, inventoryHash))
         queues.UISignalQueue.put(('updateStatusBar', ''))
         
+        # 15. Config aktualisieren
+        print(f"\n[15] CONFIG AKTUALISIEREN:")
         try:
             config.set(myAddress, 'lastpubkeysendtime', str(int(time.time())))
             config.save()
+            print(f"  ✅ lastpubkeysendtime aktualisiert auf: {int(time.time())}")
             debug_print("Config gespeichert")
         except Exception as err:
+            print(f"  ❌ FEHLER BEI CONFIG UPDATE: {err}")
             debug_print("Fehler beim Hinzufügen von lastpubkeysendtime: %s", err)
+        
+        print(f"\n✅ SENDOUTORSTOREMYV4PUBKEY ABGESCHLOSSEN für {myAddress}")
+        print("="*80)
 
     def sendOnionPeerObj(self, peer=None):
         """Send onionpeer object representing peer"""

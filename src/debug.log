@@ -1935,3 +1935,283 @@ TypeError: the JSON object must be str, bytes or bytearray, not NoneType
 2025-12-25 06:02:18,935 - WARNING - No indicator plugin found
 2025-12-25 06:02:18,959 - WARNING - No notification.message plugin found
 2025-12-25 06:02:30,299 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-25 06:05:25,262 - WARNING - Using default logger configuration
+2025-12-25 06:05:26,167 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-25 06:05:26,173 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-25 06:05:26,173 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-25 06:05:26,174 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-25 06:05:26,210 - WARNING - No indicator plugin found
+2025-12-25 06:05:26,234 - WARNING - No notification.message plugin found
+2025-12-25 06:05:39,289 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:05:50,692 - ERROR - 158.69.63.42:8080 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:05:58,883 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:06:01,989 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:06:25,402 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:06:51,115 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:06:52,402 - ERROR - 158.69.63.42:8080 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:07:24,246 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:07:24,967 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:07:32,432 - ERROR - 175.0.121.90:2841 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:08:38,300 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:09:08,458 - ERROR - 158.69.63.42:8080 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:09:41,853 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:10:14,162 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:11:00,612 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:11:01,634 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:12:11,420 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:12:29,434 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:12:35,596 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:13:11,872 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:13:48,539 - ERROR - 175.0.121.90:2841 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:14:08,717 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:14:19,933 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:14:52,350 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:15:26,394 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:15:41,483 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:16:01,716 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:16:02,856 - ERROR - 194.164.163.84:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:16:34,030 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:16:53,043 - ERROR - 175.0.121.90:2841 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:16:56,219 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:17:56,786 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:18:10,894 - ERROR - 175.0.121.90:2841 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:18:12,915 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:19:06,931 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:19:21,799 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:19:23,820 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:19:48,037 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:19:49,607 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:20:26,326 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:20:31,408 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:21:14,730 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:21:16,737 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:21:38,056 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:22:46,949 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-25 06:22:49,329 - WARNING - Using default logger configuration
+2025-12-25 06:22:50,280 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-25 06:22:50,289 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-25 06:22:50,290 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-25 06:22:50,291 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-25 06:22:50,324 - WARNING - No indicator plugin found
+2025-12-25 06:22:50,349 - WARNING - No notification.message plugin found
+2025-12-25 06:23:17,819 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:23:30,620 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-25 06:23:32,336 - WARNING - Using default logger configuration
+2025-12-25 06:23:33,282 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-25 06:23:33,288 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-25 06:23:33,288 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-25 06:23:33,289 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-25 06:23:33,326 - WARNING - No indicator plugin found
+2025-12-25 06:23:33,353 - WARNING - No notification.message plugin found
+2025-12-25 06:23:57,968 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:24:04,984 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:24:09,356 - ERROR - 103.251.55.153:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:24:11,089 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:24:22,400 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:24:44,541 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:25:06,763 - ERROR - 103.251.55.153:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:25:22,922 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:25:31,000 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:25:49,165 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:26:15,699 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:26:27,848 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:26:46,030 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:26:58,151 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:27:00,421 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:27:12,293 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:27:32,656 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:27:54,878 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:28:19,128 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:28:43,322 - ERROR - 194.164.163.84:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:29:14,835 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:29:53,965 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:30:08,268 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:30:16,295 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:30:24,700 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:30:34,555 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:30:34,687 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:31:31,628 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:31:31,629 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:32:17,635 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:32:35,765 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:32:36,569 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:32:57,948 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:33:03,998 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:33:39,454 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:33:42,562 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:34:51,085 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:35:24,159 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:35:57,828 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:36:10,989 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:36:15,390 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:36:33,987 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:36:36,238 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:37:01,509 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:37:03,092 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:37:28,987 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:38:09,928 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:38:09,929 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:38:40,555 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:39:28,244 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:39:33,797 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:40:30,293 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:40:52,918 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:41:17,124 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:41:31,244 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:42:25,889 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:42:32,884 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:43:33,208 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:44:02,578 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:44:03,449 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:44:25,619 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:44:37,697 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:45:05,114 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:45:06,308 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:45:41,944 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:47:03,626 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:47:17,261 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:47:31,391 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:47:43,468 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:48:09,978 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:48:33,663 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:48:38,234 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:48:45,420 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:49:15,508 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:49:25,701 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:49:38,730 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:50:25,413 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:50:36,466 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:50:37,403 - ERROR - 194.164.163.84:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:50:51,202 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:51:03,799 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:51:05,822 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:51:06,506 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:52:43,276 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 06:52:43,515 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 06:53:17,904 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-25 21:33:22,413 - WARNING - Using default logger configuration
+2025-12-25 21:33:23,416 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-25 21:33:23,422 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-25 21:33:23,422 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-25 21:33:23,423 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-25 21:33:23,453 - WARNING - No indicator plugin found
+2025-12-25 21:33:23,475 - WARNING - No notification.message plugin found
+2025-12-25 21:34:13,142 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 21:35:15,099 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-25 21:42:58,629 - WARNING - Using default logger configuration
+2025-12-25 21:42:59,534 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-25 21:42:59,541 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-25 21:42:59,541 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-25 21:42:59,542 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-25 21:42:59,572 - WARNING - No indicator plugin found
+2025-12-25 21:42:59,594 - WARNING - No notification.message plugin found
+2025-12-25 21:44:20,925 - ERROR - ❌ SQL COLUMN MISMATCH [Q108572]: Expected ~10 columns, got 2
+2025-12-25 21:44:20,926 - ERROR - ❌ Query was: SELECT status, COUNT(*) as count FROM sent WHERE folder='sent' GROUP BY status
+2025-12-25 21:44:20,926 - ERROR - ❌ Got (status, count) pattern: msgqueued = 1
+2025-12-25 21:44:20,949 - ERROR - ❌ SQL COLUMN MISMATCH [Q108588]: Expected ~10 columns, got 1
+2025-12-25 21:44:20,950 - ERROR - ❌ Query was: SELECT retrynumber FROM sent WHERE toaddress=?  AND (status='doingpubkeypow' OR status='awaitingpubkey')  AND folder='sent' LIMIT 1
+2025-12-25 21:45:24,940 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 21:45:57,390 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 21:47:09,864 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-25 21:47:49,891 - WARNING - Using default logger configuration
+2025-12-25 21:47:50,802 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-25 21:47:50,810 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-25 21:47:50,810 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-25 21:47:50,811 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-25 21:47:50,843 - WARNING - No indicator plugin found
+2025-12-25 21:47:50,865 - WARNING - No notification.message plugin found
+2025-12-25 21:47:51,770 - ERROR - 158.69.63.42:8080 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 21:47:58,735 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 21:48:18,926 - ERROR - 158.69.63.42:8080 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-25 21:48:27,068 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-25 21:49:00,339 - WARNING - ⚠️ GUI still running, forcing exit
