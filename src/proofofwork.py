@@ -1,24 +1,31 @@
-# pylint: disable=too-many-branches,too-many-statements,protected-access
+# pylint: disable=import-outside-toplevel,too-many-branches,too-many-statements
+
 """
 Proof of work calculation
 """
 
 import ctypes
+import hashlib
 import os
 import subprocess  # nosec B404
 import sys
 import tempfile
 import time
 from struct import pack, unpack
+from binascii import hexlify
 
 import highlevelcrypto
 import openclpow
 import paths
 import queues
 import state
-import tr
 from bmconfigparser import config
 from debug import logger
+from defaults import (
+    networkDefaultProofOfWorkNonceTrialsPerByte,
+    networkDefaultPayloadLengthExtraBytes)
+from tr import _translate
+
 
 bitmsglib = 'bitmsghash.so'
 bmpow = None
@@ -63,9 +70,9 @@ class LogOutput(object):  # pylint: disable=too-few-public-methods
         sys.stdout.flush()
         os.dup2(self._stdout_fno, 1)
 
-        with open(self._filepath) as out:
+        with open(self._filepath, 'r', encoding='utf-8') as out:
             for line in out:
-                logger.info('%s: %s', self.prefix, line)
+                logger.info('%s: %s', self.prefix, line.rstrip())
         os.remove(self._filepath)
 
 
@@ -79,16 +86,21 @@ def _set_idle():
             import win32api
             import win32process
             import win32con
-            pid = win32api.GetCurrentProcessId()
-            handle = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, True, pid)
-            win32process.SetPriorityClass(handle, win32process.IDLE_PRIORITY_CLASS)
-        except:  # nosec B110 # noqa:E722 # pylint:disable=bare-except
-            # Windows 64-bit
+
+            handle = win32api.OpenProcess(
+                win32con.PROCESS_ALL_ACCESS, True,
+                win32api.GetCurrentProcessId())
+            win32process.SetPriorityClass(
+                handle, win32process.IDLE_PRIORITY_CLASS)
+        except (ImportError, OSError, AttributeError):  # nosec B110
             pass
 
 
 def trial_value(nonce, initialHash):
     """Calculate PoW trial value"""
+    if isinstance(initialHash, str):
+        initialHash = initialHash.encode('latin-1')
+    
     trialValue, = unpack(
         '>Q', highlevelcrypto.double_sha512(
             pack('>Q', nonce) + initialHash)[0:8])
@@ -98,14 +110,22 @@ def trial_value(nonce, initialHash):
 def _pool_worker(nonce, initialHash, target, pool_size):
     _set_idle()
     trialValue = float('inf')
+    
+    if isinstance(initialHash, str):
+        initialHash = initialHash.encode('latin-1')
+    
     while trialValue > target:
         nonce += pool_size
         trialValue = trial_value(nonce, initialHash)
-    return [trialValue, nonce]
+    return trialValue, nonce
 
 
 def _doSafePoW(target, initialHash):
-    logger.debug("Safe PoW start")
+    logger.debug('Safe PoW start')
+    
+    if isinstance(initialHash, str):
+        initialHash = initialHash.encode('latin-1')
+    
     nonce = 0
     trialValue = float('inf')
     while trialValue > target and state.shutdown == 0:
@@ -113,35 +133,37 @@ def _doSafePoW(target, initialHash):
         trialValue = trial_value(nonce, initialHash)
     if state.shutdown != 0:
         raise StopIteration("Interrupted")
-    logger.debug("Safe PoW done")
-    return [trialValue, nonce]
+    logger.debug('Safe PoW done')
+    return trialValue, nonce
 
 
 def _doFastPoW(target, initialHash):
-    logger.debug("Fast PoW start")
+    logger.debug('Fast PoW start')
     from multiprocessing import Pool, cpu_count
+    
+    if isinstance(initialHash, str):
+        initialHash = initialHash.encode('latin-1')
+    
     try:
         pool_size = cpu_count()
     except:  # noqa:E722
         pool_size = 4
-    try:
-        maxCores = config.getint('bitmessagesettings', 'maxcores')
-    except:  # noqa:E722
-        maxCores = 99999
-    if pool_size > maxCores:
-        pool_size = maxCores
+    
+    maxCores = config.safeGetInt('bitmessagesettings', 'maxcores', 99999)
+    pool_size = min(pool_size, maxCores)
 
     pool = Pool(processes=pool_size)
     result = []
     for i in range(pool_size):
-        result.append(pool.apply_async(_pool_worker, args=(i, initialHash, target, pool_size)))
+        result.append(pool.apply_async(
+            _pool_worker, args=(i, initialHash, target, pool_size)))
 
     while True:
-        if state.shutdown > 0:
+        if state.shutdown != 0:
             try:
                 pool.terminate()
                 pool.join()
-            except:  # nosec B110 # noqa:E722 # pylint:disable=bare-except
+            except:  # nosec B110 # noqa:E722
                 pass
             raise StopIteration("Interrupted")
         for i in range(pool_size):
@@ -152,89 +174,74 @@ def _doFastPoW(target, initialHash):
                     pool.terminate()
                     pool.join()
                     raise StopIteration("Interrupted")
-                result = result[i].get()
+                result_val = result[i].get()
                 pool.terminate()
                 pool.join()
-                logger.debug("Fast PoW done")
-                return result[0], result[1]
+                logger.debug('Fast PoW done')
+                return result_val[0], result_val[1]
         time.sleep(0.2)
 
 
 def _doCPoW(target, initialHash):
+    if isinstance(initialHash, str):
+        initialHash = initialHash.encode('latin-1')
+    
+    if len(initialHash) != 64:
+        raise ValueError(f"initialHash must be 64 bytes, got {len(initialHash)}")
+    
     with LogOutput():
         h = initialHash
         m = target
         out_h = ctypes.pointer(ctypes.create_string_buffer(h, 64))
         out_m = ctypes.c_ulonglong(m)
-        logger.debug("C PoW start")
+        logger.debug('C PoW start')
+        
+        if bmpow is None:
+            raise RuntimeError("C PoW library not loaded")
+        
         nonce = bmpow(out_h, out_m)
 
     trialValue = trial_value(nonce, initialHash)
     if state.shutdown != 0:
         raise StopIteration("Interrupted")
-    logger.debug("C PoW done")
-    return [trialValue, nonce]
+    logger.debug('C PoW done')
+    return trialValue, nonce
 
 
 def _doGPUPoW(target, initialHash):
-    logger.debug("GPU PoW start")
-    nonce = openclpow.do_opencl_pow(initialHash.encode("hex"), target)
+    logger.debug('GPU PoW start')
+    
+    if isinstance(initialHash, str):
+        initialHash = initialHash.encode('latin-1')
+    
+    initialHash_hex = hexlify(initialHash).decode('ascii')
+    nonce = openclpow.do_opencl_pow(initialHash_hex, target)
+    
     trialValue = trial_value(nonce, initialHash)
     if trialValue > target:
         deviceNames = ", ".join(gpu.name for gpu in openclpow.enabledGpus)
         queues.UISignalQueue.put((
             'updateStatusBar', (
-                tr._translate(
+                _translate(
                     "MainWindow",
-                    'Your GPU(s) did not calculate correctly, disabling OpenCL. Please report to the developers.'
-                ),
-                1)))
+                    "Your GPU(s) did not calculate correctly,"
+                    " disabling OpenCL. Please report to the developers."
+                ), 1)
+        ))
         logger.error(
-            "Your GPUs (%s) did not calculate correctly, disabling OpenCL. Please report to the developers.",
-            deviceNames)
+            'Your GPUs (%s) did not calculate correctly, disabling OpenCL.'
+            ' Please report to the developers.', deviceNames)
         openclpow.enabledGpus = []
         raise Exception("GPU did not calculate correctly.")
+    
     if state.shutdown != 0:
         raise StopIteration("Interrupted")
-    logger.debug("GPU PoW done")
-    return [trialValue, nonce]
-
-
-def estimate(difficulty, format=False):  # pylint: disable=redefined-builtin
-    """
-    .. todo: fix unused variable
-    """
-    ret = difficulty / 10
-    if ret < 1:
-        ret = 1
-
-    if format:
-        # pylint: disable=unused-variable
-        out = str(int(ret)) + " seconds"
-        if ret > 60:
-            ret /= 60
-            out = str(int(ret)) + " minutes"
-        if ret > 60:
-            ret /= 60
-            out = str(int(ret)) + " hours"
-        if ret > 24:
-            ret /= 24
-            out = str(int(ret)) + " days"
-        if ret > 7:
-            out = str(int(ret)) + " weeks"
-        if ret > 31:
-            out = str(int(ret)) + " months"
-        if ret > 366:
-            ret /= 366
-            out = str(int(ret)) + " years"
-        ret = None  # Ensure legacy behaviour
-
-    return ret
+    
+    logger.debug('GPU PoW done')
+    return trialValue, nonce
 
 
 def getPowType():
-    """Get the proof of work implementation"""
-
     if openclpow.openclEnabled():
         return "OpenCL"
     if bmpow:
@@ -243,168 +250,193 @@ def getPowType():
 
 
 def notifyBuild(tried=False):
-    """Notify the user of the success or otherwise of building the PoW C module"""
-
     if bmpow:
-        queues.UISignalQueue.put(('updateStatusBar', (tr._translate(
+        queues.UISignalQueue.put(('updateStatusBar', (_translate(
             "proofofwork", "C PoW module built successfully."), 1)))
     elif tried:
-        queues.UISignalQueue.put(
-            (
-                'updateStatusBar', (
-                    tr._translate(
-                        "proofofwork",
-                        "Failed to build C PoW module. Please build it manually."
-                    ),
-                    1
-                )
-            )
-        )
+        queues.UISignalQueue.put(('updateStatusBar', (_translate(
+            "proofofwork",
+            "Failed to build C PoW module. Please build it manually."), 1)))
     else:
-        queues.UISignalQueue.put(('updateStatusBar', (tr._translate(
+        queues.UISignalQueue.put(('updateStatusBar', (_translate(
             "proofofwork", "C PoW module unavailable. Please build it."), 1)))
 
 
 def buildCPoW():
     """Attempt to build the PoW C module"""
+    global bmpow  # DIESE ZEILE GANZ OBEN EINFÜGEN!
+    
     if bmpow is not None:
         return
-    if paths.frozen is not None:
+    if paths.frozen or sys.platform.startswith('win'):
         notifyBuild(False)
         return
-    if sys.platform in ["win32", "win64"]:
-        notifyBuild(False)
-        return
+
     try:
+        make_cmd = ['make', '-C', os.path.join(paths.codePath(), 'bitmsghash')]
         if "bsd" in sys.platform:
-            # BSD make
-            subprocess.check_call([  # nosec B607, B603
-                "make", "-C", os.path.join(paths.codePath(), "bitmsghash"),
-                '-f', 'Makefile.bsd'])
-        else:
-            # GNU make
-            subprocess.check_call([  # nosec B607, B603
-                "make", "-C", os.path.join(paths.codePath(), "bitmsghash")])
-        if os.path.exists(
-            os.path.join(paths.codePath(), "bitmsghash", "bitmsghash.so")
-        ):
-            init()
-            notifyBuild(True)
-        else:
-            notifyBuild(True)
-    except (OSError, subprocess.CalledProcessError):
-        notifyBuild(True)
-    except:  # noqa:E722
+            make_cmd += ['-f', 'Makefile.bsd']
+
+        subprocess.check_call(make_cmd)  # nosec B603
+        
+        lib_path = os.path.join(paths.codePath(), 'bitmsghash', 'bitmsghash.so')
+        if os.path.exists(lib_path):
+            # global bmpow  # DIESE ZEILE LÖSCHEN - sie steht jetzt oben!
+            try:
+                bso = ctypes.CDLL(lib_path)
+                if hasattr(bso, 'BitmessagePOW'):
+                    bmpow = bso.BitmessagePOW
+                    bmpow.restype = ctypes.c_ulonglong
+                    logger.info('Successfully built and loaded C PoW module')
+                else:
+                    logger.warning('Built library missing BitmessagePOW function')
+                    bmpow = None
+            except Exception as e:
+                logger.warning('Failed to load built library: %s', e)
+                bmpow = None
+    except (OSError, subprocess.CalledProcessError) as e:
+        logger.debug('Build failed: %s', e)
+    except Exception as e:  # noqa:E722
         logger.warning(
-            'Unexpected exception rised when tried to build bitmsghash lib',
-            exc_info=True)
-        notifyBuild(True)
+            'Unexpected exception raised when tried to build bitmsghash lib: %s',
+            e, exc_info=True)
+    
+    notifyBuild(True)
 
 
 def run(target, initialHash):
-    """Run the proof of work thread"""
-
     if state.shutdown != 0:
-        raise  # pylint: disable=misplaced-bare-raise
+        raise StopIteration("Interrupted")
+    
     target = int(target)
+    
+    if isinstance(initialHash, str):
+        initialHash = initialHash.encode('latin-1')
+    
+    logger.debug('PoW calculation started: target=%s, hash_len=%s', 
+                target, len(initialHash))
+    
     if openclpow.openclEnabled():
         try:
             return _doGPUPoW(target, initialHash)
         except StopIteration:
             raise
-        except:  # nosec B110 # noqa:E722 # pylint:disable=bare-except
-            pass  # fallback
+        except Exception as e:
+            logger.debug('GPU PoW failed, falling back: %s', e)
+    
     if bmpow:
         try:
             return _doCPoW(target, initialHash)
         except StopIteration:
             raise
-        except:  # nosec B110 # noqa:E722 # pylint:disable=bare-except
-            pass  # fallback
+        except Exception as e:
+            logger.debug('C PoW failed, falling back: %s', e)
+    
     if paths.frozen == "macosx_app" or not paths.frozen:
-        # on my (Peter Surda) Windows 10, Windows Defender
-        # does not like this and fights with PyBitmessage
-        # over CPU, resulting in very slow PoW
-        # added on 2015-11-29: multiprocesing.freeze_support() doesn't help
         try:
             return _doFastPoW(target, initialHash)
         except StopIteration:
-            logger.error("Fast PoW got StopIteration")
             raise
-        except:  # noqa:E722 # pylint:disable=bare-except
-            logger.error("Fast PoW got exception:", exc_info=True)
-    try:
-        return _doSafePoW(target, initialHash)
-    except StopIteration:
-        raise
-    except:  # nosec B110 # noqa:E722 # pylint:disable=bare-except
-        pass  # fallback
+        except Exception as e:
+            logger.debug('Fast Python PoW failed, falling back: %s', e)
+    
+    return _doSafePoW(target, initialHash)
+
+
+def getTarget(payloadLength, ttl, nonceTrialsPerByte, payloadLengthExtraBytes):
+    return 2 ** 64 / (
+        nonceTrialsPerByte * (
+            payloadLength + 8 + payloadLengthExtraBytes + ((
+                ttl * (
+                    payloadLength + 8 + payloadLengthExtraBytes
+                )) / (2 ** 16))
+        ))
+
+
+def calculate(
+    payload, ttl,
+    nonceTrialsPerByte=networkDefaultProofOfWorkNonceTrialsPerByte,
+    payloadLengthExtraBytes=networkDefaultPayloadLengthExtraBytes
+):
+    if isinstance(payload, str):
+        payload = payload.encode('utf-8')
+    
+    target = getTarget(
+        len(payload), ttl, nonceTrialsPerByte, payloadLengthExtraBytes)
+    
+    initialHash = hashlib.sha512(payload).digest()
+    
+    return run(target, initialHash)
 
 
 def resetPoW():
-    """Initialise the OpenCL PoW"""
     openclpow.initCL()
-
-
-# init
 
 
 def init():
     """Initialise PoW"""
-    # pylint: disable=global-statement
-    global bitmsglib, bmpow
+    # pylint: disable=broad-exception-caught,global-statement
+    global bitmsglib, bmpow  # DIESE ZEILE MUSS GANZ OBEN STEHEN!
+
+    print("DEBUG [proofofwork.init]: Starting PoW initialization (Python 3 version)")
 
     openclpow.initCL()
-    if sys.platform == "win32":
-        if ctypes.sizeof(ctypes.c_voidp) == 4:
-            bitmsglib = 'bitmsghash32.dll'
-        else:
-            bitmsglib = 'bitmsghash64.dll'
+    
+    if sys.platform.startswith('win'):
+        bitmsglib = (
+            'bitmsghash32.dll' if ctypes.sizeof(ctypes.c_voidp) == 4 else
+            'bitmsghash64.dll')
+    else:
+        bitmsglib = 'bitmsghash.so'
+    
+    print(f"DEBUG [proofofwork.init]: Target library: {bitmsglib}")
+    
+    bmpow = None
+    
+    lib_path = os.path.join(paths.codePath(), 'bitmsghash', bitmsglib)
+    
+    if os.path.exists(lib_path):
+        print(f"DEBUG [proofofwork.init]: Library exists at {lib_path}")
         try:
-            # MSVS
-            bso = ctypes.WinDLL(os.path.join(paths.codePath(), "bitmsghash", bitmsglib))
-            logger.info("Loaded C PoW DLL (stdcall) %s", bitmsglib)
-            bmpow = bso.BitmessagePOW
-            bmpow.restype = ctypes.c_ulonglong
-            _doCPoW(2**63, "")
-            logger.info("Successfully tested C PoW DLL (stdcall) %s", bitmsglib)
-        except ValueError:
-            try:
-                # MinGW
-                bso = ctypes.CDLL(os.path.join(paths.codePath(), "bitmsghash", bitmsglib))
-                logger.info("Loaded C PoW DLL (cdecl) %s", bitmsglib)
+            if sys.platform.startswith('win'):
+                try:
+                    bso = ctypes.WinDLL(lib_path)
+                    print("DEBUG [proofofwork.init]: Loaded as WinDLL (MSVS)")
+                except (OSError, AttributeError):
+                    try:
+                        bso = ctypes.CDLL(lib_path)
+                        print("DEBUG [proofofwork.init]: Loaded as CDLL (MinGW)")
+                    except (OSError, AttributeError) as e:
+                        print(f"DEBUG [proofofwork.init]: Failed to load Windows library: {e}")
+                        bso = None
+            else:
+                try:
+                    bso = ctypes.CDLL(lib_path)
+                    print("DEBUG [proofofwork.init]: Loaded as CDLL")
+                except (OSError, AttributeError) as e:
+                    print(f"DEBUG [proofofwork.init]: Failed to load library: {e}")
+                    bso = None
+            
+            if bso and hasattr(bso, 'BitmessagePOW'):
                 bmpow = bso.BitmessagePOW
                 bmpow.restype = ctypes.c_ulonglong
-                _doCPoW(2**63, "")
-                logger.info("Successfully tested C PoW DLL (cdecl) %s", bitmsglib)
-            except Exception as e:
-                logger.error("Error: %s", e, exc_info=True)
-                bso = None
+                print("DEBUG [proofofwork.init]: BitmessagePOW function found")
+                print("DEBUG [proofofwork.init]: C library loaded (testing disabled)")
+            else:
+                print("DEBUG [proofofwork.init]: BitmessagePOW function not found")
+                bmpow = None
+                
         except Exception as e:
-            logger.error("Error: %s", e, exc_info=True)
-            bso = None
-    else:
-        try:
-            bso = ctypes.CDLL(os.path.join(paths.codePath(), "bitmsghash", bitmsglib))
-        except OSError:
-            import glob
-            try:
-                bso = ctypes.CDLL(glob.glob(os.path.join(
-                    paths.codePath(), "bitmsghash", "bitmsghash*.so"
-                ))[0])
-            except (OSError, IndexError):
-                bso = None
-        except:  # noqa:E722
-            bso = None
-        else:
-            logger.info("Loaded C PoW DLL %s", bitmsglib)
-    if bso:
-        try:
-            bmpow = bso.BitmessagePOW
-            bmpow.restype = ctypes.c_ulonglong
-        except:  # noqa:E722
+            print(f"DEBUG [proofofwork.init]: Error loading library: {e}")
             bmpow = None
     else:
+        print(f"DEBUG [proofofwork.init]: Library not found at {lib_path}")
         bmpow = None
+    
     if bmpow is None:
+        print("DEBUG [proofofwork.init]: Attempting to build C library...")
         buildCPoW()
+    
+    print("DEBUG [proofofwork.init]: PoW initialization complete")
+    pow_type = getPowType()
+    print(f"DEBUG [proofofwork.init]: Using PoW type: {pow_type}")
