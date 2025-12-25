@@ -257,17 +257,14 @@ class objectProcessor(threading.Thread):
 
 
         if requestedAddressVersionNumber == 0:
-            print("ERROR: Address version is 0 - ignoring")
             return logger.debug(
                 'The requestedAddressVersionNumber of the pubkey request'
                 ' is zero. That doesn\'t make any sense. Ignoring it.')
         if requestedAddressVersionNumber == 1:
-            print("ERROR: Address version 1 not supported - ignoring")
             return logger.debug(
                 'The requestedAddressVersionNumber of the pubkey request'
                 ' is 1 which isn\'t supported anymore. Ignoring it.')
         if requestedAddressVersionNumber > 4:
-            print(f"ERROR: Address version {requestedAddressVersionNumber} too high - ignoring")
             return logger.debug(
                 'The requestedAddressVersionNumber of the pubkey request'
                 ' is too high. Can\'t understand. Ignoring it.')
@@ -279,7 +276,6 @@ class objectProcessor(threading.Thread):
         if requestedAddressVersionNumber <= 3:
             requestedHash = data[readPosition:readPosition + 20]
             if len(requestedHash) != 20:
-                print(f"ERROR: Hash length incorrect ({len(requestedHash)} != 20) - ignoring")
                 return logger.debug(
                     'The length of the requested hash is not 20 bytes.'
                     ' Something is wrong. Ignoring.')
@@ -290,9 +286,7 @@ class objectProcessor(threading.Thread):
                 'the hash requested in this getpubkey request is: %s',
                 hexlify(requestedHash))
             
-            # Debug: Print all my hashes
-            for hash_hex, addr in list(shared.myAddressesByHash.items())[:5]:  # Show first 5
-                print(f"  {hash_hex} -> {addr}")
+
             if len(shared.myAddressesByHash) > 5:
                 print(f"  ... and {len(shared.myAddressesByHash) - 5} more")
             
@@ -316,9 +310,7 @@ class objectProcessor(threading.Thread):
                 'the tag requested in this getpubkey request is: %s',
                 hexlify(requestedTag))
             
-            # Debug: Print all my tags
-            for tag_hex, addr in list(shared.myAddressesByTag.items())[:5]:  # Show first 5
-                print(f"  {tag_hex} -> {addr}")
+
             if len(shared.myAddressesByTag) > 5:
                 print(f"  ... and {len(shared.myAddressesByTag) - 5} more")
             
@@ -331,7 +323,6 @@ class objectProcessor(threading.Thread):
             logger.info('This getpubkey request is not for any of my keys.')
             return
 
-        print(f"\nFound matching address: {myAddress}")
         
         # Decode the address to check version and stream
         decoded = decodeAddress(myAddress)
@@ -341,7 +332,6 @@ class objectProcessor(threading.Thread):
         
 
         if myAddressVersion != requestedAddressVersionNumber:
-            print(f"ERROR: Version mismatch: {myAddressVersion} != {requestedAddressVersionNumber}")
             return logger.warning(
                 '(Within the processgetpubkey function) Someone requested'
                 ' one of my pubkeys but the requestedAddressVersionNumber'
