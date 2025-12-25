@@ -1121,7 +1121,7 @@ class singleWorker(StoppableThread):
         queryreturn = sqlQuery(
             '''SELECT toaddress, fromaddress, subject, message, '''
             ''' ackdata, status, ttl, retrynumber, encodingtype FROM '''
-            ''' sent WHERE (status='msgqueued' or status='forcepow') '''
+            ''' sent WHERE (status='msgqueued' OR status='forcepow' OR status='awaitingpubkey') '''
             ''' and folder='sent' ORDER BY lastactiontime ASC LIMIT 5''')
         
         debug_print("Gefundene Nachrichten zum Verarbeiten: %d (limit 5)", len(queryreturn))
@@ -1358,6 +1358,38 @@ class singleWorker(StoppableThread):
                                 self.requestPubKey(toaddress)
                                 # on with the next msg on which we can do some work
                                 continue
+                
+                # NEU: Behandlung von 'awaitingpubkey' Status
+                elif status == 'awaitingpubkey':
+                    debug_print("  Status ist 'awaitingpubkey' - prüfe ob Pubkey verfügbar")
+                    
+                    # Prüfe ob Pubkey jetzt in Datenbank ist
+                    queryreturn_pubkey = sqlQuery(
+                        '''SELECT address FROM pubkeys WHERE address=?''',
+                        toaddress)
+                    
+                    if queryreturn_pubkey:
+                        debug_print("  Pubkey jetzt verfügbar! Aktualisiere Status zu 'doingmsgpow'")
+                        try:
+                            update_result = sqlExecute(
+                                '''UPDATE sent SET status='doingmsgpow' '''
+                                ''' WHERE toaddress=? AND status='awaitingpubkey' AND folder='sent' ''',
+                                toaddress)
+                            debug_print("  Update Result: %d Zeilen aktualisiert", update_result)
+                            status = 'doingmsgpow'
+                            debug_print("  Status auf 'doingmsgpow' aktualisiert")
+                            
+                            # Mark pubkey as used
+                            sqlExecute(
+                                '''UPDATE pubkeys SET usedpersonally='yes' '''
+                                ''' WHERE address=?''',
+                                toaddress)
+                        except Exception as e:
+                            debug_print("  Fehler beim Aktualisieren: %s", e)
+                            status = 'doingmsgpow'  # Fortfahren
+                    else:
+                        debug_print("  Pubkey noch nicht verfügbar, überspringe Nachricht")
+                        continue
 
                 # At this point we know that we have the necessary pubkey
                 # in the pubkeys table.

@@ -42,7 +42,7 @@ class sqlThread(threading.Thread):
         config_ready.wait()
         
         try:
-            self.conn = sqlite3.connect(state.appdata + 'messages.dat')
+            self.conn = sqlite3.connect(state.appdata + 'messages.dat', detect_types=sqlite3.PARSE_DECLTYPES)
             self.conn.text_factory = str
             self.cur = self.conn.cursor()
 
@@ -548,15 +548,15 @@ class sqlThread(threading.Thread):
                             self.conn.close()
                             shutil.move(
                                 paths.lookupAppdataFolder() + 'messages.dat', paths.lookupExeFolder() + 'messages.dat')
-                            self.conn = sqlite3.connect(paths.lookupExeFolder() + 'messages.dat')
-                            self.conn.text_factory = bytes
+                            self.conn = sqlite3.connect(paths.lookupExeFolder() + 'messages.dat', detect_types=sqlite3.PARSE_DECLTYPES)
+                            self.conn.text_factory = str
                             self.cur = self.conn.cursor()
                         except Exception as err:
                             logger.error('Error moving messages to program dir: %s', err)
                             # Try to reconnect
                             try:
                                 self.conn = sqlite3.connect(state.appdata + 'messages.dat')
-                                self.conn.text_factory = bytes
+                                self.conn.text_factory = str
                                 self.cur = self.conn.cursor()
                             except Exception as e2:
                                 logger.error('Failed to reconnect: %s', e2)
@@ -570,15 +570,15 @@ class sqlThread(threading.Thread):
                             self.conn.close()
                             shutil.move(
                                 paths.lookupExeFolder() + 'messages.dat', paths.lookupAppdataFolder() + 'messages.dat')
-                            self.conn = sqlite3.connect(paths.lookupAppdataFolder() + 'messages.dat')
-                            self.conn.text_factory = bytes
+                            self.conn = sqlite3.connect(paths.lookupAppdataFolder() + 'messages.dat', detect_types=sqlite3.PARSE_DECLTYPES)
+                            self.conn.text_factory = str
                             self.cur = self.conn.cursor()
                         except Exception as err:
                             logger.error('Error moving messages to appdata: %s', err)
                             # Try to reconnect
                             try:
-                                self.conn = sqlite3.connect(state.appdata + 'messages.dat')
-                                self.conn.text_factory = bytes
+                                self.conn = sqlite3.connect(state.appdata + 'messages.dat', detect_types=sqlite3.PARSE_DECLTYPES)
+                                self.conn.text_factory = str
                                 self.cur = self.conn.cursor()
                             except Exception as e2:
                                 logger.error('Failed to reconnect: %s', e2)
