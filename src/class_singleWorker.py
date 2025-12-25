@@ -1469,12 +1469,18 @@ class singleWorker(StoppableThread):
                 
                 print("\n  Dekodiere Adressen...")
                 try:
-                    # toStatus
-                    _, toAddressVersionNumber, toStreamNumber, toRipe = \
-                        decodeAddress(toaddress)
-                    # fromStatus, , ,fromRipe
-                    _, fromAddressVersionNumber, fromStreamNumber, _ = \
-                        decodeAddress(fromaddress)
+                    # WICHTIGER FIX: Verwende [1:] wie in der funktionierenden Version
+                    # ALT: _, toAddressVersionNumber, toStreamNumber, toRipe = decodeAddress(toaddress)
+                    # NEU: (nimm nur die letzten 3 Werte)
+                    toStatus, toAddressVersionNumber, toStreamNumber, toRipe = decodeAddress(toaddress)
+                    if toStatus != 'success':
+                        print(f"  ❌ FEHLER: Adresse 'An' konnte nicht dekodiert werden: {toStatus}")
+                        continue
+                        
+                    fromStatus, fromAddressVersionNumber, fromStreamNumber, _ = decodeAddress(fromaddress)
+                    if fromStatus != 'success':
+                        print(f"  ❌ FEHLER: Adresse 'Von' konnte nicht dekodiert werden: {fromStatus}")
+                        continue
                         
                     print(f"  ✅ Adressen erfolgreich dekodiert:")
                     print(f"    An Version: {toAddressVersionNumber}, Stream: {toStreamNumber}")
@@ -1714,117 +1720,11 @@ class singleWorker(StoppableThread):
                                 # on with the next msg on which we can do some work
                                 continue
                 
-                # NEU: Behandlung von 'awaitingpubkey' Status
+                # KRITISCHER FIX: awaitingpubkey Status - einfach überspringen (wie in funktionierender Version)
                 elif status == 'awaitingpubkey':
-                    print(f"  Status ist 'awaitingpubkey' - prüfe ob Pubkey verfügbar")
-                    debug_print("  Status ist 'awaitingpubkey' - prüfe ob Pubkey verfügbar")
-                    
-                    # Prüfe ob Pubkey jetzt in Datenbank ist
-                    queryreturn_pubkey = sqlQuery(
-                        '''SELECT address FROM pubkeys WHERE address=?''',
-                        toaddress)
-                    
-                    if queryreturn_pubkey:
-                        print(f"  ✅ Pubkey jetzt verfügbar! Aktualisiere Status zu 'doingmsgpow'")
-                        debug_print("  Pubkey jetzt verfügbar! Aktualisiere Status zu 'doingmsgpow'")
-                        try:
-                            # VERBESSERT: Suche nach KOMBINATION aus msgid UND toaddress für Sicherheit
-                            print(f"  Update mit msgid + toaddress...")
-                            if isinstance(msgid, bytes):
-                                update_result = sqlExecute(
-                                    '''UPDATE sent SET status='doingmsgpow' '''
-                                    ''' WHERE msgid=? AND toaddress=? AND status='awaitingpubkey' ''',
-                                    sqlite3.Binary(msgid), toaddress)
-                            else:
-                                update_result = sqlExecute(
-                                    '''UPDATE sent SET status='doingmsgpow' '''
-                                    ''' WHERE msgid=? AND toaddress=? AND status='awaitingpubkey' ''',
-                                    msgid, toaddress)
-                            
-                            print(f"  Update Result (mit msgid+toaddress): {update_result} Zeilen aktualisiert")
-                            debug_print("  Update Result (mit msgid+toaddress): %d Zeilen aktualisiert", update_result)
-                            
-                            if update_result <= 0:
-                                # Alternative 1: Nur mit toaddress
-                                print(f"  ⚠️  Keine Zeilen mit msgid+toaddress, versuche nur mit toaddress...")
-                                debug_print("  Keine Zeilen mit msgid+toaddress, versuche nur mit toaddress...")
-                                update_result = sqlExecute(
-                                    '''UPDATE sent SET status='doingmsgpow' '''
-                                    ''' WHERE toaddress=? AND status='awaitingpubkey' ''',
-                                    toaddress)
-                                print(f"  Update nur mit toaddress: {update_result} Zeilen")
-                                debug_print("  Update nur mit toaddress: %d Zeilen", update_result)
-                                
-                                # Alternative 2: Nur mit msgid
-                                if update_result <= 0 and isinstance(msgid, bytes):
-                                    print(f"  ⚠️  Versuche nur mit msgid...")
-                                    debug_print("  Versuche nur mit msgid...")
-                                    try:
-                                        update_result = sqlExecute(
-                                            '''UPDATE sent SET status='doingmsgpow' '''
-                                            ''' WHERE msgid=? AND status='awaitingpubkey' ''',
-                                            sqlite3.Binary(msgid))
-                                        print(f"  Update nur mit msgid: {update_result} Zeilen")
-                                        debug_print("  Update nur mit msgid: %d Zeilen", update_result)
-                                    except Exception as e:
-                                        print(f"  ❌ Fehler bei Update mit msgid: {e}")
-                                        debug_print("  Fehler bei Update mit msgid: %s", e)
-                            
-                            if update_result <= 0:
-                                print(f"  ⚠️  WARNUNG: Konnte keine Zeile updaten, setze Status manuell")
-                                debug_print("  WARNUNG: Konnte keine Zeile updaten, setze Status manuell")
-                                status = 'doingmsgpow'
-                            else:
-                                status = 'doingmsgpow'
-                                print(f"  ✅ Status erfolgreich auf 'doingmsgpow' aktualisiert")
-                                debug_print("  ✅ Status erfolgreich auf 'doingmsgpow' aktualisiert")
-                            
-                            # Mark pubkey as used
-                            sqlExecute(
-                                '''UPDATE pubkeys SET usedpersonally='yes' '''
-                                ''' WHERE address=?''',
-                                toaddress)
-                            print(f"  ✅ Pubkey als 'usedpersonally' markiert")
-                        except Exception as e:
-                            print(f"  ❌ Fehler beim Aktualisieren: {e}")
-                            debug_print("  Fehler beim Aktualisieren: %s", e)
-                            status = 'doingmsgpow'  # Fortfahren trotz Fehler
-                    else:
-                        print(f"  ❌ KEIN PUBKEY GEFUNDEN - starte erneute Pubkey-Anfrage")
-                        debug_print("  KEIN PUBKEY GEFUNDEN - starte erneute Pubkey-Anfrage")
-                        print(f"  Setze Status auf 'doingpubkeypow' für erneute Anfrage")
-                        debug_print("  Setze Status auf 'doingpubkeypow' für erneute Anfrage")
-                        
-                        try:
-                            # Setze Status zurück zu 'doingpubkeypow' für erneute Anfrage
-                            if isinstance(msgid, bytes):
-                                update_result = sqlExecute(
-                                    '''UPDATE sent SET status='doingpubkeypow', retrynumber=retrynumber+1 '''
-                                    ''' WHERE msgid=? AND status='awaitingpubkey' ''',
-                                    sqlite3.Binary(msgid))
-                            else:
-                                update_result = sqlExecute(
-                                    '''UPDATE sent SET status='doingpubkeypow', retrynumber=retrynumber+1 '''
-                                    ''' WHERE msgid=? AND status='awaitingpubkey' ''',
-                                    msgid)
-                            
-                            print(f"  Update Result: {update_result} Zeilen aktualisiert für erneute Pubkey-Anfrage")
-                            debug_print("  Update Result: %d Zeilen aktualisiert für erneute Pubkey-Anfrage", update_result)
-                            
-                            # Auch das letzte Aktualisierungsdatum zurücksetzen
-                            sqlExecute(
-                                '''UPDATE sent SET lastactiontime=? '''
-                                ''' WHERE msgid=?''',
-                                int(time.time()), msgid)
-                            
-                            print(f"  ✅ Status auf 'doingpubkeypow' zurückgesetzt - wird in nächster Runde verarbeitet")
-                            debug_print("  Status auf 'doingpubkeypow' zurückgesetzt - wird in nächster Runde verarbeitet")
-                        except Exception as e:
-                            print(f"  ❌ Fehler beim Zurücksetzen des Status: {e}")
-                            debug_print("  Fehler beim Zurücksetzen des Status: %s", e)
-                        
-                        print(f"  ⏭️  Weiter zur nächsten Nachricht")
-                        continue
+                    print(f"  ⏭️  Status ist 'awaitingpubkey' - überspringe, warte auf Pubkey")
+                    debug_print("  Status ist 'awaitingpubkey' - überspringe")
+                    continue
 
                 print(f"\n📋 PHASE 6: Fortfahren mit Nachrichtenverarbeitung (Status: {status})")
                 debug_print("  Fortfahren mit Nachrichtenverarbeitung...")
