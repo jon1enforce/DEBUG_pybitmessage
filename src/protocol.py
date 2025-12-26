@@ -460,8 +460,6 @@ def decodeObjectParameters(data):
     return objectType, toStreamNumber, expiresTime
 
 
-# Python version check
-PY3 = sys.version_info[0] == 3
 def decryptAndCheckPubkeyPayload(data, address):
     """
     Version 4 pubkeys are encrypted. This function is run when we
@@ -470,84 +468,135 @@ def decryptAndCheckPubkeyPayload(data, address):
     already in our inventory when we tried to send a msg to this
     particular address.
     
-    Compatible with both Python 2 and Python 3.
+    EXTENSIVE DEBUG VERSION FOR PYTHON 3
     """
-    logger = logging.getLogger('protocol')
     
-    # Helper functions for Python 2/3 compatibility
-    def to_bytes(x, encoding='utf-8'):
-        """Convert input to bytes"""
-        if isinstance(x, bytes):
-            return x
-        elif isinstance(x, bytearray):
-            return bytes(x)
-        elif isinstance(x, str):
-            return x.encode(encoding)
-        else:
-            return bytes(x)
+    print("\n" + "="*100)
+    print("🔍 DEBUG: decryptAndCheckPubkeyPayload START")
+    print(f"  Address: {address}")
+    print(f"  Data type: {type(data)}, length: {len(data)}")
+    print("="*100)
     
     try:
-        # Ensure data is bytes
-        data = to_bytes(data)
+        # 1. ADDRESS DECODING
+        print(f"\n📋 [1] ADDRESS DECODING:")
+        print(f"  Input address: {address}")
         
-        # Decode the address
-        addressStatus, addressVersion, streamNumber, ripe = decodeAddress(address)
-        if addressStatus != 'success':
-            logger.error("Failed to decode address: %s", address)
+        decode_result = decodeAddress(address)
+        print(f"  decodeAddress result: {decode_result}")
+        print(f"  decodeAddress result type: {type(decode_result)}")
+        print(f"  decodeAddress result length: {len(decode_result)}")
+        
+        if decode_result[0] != 'success':
+            print(f"  ❌ Address decode failed: {decode_result[0]}")
             return 'failed'
+            
+        addressVersion, streamNumber, ripe = decode_result[1:]
+        print(f"  ✅ Decoded successfully:")
+        print(f"    Version: {addressVersion}")
+        print(f"    Stream: {streamNumber}")
+        print(f"    RIPE type: {type(ripe)}, length: {len(ripe)}")
+        print(f"    RIPE hex: {hexlify(ripe)}")
         
-        readPosition = 20
+        # 2. INITIAL DATA PARSING
+        print(f"\n📋 [2] INITIAL DATA PARSING:")
+        print(f"  Data length: {len(data)} bytes")
+        print(f"  First 50 bytes hex: {hexlify(data[:50])}")
+        
+        readPosition = 20  # bypass the nonce (8), time (8), and object type (4)
+        print(f"  Start readPosition: {readPosition}")
         
         # Embedded address version
         embeddedAddressVersion, varintLength = decodeVarint(
             data[readPosition:readPosition + 10])
+        print(f"  embeddedAddressVersion: {embeddedAddressVersion}, varintLength: {varintLength}")
         readPosition += varintLength
         
         # Embedded stream number
         embeddedStreamNumber, varintLength = decodeVarint(
             data[readPosition:readPosition + 10])
+        print(f"  embeddedStreamNumber: {embeddedStreamNumber}, varintLength: {varintLength}")
         readPosition += varintLength
         
-        # Verify address version and stream number match
-        if addressVersion != embeddedAddressVersion or streamNumber != embeddedStreamNumber:
-            logger.error("Address version or stream number mismatch")
+        # Version/Stream validation
+        print(f"\n📋 [3] VERSION/STREAM VALIDATION:")
+        print(f"  Expected: Version={addressVersion}, Stream={streamNumber}")
+        print(f"  Actual:   Version={embeddedAddressVersion}, Stream={embeddedStreamNumber}")
+        
+        if addressVersion != embeddedAddressVersion:
+            print(f"  ❌ VERSION MISMATCH!")
+            return 'failed'
+        if streamNumber != embeddedStreamNumber:
+            print(f"  ❌ STREAM MISMATCH!")
             return 'failed'
         
-        storedData = data[20:readPosition]
+        print(f"  ✅ Version/Stream match OK")
         
-        # Tag - 32 bytes binary data
+        storedData = data[20:readPosition]
+        print(f"  storedData type: {type(storedData)}, length: {len(storedData)}")
+        
+        # 3. TAG EXTRACTION
+        print(f"\n📋 [4] TAG EXTRACTION:")
+        print(f"  Current readPosition: {readPosition}")
+        
         tag = data[readPosition:readPosition + 32]
+        print(f"  tag type: {type(tag)}, length: {len(tag)}")
+        print(f"  tag hex: {hexlify(tag)}")
         readPosition += 32
         
-        # Signed data
+        # Python 3 CRITICAL: tag is bytes, but neededPubkeys might have different key types
+        tag_bytes = bytes(tag)
+        print(f"  tag_bytes type: {type(tag_bytes)}")
+        
         signedData = data[8:readPosition]
         encryptedData = data[readPosition:]
         
-        # Find the tag in neededPubkeys
-        # tag ist 32 Bytes binärer Daten, kann als Key verwendet werden
+        print(f"  signedData length: {len(signedData)}")
+        print(f"  encryptedData length: {len(encryptedData)}")
+        print(f"  encryptedData first 50 bytes: {hexlify(encryptedData[:50])}")
+        
+        # 4. NEEDEDPUBKEYS LOOKUP
+        print(f"\n📋 [5] NEEDEDPUBKEYS LOOKUP:")
+        print(f"  State.neededPubkeys size: {len(state.neededPubkeys)}")
+        
+        # Try multiple key types
         found = False
         cryptorObject = None
         toAddress = None
         
-        # In Python 3, Dictionary-Keys können bytes sein
-        # Aber state.neededPubkeys könnte hex strings als Keys haben
-        tag_bytes = to_bytes(tag)
+        # List all keys in neededPubkeys for debugging
+        print(f"  All keys in neededPubkeys (first 5):")
+        keys_list = list(state.neededPubkeys.keys())
+        for i, key in enumerate(keys_list[:5]):
+            print(f"    [{i}] Key type: {type(key)}, value: {key}")
+            if isinstance(key, bytes):
+                print(f"         Hex: {hexlify(key)}")
         
-        # Versuche verschiedene Darstellungen
+        # Try different key representations
         possible_keys = []
         
-        # 1. Direkt als bytes
+        # 1. Direct bytes
         possible_keys.append(tag_bytes)
+        print(f"  Trying key type 1: bytes, hex: {hexlify(tag_bytes)}")
         
-        # 2. Als hex string (wahrscheinlich was PyBitmessage verwendet)
-        if PY3:
-            possible_keys.append(hexlify(tag_bytes).decode('ascii'))
-        else:
-            possible_keys.append(hexlify(tag_bytes))
+        # 2. Hex string (common in Python 2/3 mix)
+        tag_hex = hexlify(tag_bytes).decode('ascii')
+        possible_keys.append(tag_hex)
+        print(f"  Trying key type 2: hex string, value: {tag_hex}")
         
-        # 3. Als latin-1 decoded string (für den Fall)
+        # 3. Latin-1 decoded string
         try:
-            possible_keys.append(tag_bytes.decode('latin-1'))
+            tag_latin1 = tag_bytes.decode('latin-1')
+            possible_keys.append(tag_latin1)
+            print(f"  Trying key type 3: latin-1 string, value: {repr(tag_latin1)}")
+        except:
+            print(f"  Cannot decode tag as latin-1")
+            
+        # 4. Raw bytes as memoryview (if neededPubkeys uses memoryview)
+        try:
+            tag_memoryview = memoryview(tag_bytes)
+            possible_keys.append(tag_memoryview)
+            print(f"  Trying key type 4: memoryview")
         except:
             pass
         
@@ -555,139 +604,214 @@ def decryptAndCheckPubkeyPayload(data, address):
             if key in state.neededPubkeys:
                 toAddress, cryptorObject = state.neededPubkeys[key]
                 found = True
+                print(f"  ✅ FOUND in neededPubkeys with key type: {type(key)}")
+                print(f"     toAddress: {toAddress}")
+                print(f"     cryptorObject type: {type(cryptorObject)}")
                 break
         
         if not found:
-            logger.error("Tag not found in neededPubkeys. Tag hex: %s", 
-                        hexlify(tag_bytes).decode('ascii') if PY3 else hexlify(tag_bytes))
+            print(f"  ❌ TAG NOT FOUND in neededPubkeys!")
+            print(f"  Tag hex we're looking for: {hexlify(tag_bytes)}")
+            print(f"  Tag hex as string: {tag_hex}")
             return 'failed'
         
         # Address comparison
+        print(f"\n📋 [6] ADDRESS COMPARISON:")
+        print(f"  Expected address: {address}")
+        print(f"  Found address: {toAddress}")
+        
         if toAddress != address:
-            logger.error("Address mismatch in neededPubkeys")
+            print(f"  ❌ ADDRESS MISMATCH!")
             return 'failed'
         
-        # Try to decrypt
+        print(f"  ✅ Address match OK")
+        
+        # 5. DECRYPTION
+        print(f"\n📋 [7] DECRYPTION ATTEMPT:")
+        print(f"  encryptedData type: {type(encryptedData)}, length: {len(encryptedData)}")
+        print(f"  cryptorObject type: {type(cryptorObject)}")
+        
         try:
             decryptedData = cryptorObject.decrypt(encryptedData)
+            print(f"  ✅ Decryption successful!")
+            print(f"  decryptedData type: {type(decryptedData)}, length: {len(decryptedData)}")
+            print(f"  First 100 bytes hex: {hexlify(decryptedData[:100])}")
         except Exception as e:
-            logger.error("Decryption failed: %s", str(e))
+            print(f"  ❌ Decryption failed: {e}")
+            print(f"  Error type: {type(e)}")
+            import traceback
+            traceback.print_exc()
             return 'failed'
         
-
+        # 6. DECRYPTED DATA PARSING
+        print(f"\n📋 [8] DECRYPTED DATA PARSING:")
         
         # Ensure decryptedData is bytes
-        decryptedData = to_bytes(decryptedData)
+        if isinstance(decryptedData, str):
+            print(f"  WARNING: decryptedData is string, converting to bytes")
+            decryptedData = decryptedData.encode('latin-1')
+        elif isinstance(decryptedData, bytearray):
+            decryptedData = bytes(decryptedData)
         
-        if len(decryptedData) < 140:
-            logger.error("Decrypted data too short")
-            return 'failed'
+        print(f"  Final decryptedData type: {type(decryptedData)}")
         
-        # Parse decrypted data
         readPosition = 0
-        # bitfieldBehaviors = decryptedData[readPosition:readPosition + 4]
+        
+        # Bitfield (4 bytes)
+        bitfieldBehaviors = decryptedData[readPosition:readPosition + 4]
+        print(f"  bitfieldBehaviors: {hexlify(bitfieldBehaviors)}")
         readPosition += 4
         
-        # Public keys - ensure they start with 0x04
-        pubSigningKey = b'\x04' + decryptedData[readPosition:readPosition + 64]
+        # Public Signing Key (64 bytes + 1 byte prefix)
+        pubSigningKey_raw = decryptedData[readPosition:readPosition + 64]
+        print(f"  pubSigningKey_raw (64 bytes): {hexlify(pubSigningKey_raw)}")
+        
+        # CRITICAL FIX: Python 3 needs bytes, not string
+        pubSigningKey = b'\x04' + pubSigningKey_raw
+        print(f"  pubSigningKey (with 0x04 prefix): {hexlify(pubSigningKey)}")
+        print(f"  pubSigningKey type: {type(pubSigningKey)}, length: {len(pubSigningKey)}")
         readPosition += 64
         
-        pubEncryptionKey = b'\x04' + decryptedData[readPosition:readPosition + 64]
+        # Public Encryption Key (64 bytes + 1 byte prefix)
+        pubEncryptionKey_raw = decryptedData[readPosition:readPosition + 64]
+        pubEncryptionKey = b'\x04' + pubEncryptionKey_raw
+        print(f"  pubEncryptionKey (with 0x04 prefix): {hexlify(pubEncryptionKey[:20])}...")
         readPosition += 64
         
         # Nonce trials per byte
         specifiedNonceTrialsPerByte, varintLength = decodeVarint(
             decryptedData[readPosition:readPosition + 10])
+        print(f"  specifiedNonceTrialsPerByte: {specifiedNonceTrialsPerByte}")
         readPosition += varintLength
         
         # Payload length extra bytes
         specifiedPayloadLengthExtraBytes, varintLength = decodeVarint(
             decryptedData[readPosition:readPosition + 10])
+        print(f"  specifiedPayloadLengthExtraBytes: {specifiedPayloadLengthExtraBytes}")
         readPosition += varintLength
         
         # Update stored and signed data
         storedData += decryptedData[:readPosition]
         signedData += decryptedData[:readPosition]
         
-        # Signature
+        print(f"  signedData final length: {len(signedData)}")
+        
+        # 7. SIGNATURE
+        print(f"\n📋 [9] SIGNATURE:")
+        
         signatureLength, varintLength = decodeVarint(
             decryptedData[readPosition:readPosition + 10])
+        print(f"  signatureLength: {signatureLength}")
         readPosition += varintLength
         
-        if len(decryptedData) < readPosition + signatureLength:
-            logger.error("Decrypted data too short for signature")
-            return 'failed'
-        
         signature = decryptedData[readPosition:readPosition + signatureLength]
+        print(f"  signature type: {type(signature)}, length: {len(signature)}")
+        print(f"  signature hex (first 50): {hexlify(signature[:50])}")
         
-        # VERIFICATION - Handle Python 2/3 differences
-        # Ensure signedData is bytes
-        signedData = to_bytes(signedData)
-        signature = to_bytes(signature)
+        # 8. ECDSA VERIFICATION
+        print(f"\n📋 [10] ECDSA VERIFICATION:")
+        print(f"  signedData type: {type(signedData)}, length: {len(signedData)}")
+        print(f"  signature type: {type(signature)}")
         
-        # Convert pubSigningKey to hex string (both Python 2 and 3)
-        if PY3:
-            pubSigningKeyHex = hexlify(pubSigningKey).decode('ascii')
-        else:
-            pubSigningKeyHex = hexlify(pubSigningKey)
+        # Convert pubSigningKey to hex string for highlevelcrypto.verify
+        pubSigningKeyHex = hexlify(pubSigningKey).decode('ascii')
+        print(f"  pubSigningKeyHex type: {type(pubSigningKeyHex)}, length: {len(pubSigningKeyHex)}")
+        print(f"  pubSigningKeyHex (first 100): {pubSigningKeyHex[:100]}")
         
-        # Try verification
+        # Try verification with bytes signature first
+        print(f"\n  Attempt 1: signature as bytes")
         verify_result = highlevelcrypto.verify(
             signedData, 
             signature, 
             pubSigningKeyHex
         )
+        print(f"    Result: {verify_result}")
         
         if not verify_result:
-            logger.error("ECDSA verification failed")
-            
-            # Try alternative: if signature needs to be hex string
-            try:
-                if PY3:
-                    signature_hex = hexlify(signature).decode('ascii')
-                else:
-                    signature_hex = hexlify(signature)
-                
-                alt_result = highlevelcrypto.verify(
-                    signedData,
-                    signature_hex,
-                    pubSigningKeyHex
-                )
-                if alt_result:
-                    verify_result = alt_result
-            except Exception:
-                pass
-            
-            if not verify_result:
-                return 'failed'
+            # Try with signature as hex string
+            print(f"\n  Attempt 2: signature as hex string")
+            signature_hex = hexlify(signature).decode('ascii')
+            verify_result = highlevelcrypto.verify(
+                signedData,
+                signature_hex,
+                pubSigningKeyHex
+            )
+            print(f"    Result: {verify_result}")
         
-        logger.info("ECDSA verification passed")
-        
-        # Calculate and compare RIPE
-        embeddedRipe = highlevelcrypto.to_ripe(pubSigningKey, pubEncryptionKey)
-        
-        if embeddedRipe != ripe:
-            logger.error("RIPE mismatch")
+        if not verify_result:
+            print(f"  ❌ ECDSA VERIFICATION FAILED!")
             return 'failed'
         
-        # Store in database
-        # Ensure data types are compatible with SQL
-        if PY3:
-            # Python 3 needs bytes for Binary
-            t = (address, addressVersion, sqlite3.Binary(storedData), 
-                 int(time.time()), 'yes')
-        else:
-            # Python 2 works with str/bytes directly
-            t = (address, addressVersion, storedData, 
-                 int(time.time()), 'yes')
+        print(f"  ✅ ECDSA verification passed!")
         
+        # 9. RIPE CALCULATION AND COMPARISON
+        print(f"\n📋 [11] RIPE CALCULATION & COMPARISON:")
+        print(f"  pubSigningKey type: {type(pubSigningKey)}, length: {len(pubSigningKey)}")
+        print(f"  pubEncryptionKey type: {type(pubEncryptionKey)}, length: {len(pubEncryptionKey)}")
+        
+        # Call highlevelcrypto.to_ripe
+        print(f"  Calling highlevelcrypto.to_ripe()...")
+        embeddedRipe = highlevelcrypto.to_ripe(pubSigningKey, pubEncryptionKey)
+        print(f"  embeddedRipe type: {type(embeddedRipe)}, length: {len(embeddedRipe)}")
+        print(f"  embeddedRipe hex: {hexlify(embeddedRipe)}")
+        
+        print(f"\n  RIPE COMPARISON:")
+        print(f"  Expected RIPE (from address): {hexlify(ripe)}")
+        print(f"  Calculated RIPE (from keys):   {hexlify(embeddedRipe)}")
+        
+        if embeddedRipe != ripe:
+            print(f"\n  ❌ RIPE MISMATCH!")
+            print(f"  Expected: {hexlify(ripe)}")
+            print(f"  Got:      {hexlify(embeddedRipe)}")
+            print(f"  Equal? {embeddedRipe == ripe}")
+            
+            # Debug the actual bytes
+            print(f"\n  Byte-by-byte comparison:")
+            ripe_bytes = bytes(ripe) if not isinstance(ripe, bytes) else ripe
+            embedded_bytes = bytes(embeddedRipe) if not isinstance(embeddedRipe, bytes) else embeddedRipe
+            
+            if len(ripe_bytes) != len(embedded_bytes):
+                print(f"    Length mismatch: {len(ripe_bytes)} vs {len(embedded_bytes)}")
+            else:
+                for i in range(min(len(ripe_bytes), len(embedded_bytes))):
+                    if ripe_bytes[i] != embedded_bytes[i]:
+                        print(f"    Byte {i}: Expected {ripe_bytes[i]:02x}, Got {embedded_bytes[i]:02x}")
+            
+            return 'failed'
+        
+        print(f"  ✅ RIPE match OK!")
+        
+        # 10. DATABASE INSERTION
+        print(f"\n📋 [12] DATABASE INSERTION:")
+        print(f"  Address: {address}")
+        print(f"  AddressVersion: {addressVersion}")
+        print(f"  storedData type: {type(storedData)}, length: {len(storedData)}")
+        print(f"  storedData hex (first 50): {hexlify(storedData[:50])}")
+        
+        t = (address, addressVersion, sqlite3.Binary(storedData), 
+             int(time.time()), 'yes')
+        
+        print(f"  Executing SQL INSERT...")
         sqlExecute('''INSERT INTO pubkeys VALUES (?,?,?,?,?)''', *t)
+        
+        print(f"\n✅ SUCCESS! Pubkey decryption and verification complete!")
+        print(f"  Pubkey stored for address: {address}")
         
         return 'successful'
         
     except varintDecodeError as e:
-        logger.error("Varint decode error: %s", str(e))
+        print(f"\n❌ VARINT DECODE ERROR: {e}")
+        print(f"  readPosition at error: {readPosition}")
         return 'failed'
     except Exception as e:
-        logger.error("Unhandled exception: %s", str(e), exc_info=True)
+        print(f"\n❌ UNHANDLED EXCEPTION: {type(e).__name__}: {e}")
+        import traceback
+        print(f"  Traceback:")
+        traceback.print_exc()
+        print(f"  readPosition at error: {readPosition}")
         return 'failed'
+    
+    finally:
+        print("\n" + "="*100)
+        print("🔍 DEBUG: decryptAndCheckPubkeyPayload END")
+        print("="*100 + "\n")
