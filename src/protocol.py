@@ -815,3 +815,327 @@ def decryptAndCheckPubkeyPayload(data, address):
         print("\n" + "="*100)
         print("🔍 DEBUG: decryptAndCheckPubkeyPayload END")
         print("="*100 + "\n")
+
+
+# Getpubkey creation functions - DEBUG VERSION
+def createGetpubkeyPayload(address):
+    """
+    Create a getpubkey request for the given address.
+    EXTENSIVE DEBUG VERSION.
+    """
+    print("\n" + "="*100)
+    print("🔍 DEBUG: createGetpubkeyPayload START")
+    print(f"  Creating getpubkey for address: {address}")
+    print("="*100)
+    
+    try:
+        # Decode the address
+        decode_result = decodeAddress(address)
+        print(f"\n📋 [1] ADDRESS DECODING:")
+        print(f"  decodeAddress result: {decode_result}")
+        
+        if decode_result[0] != 'success':
+            print(f"  ❌ Address decode failed: {decode_result[0]}")
+            return None
+            
+        addressVersion, streamNumber, ripe = decode_result[1:]
+        print(f"  ✅ Decoded successfully:")
+        print(f"    Version: {addressVersion}")
+        print(f"    Stream: {streamNumber}")
+        print(f"    RIPE hex: {hexlify(ripe)}")
+        
+        # Create payload based on address version
+        payload = b''
+        
+        if addressVersion <= 3:
+            # Version 2/3 uses RIPE hash
+            print(f"\n📋 [2] CREATING V{addressVersion} GETPUBKEY:")
+            print(f"  Using RIPE hash (20 bytes): {hexlify(ripe)}")
+            
+            payload += encodeVarint(addressVersion)
+            payload += encodeVarint(streamNumber)
+            payload += ripe  # 20 bytes
+            
+            print(f"  Payload created: {len(payload)} bytes")
+            print(f"  Payload hex: {hexlify(payload)}")
+            
+        elif addressVersion >= 4:
+            # Version 4 uses tag
+            print(f"\n📋 [2] CREATING V{addressVersion} GETPUBKEY:")
+            
+            # Calculate tag
+            print(f"  Calculating tag from:")
+            print(f"    Version: {addressVersion}")
+            print(f"    Stream: {streamNumber}")
+            print(f"    RIPE: {hexlify(ripe)}")
+            
+            tag = highlevelcrypto.double_sha512(
+                encodeVarint(addressVersion) + encodeVarint(streamNumber) + ripe
+            )[32:]
+            
+            print(f"  Tag calculated: {hexlify(tag)}")
+            print(f"  Tag length: {len(tag)} bytes")
+            
+            payload += encodeVarint(addressVersion)
+            payload += encodeVarint(streamNumber)
+            payload += tag  # 32 bytes
+            
+            print(f"  Payload created: {len(payload)} bytes")
+            print(f"  Payload hex: {hexlify(payload)}")
+            
+        else:
+            print(f"\n❌ UNSUPPORTED ADDRESS VERSION: {addressVersion}")
+            return None
+        
+        print(f"\n✅ SUCCESS: getpubkey payload created")
+        print(f"  Total size: {len(payload)} bytes")
+        print("="*100)
+        
+        return payload
+        
+    except Exception as e:
+        print(f"\n❌ ERROR in createGetpubkeyPayload: {e}")
+        import traceback
+        traceback.print_exc()
+        print("="*100)
+        return None
+
+
+def assembleGetpubkeyMessage(address):
+    """
+    Create a complete getpubkey object for the given address.
+    Includes nonce, time, and object type.
+    EXTENSIVE DEBUG VERSION.
+    """
+    print("\n" + "="*100)
+    print("🚀 DEBUG: assembleGetpubkeyMessage START")
+    print(f"  Assembling getpubkey message for: {address}")
+    print("="*100)
+    
+    try:
+        # Get the payload
+        payload = createGetpubkeyPayload(address)
+        if not payload:
+            print(f"❌ Failed to create payload")
+            return None
+        
+        print(f"\n📋 [3] ASSEMBLING COMPLETE GETPUBKEY OBJECT:")
+        
+        # Create the complete object
+        data = b''
+        
+        # Nonce (8 bytes - will be filled during PoW)
+        nonce = b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        data += nonce
+        print(f"  Nonce placeholder: 8 bytes")
+        
+        # Expiration time (8 bytes)
+        expires_time = int(time.time()) + 86400  # 1 day
+        data += pack('>Q', expires_time)
+        print(f"  Expires time: {expires_time} ({time.ctime(expires_time)})")
+        
+        # Object type (4 bytes)
+        object_type = pack('>I', OBJECT_GETPUBKEY)
+        data += object_type
+        print(f"  Object type: GETPUBKEY (0x{OBJECT_GETPUBKEY:08X})")
+        
+        # Version (varint)
+        decode_result = decodeAddress(address)
+        if decode_result[0] != 'success':
+            print(f"❌ Cannot decode address for version")
+            return None
+            
+        addressVersion = decode_result[1]
+        data += encodeVarint(addressVersion)
+        print(f"  Address version varint: {addressVersion}")
+        
+        # Stream number (varint)
+        streamNumber = decode_result[2]
+        data += encodeVarint(streamNumber)
+        print(f"  Stream number varint: {streamNumber}")
+        
+        # Add the payload (hash or tag)
+        data += payload[len(encodeVarint(addressVersion)) + len(encodeVarint(streamNumber)):]
+        
+        print(f"\n✅ COMPLETE GETPUBKEY OBJECT CREATED:")
+        print(f"  Total size: {len(data)} bytes")
+        print(f"  First 50 bytes hex: {hexlify(data[:50])}")
+        print("="*100)
+        
+        return data
+        
+    except Exception as e:
+        print(f"\n❌ ERROR in assembleGetpubkeyMessage: {e}")
+        import traceback
+        traceback.print_exc()
+        print("="*100)
+        return None
+
+
+def createAndSendGetpubkey(address, stream):
+    """
+    High-level function to create and queue a getpubkey request.
+    This is what should be called when we need a pubkey.
+    EXTENSIVE DEBUG VERSION.
+    """
+    print("\n" + "="*100)
+    print("🚀🚀🚀 DEBUG: createAndSendGetpubkey START 🚀🚀🚀")
+    print(f"  Creating and sending getpubkey request for:")
+    print(f"    Address: {address}")
+    print(f"    Stream: {stream}")
+    print("="*100)
+    
+    try:
+        # First, check if we already have the pubkey
+        print(f"\n📋 [1] CHECKING IF WE ALREADY HAVE PUBKEY:")
+        query = "SELECT address FROM pubkeys WHERE address = ?"
+        from helper_sql import sqlQuery
+        result = sqlQuery(query, address)
+        
+        if result:
+            print(f"  ✅ Pubkey already in database!")
+            return True
+        else:
+            print(f"  ❌ Pubkey not found in database")
+        
+        # Check if we're already waiting for this pubkey
+        print(f"\n📋 [2] CHECKING state.neededPubkeys:")
+        print(f"  Current neededPubkeys size: {len(state.neededPubkeys)}")
+        
+        # Calculate tag for v4 addresses
+        decode_result = decodeAddress(address)
+        if decode_result[0] != 'success':
+            print(f"❌ Cannot decode address")
+            return False
+            
+        addressVersion = decode_result[1]
+        
+        if addressVersion >= 4:
+            streamNumber, ripe = decode_result[2], decode_result[3]
+            tag = highlevelcrypto.double_sha512(
+                encodeVarint(addressVersion) + encodeVarint(streamNumber) + ripe
+            )[32:]
+            tag_hex = hexlify(tag).decode('ascii')
+            
+            print(f"  Calculated tag for v{addressVersion}: {hexlify(tag)}")
+            print(f"  Tag hex string: {tag_hex}")
+            
+            # Check if already in neededPubkeys
+            if tag in state.neededPubkeys or tag_hex in state.neededPubkeys:
+                print(f"  ℹ️ Already waiting for this pubkey")
+                return True
+        else:
+            # For v2/v3, check by address
+            if address in state.neededPubkeys:
+                print(f"  ℹ️ Already waiting for this pubkey")
+                return True
+        
+        # Create the getpubkey object
+        print(f"\n📋 [3] CREATING GETPUBKEY OBJECT:")
+        getpubkey_data = assembleGetpubkeyMessage(address)
+        if not getpubkey_data:
+            print(f"❌ Failed to create getpubkey object")
+            return False
+        
+        # Calculate inventory hash
+        print(f"\n📋 [4] CALCULATING INVENTORY HASH:")
+        inventory_hash = highlevelcrypto.calculateInventoryHash(getpubkey_data)
+        print(f"  Inventory hash: {hexlify(inventory_hash)}")
+        
+        # Add to inventory
+        print(f"\n📋 [5] ADDING TO INVENTORY:")
+        print(f"  Adding to state.Inventory...")
+        expires_time = unpack('>Q', getpubkey_data[8:16])[0]
+        state.Inventory[inventory_hash] = (
+            OBJECT_GETPUBKEY, stream, getpubkey_data, expires_time, b''
+        )
+        print(f"  Inventory size now: {len(state.Inventory)}")
+        
+        # Add to invQueue to send to peers
+        print(f"\n📋 [6] QUEUING FOR NETWORK:")
+        from network import invQueue
+        invQueue.put((stream, inventory_hash))
+        print(f"  Added to invQueue for stream {stream}")
+        
+        # Update neededPubkeys
+        print(f"\n📋 [7] UPDATING state.neededPubkeys:")
+        if addressVersion >= 4:
+            # For v4, we need a cryptor object
+            print(f"  Creating cryptor object for v{addressVersion}...")
+            try:
+                from highlevelcrypto import makeCryptor
+                cryptorObject = makeCryptor(hexlify(ripe))
+                state.neededPubkeys[tag] = (address, cryptorObject)
+                print(f"  ✅ Added to neededPubkeys with bytes key")
+                print(f"    Key (bytes): {hexlify(tag)}")
+                print(f"    Value: ({address}, cryptorObject)")
+            except Exception as e:
+                print(f"  ❌ Failed to create cryptor object: {e}")
+                # Fallback: store without cryptor
+                state.neededPubkeys[tag] = (address, None)
+                print(f"  ℹ️ Added without cryptor object")
+        else:
+            # For v2/v3, store address directly
+            state.neededPubkeys[address] = 0
+            print(f"  ✅ Added to neededPubkeys:")
+            print(f"    Key: {address}")
+            print(f"    Value: 0")
+        
+        print(f"\n🎉 SUCCESS! Getpubkey request created and queued!")
+        print(f"  neededPubkeys size: {len(state.neededPubkeys)}")
+        print("="*100)
+        
+        return True
+        
+    except Exception as e:
+        print(f"\n❌ ERROR in createAndSendGetpubkey: {e}")
+        import traceback
+        traceback.print_exc()
+        print("="*100)
+        return False
+
+
+# Helper function to debug the current state
+def debugPubkeyState():
+    """Print debug information about pubkey state"""
+    print("\n" + "="*100)
+    print("🔍 DEBUG: CURRENT PUBKEY STATE")
+    print("="*100)
+    
+    print(f"\n📊 DATABASE STATS:")
+    from helper_sql import sqlQuery
+    pubkey_count = sqlQuery("SELECT COUNT(*) FROM pubkeys")[0][0]
+    print(f"  Pubkeys in database: {pubkey_count}")
+    
+    print(f"\n📊 STATE.NEEDEDPUBKEYS:")
+    print(f"  Size: {len(state.neededPubkeys)}")
+    if state.neededPubkeys:
+        print(f"  Keys:")
+        for i, (key, value) in enumerate(list(state.neededPubkeys.items())[:10]):
+            if isinstance(key, str):
+                key_disp = f"str: {key[:30]}..." if len(key) > 30 else f"str: {key}"
+            elif isinstance(key, bytes):
+                key_disp = f"bytes: {hexlify(key[:10])}..."
+            else:
+                key_disp = f"{type(key)}: {key}"
+            print(f"    [{i}] Key: {key_disp}")
+            print(f"        Value type: {type(value)}")
+            if isinstance(value, tuple) and len(value) >= 2:
+                print(f"        Address: {value[0]}")
+    
+    print(f"\n📊 STATE.INVENTORY:")
+    print(f"  Size: {len(state.Inventory)}")
+    if state.Inventory:
+        print(f"  First 3 items:")
+        for i, (inv_hash, inv_data) in enumerate(list(state.Inventory.items())[:3]):
+            object_type = inv_data[0]
+            object_type_name = {
+                OBJECT_GETPUBKEY: "GETPUBKEY",
+                OBJECT_PUBKEY: "PUBKEY",
+                OBJECT_MSG: "MSG",
+                OBJECT_BROADCAST: "BROADCAST"
+            }.get(object_type, f"UNKNOWN(0x{object_type:08X})")
+            print(f"    [{i}] Hash: {hexlify(inv_hash[:10])}...")
+            print(f"        Type: {object_type_name}")
+    
+    print("="*100)

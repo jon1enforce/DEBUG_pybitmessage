@@ -2655,3 +2655,566 @@ TypeError: the JSON object must be str, bytes or bytearray, not NoneType
 2025-12-26 01:03:56,618 - ERROR - 158.69.63.42:8080 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
 2025-12-26 01:03:58,199 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
 2025-12-26 01:04:08,090 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-26 01:05:46,998 - WARNING - Using default logger configuration
+2025-12-26 01:05:47,886 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-26 01:05:47,892 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-26 01:05:47,892 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-26 01:05:47,893 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-26 01:05:47,925 - WARNING - No indicator plugin found
+2025-12-26 01:05:47,946 - WARNING - No notification.message plugin found
+2025-12-26 01:06:42,763 - ERROR - 5.135.166.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:07:14,356 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:10:41,913 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-26 01:32:57,938 - WARNING - Using default logger configuration
+2025-12-26 01:33:00,161 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-26 01:33:00,167 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-26 01:33:00,168 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-26 01:33:00,170 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-26 01:33:00,206 - WARNING - No indicator plugin found
+2025-12-26 01:33:00,231 - WARNING - No notification.message plugin found
+2025-12-26 01:33:11,417 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:33:16,738 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:33:28,095 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:33:34,586 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:33:50,969 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:34:23,458 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:34:37,916 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:35:16,382 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:35:35,946 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:35:54,653 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:36:06,712 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:36:50,297 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:37:15,387 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:37:45,765 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:37:51,323 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:37:51,323 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:38:23,956 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:38:52,238 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:39:06,336 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:39:15,484 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:39:18,447 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:40:19,928 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:40:19,931 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 01:41:25,677 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:41:55,135 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:41:59,120 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:42:34,001 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:42:52,563 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:43:45,183 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:43:49,220 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:44:20,999 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:44:42,059 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:44:57,071 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:45:01,860 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 01:45:06,573 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:45:10,976 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:45:34,100 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:46:04,638 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:46:10,418 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:46:14,462 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 01:46:24,807 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:47:05,178 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:47:19,322 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 01:47:29,810 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:48:32,123 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:48:36,150 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:49:04,504 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 01:49:26,657 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:49:48,806 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 01:49:58,893 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:50:00,061 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:50:33,351 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:50:53,503 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:50:57,526 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:51:13,036 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:51:34,360 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:51:38,251 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 01:52:15,568 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:52:22,543 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:52:26,624 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:52:48,847 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:52:57,011 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 01:53:23,056 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:53:32,356 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:54:35,472 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:54:40,962 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:55:23,015 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:55:30,656 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:55:44,969 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 01:56:15,054 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:56:23,117 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 01:56:49,346 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 01:57:31,536 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:57:49,632 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:58:13,700 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 01:58:21,719 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:58:57,957 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:58:59,981 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:59:21,467 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:59:41,688 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:59:42,543 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 01:59:50,617 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:00:15,849 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-26 02:00:30,395 - WARNING - Using default logger configuration
+2025-12-26 02:00:31,313 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-26 02:00:31,320 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-26 02:00:31,321 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-26 02:00:31,321 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-26 02:00:31,352 - WARNING - No indicator plugin found
+2025-12-26 02:00:31,374 - WARNING - No notification.message plugin found
+2025-12-26 02:00:31,508 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:00:42,598 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:00:51,567 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:01:06,544 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:01:21,926 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-26 02:11:14,045 - WARNING - Using default logger configuration
+2025-12-26 02:11:16,104 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-26 02:11:16,110 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-26 02:11:16,110 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-26 02:11:16,111 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-26 02:11:16,165 - WARNING - No indicator plugin found
+2025-12-26 02:11:16,187 - WARNING - No notification.message plugin found
+2025-12-26 02:11:32,732 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:11:44,950 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:12:35,523 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:12:51,653 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:13:24,086 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:13:30,829 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:13:58,382 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:14:06,449 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:14:28,766 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:15:01,311 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:15:14,241 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:16:02,070 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:16:07,316 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:16:28,335 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:16:31,463 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:16:46,444 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 02:17:39,123 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:17:45,164 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:18:08,244 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:18:15,518 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:18:24,201 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 02:18:24,203 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:18:35,496 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:19:26,004 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:19:44,163 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:20:00,256 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:20:44,668 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:21:06,751 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:21:46,152 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:21:53,171 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:22:11,145 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:23:23,875 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:23:48,057 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:24:00,122 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:24:00,138 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:24:15,291 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:24:18,330 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:25:12,642 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:25:38,546 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:26:25,485 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:26:33,375 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:26:38,274 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:26:47,616 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:27:28,934 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:27:53,018 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:28:10,226 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:28:16,252 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:28:50,944 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:28:55,836 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:29:42,899 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 02:30:24,534 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:30:46,409 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:30:50,119 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:31:09,424 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:31:22,241 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:31:55,173 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:31:55,173 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:32:01,820 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:32:08,938 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:32:29,971 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:32:41,990 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:33:36,104 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:34:00,607 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:34:02,623 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:34:28,918 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:34:36,271 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:34:38,971 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 02:34:53,015 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:35:20,309 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:35:20,323 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:35:49,493 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:35:51,498 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:36:17,948 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 02:36:54,131 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 02:37:27,332 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:37:32,168 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:37:53,198 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:38:16,523 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:38:24,721 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:38:48,913 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:40:05,363 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:40:34,205 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:40:46,323 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:40:59,702 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:41:08,557 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:41:12,592 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:41:16,630 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:41:27,389 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:41:34,811 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 02:41:36,687 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:42:02,892 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:42:23,427 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:42:47,683 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 02:43:14,056 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 02:43:30,174 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:43:49,133 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 02:43:57,553 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-26 02:44:15,459 - WARNING - Using default logger configuration
+2025-12-26 02:44:16,411 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-26 02:44:16,417 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-26 02:44:16,417 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-26 02:44:16,418 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-26 02:44:16,449 - WARNING - No indicator plugin found
+2025-12-26 02:44:16,470 - WARNING - No notification.message plugin found
+2025-12-26 02:44:16,583 - ERROR - 158.69.63.42:8080 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:44:44,772 - ERROR - 158.69.63.42:8080 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:45:06,325 - ERROR - 158.69.63.42:8080 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:45:10,902 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:45:33,057 - ERROR - 158.69.63.42:8080 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:45:37,097 - ERROR - 170.75.173.70:63433 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:45:47,949 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:45:59,195 - ERROR - 158.69.63.42:8080 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:46:11,510 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:47:01,885 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:47:11,963 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:47:37,639 - ERROR - 31.170.186.69:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:47:44,078 - ERROR - 0.0.0.0:8444 error: 2, bytearray(b"I\'m connected to myself. Closing connection.")
+2025-12-26 02:47:54,234 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:48:04,296 - ERROR - 85.25.46.168:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:48:22,167 - ERROR - 85.114.135.102:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:48:38,671 - ERROR - 121.45.133.143:8444 error: 2, bytearray(b'Too many connections from your IP. Closing connection.')
+2025-12-26 02:49:11,166 - WARNING - ⚠️ GUI still running, forcing exit
+2025-12-26 02:51:52,552 - WARNING - Using default logger configuration
+2025-12-26 02:51:53,494 - WARNING - DEBUG: Error processing namecoin.conf
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 363, in ensureNamecoinOptions
+    with safe_open(nmcConfig, "r") as nmc:
+         ^^^^^^^^^
+NameError: name 'safe_open' is not defined
+2025-12-26 02:51:53,501 - ERROR - DEBUG: HTTP connection error: a bytes-like object is required, not 'str'
+2025-12-26 02:51:53,502 - ERROR - DEBUG: Namecoin connection test failure
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 166, in test
+    vers = self.callRPC("getinfo", [])["version"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jon/DEBUG_pybitmessage/src/namecoin.py", line 225, in callRPC
+    val = json.loads(resp)
+          ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 339, in loads
+    raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+TypeError: the JSON object must be str, bytes or bytearray, not NoneType
+2025-12-26 02:51:53,505 - WARNING - There was a problem testing for a Namecoin daemon. Hiding the Fetch Namecoin ID button
+2025-12-26 02:51:53,543 - WARNING - No indicator plugin found
+2025-12-26 02:51:53,568 - WARNING - No notification.message plugin found
+2025-12-26 02:52:09,812 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:10,326 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:10,540 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:10,638 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:10,952 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:10,984 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:11,447 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:12,244 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:12,694 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:12,702 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:13,103 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:13,391 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:13,469 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:13,478 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:13,949 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:14,512 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:14,524 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:15,144 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:15,449 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:15,979 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:16,042 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:17,988 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:18,087 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:18,883 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:19,091 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:19,329 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:20,180 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:20,551 - CRITICAL - Critical error within objectProcessorThread: 
+Traceback (most recent call last):
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 156, in run
+    self.processpubkey(data)
+  File "/home/jon/DEBUG_pybitmessage/src/class_objectProcessor.py", line 686, in processpubkey
+    if tag in state.neededPubkeys:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: cannot hash writable memoryview object
+2025-12-26 02:52:22,965 - WARNING - ⚠️ GUI still running, forcing exit
