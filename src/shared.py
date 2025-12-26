@@ -1,5 +1,5 @@
 """
-Shared functions with enhanced debugging
+Some shared functions
 
 .. deprecated:: 0.6.3
   Should be moved to different places and this file removed,
@@ -7,398 +7,229 @@ Shared functions with enhanced debugging
 """
 from __future__ import division
 
-import sys
-import logging
+# Libraries.
 import hashlib
 import os
 import stat
 import subprocess  # nosec B404
+import sys
 from binascii import hexlify
 from six.moves.reprlib import repr
-
-# Setup debug logging
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='DEBUG: %(asctime)s - %(levelname)s - %(message)s',
-    stream=sys.stdout
-)
-logger = logging.getLogger(__name__)
-
-logger.debug("Initializing shared module")
 
 # Project imports.
 import highlevelcrypto
 import state
 from addresses import decodeAddress, encodeVarint
 from bmconfigparser import config
-from debug import logger as debug_logger
+from debug import logger
 from helper_sql import sqlQuery
 from dbcompat import dbstr
 
-logger.debug("Imported all required modules")
 
-# Global dictionaries
 myECCryptorObjects = {}
 MyECSubscriptionCryptorObjects = {}
+# The key in this dictionary is the RIPE hash which is encoded
+# in an address and value is the address itself.
 myAddressesByHash = {}
+# The key in this dictionary is the tag generated from the address.
 myAddressesByTag = {}
 broadcastSendersForWhichImWatching = {}
 
-logger.debug("Initialized global dictionaries")
 
 def isAddressInMyAddressBook(address):
-    """Check if address exists in addressbook with debug logging"""
-    logger.debug("Checking if address exists in addressbook: %s", address)
+    """Is address in my addressbook?"""
     queryreturn = sqlQuery(
         '''select TRUE from addressbook where address=?''',
         dbstr(address))
-    result = queryreturn != []
-    logger.debug("Address %s %s in addressbook", address, "exists" if result else "does not exist")
-    return result
+    return queryreturn != []
 
+
+# At this point we should really just have a isAddressInMy(book, address)...
 def isAddressInMySubscriptionsList(address):
-    """Check if address exists in subscriptions with debug logging"""
-    logger.debug("Checking if address exists in subscriptions: %s", address)
+    """Am I subscribed to this address?"""
     queryreturn = sqlQuery(
         '''select TRUE from subscriptions where address=?''',
         dbstr(address))
-    result = queryreturn != []
-    logger.debug("Address %s %s in subscriptions", address, "exists" if result else "does not exist")
-    return result
+    return queryreturn != []
+
 
 def isAddressInMyAddressBookSubscriptionsListOrWhitelist(address):
-    """Check address presence in multiple lists with debug logging"""
-    logger.debug("Checking address presence in multiple lists: %s", address)
-    
+    """
+    Am I subscribed to this address, is it in my addressbook or whitelist?
+    """
     if isAddressInMyAddressBook(address):
-        logger.debug("Address found in addressbook")
         return True
 
-    logger.debug("Checking whitelist for address")
     queryreturn = sqlQuery(
         '''SELECT address FROM whitelist where address=?'''
         ''' and enabled = '1' ''',
         dbstr(address))
     if queryreturn != []:
-        logger.debug("Address found in whitelist")
         return True
 
-    logger.debug("Checking subscriptions for address")
     queryreturn = sqlQuery(
         '''select address from subscriptions where address=?'''
         ''' and enabled = '1' ''',
         dbstr(address))
-    result = queryreturn != []
-    logger.debug("Address %s %s in enabled subscriptions", address, "exists" if result else "does not exist")
-    return result
+    if queryreturn != []:
+        return True
+    return False
+
 
 def reloadMyAddressHashes():
-    """Reload address hashes with detailed debugging"""
-    logger.debug("Reloading address hashes from keys.dat")
-    
-    # Clear existing data
+    """Reload keys for user's addresses from the config file"""
+    logger.debug('reloading keys from keys.dat file')
     myECCryptorObjects.clear()
     myAddressesByHash.clear()
     myAddressesByTag.clear()
-    logger.debug("Cleared existing address hash data")
+    # myPrivateKeys.clear()
 
-    # Check file permissions
-    keyfile = os.path.join(state.appdata, 'keys.dat')
-    keyfileSecure = checkSensitiveFilePermissions(keyfile)
+    keyfileSecure = checkSensitiveFilePermissions(os.path.join(
+        state.appdata, 'keys.dat'))
     hasEnabledKeys = False
-    logger.debug("Keys.dat permissions secure: %s", keyfileSecure)
-
-    # Process each address
     for addressInKeysFile in config.addresses():
         if not config.getboolean(addressInKeysFile, 'enabled'):
-            logger.debug("Skipping disabled address: %s", addressInKeysFile)
             continue
 
         hasEnabledKeys = True
-        logger.debug("Processing enabled address: %s", addressInKeysFile)
 
+        addressVersionNumber, streamNumber, hashobj = decodeAddress(
+            addressInKeysFile)[1:]
+        if addressVersionNumber not in (2, 3, 4):
+            logger.error(
+                'Error in reloadMyAddressHashes: Can\'t handle'
+                ' address versions other than 2, 3, or 4.')
+            continue
+
+        # Returns a simple 32 bytes of information encoded in 64 Hex characters
         try:
-            addressVersionNumber, streamNumber, hashobj = decodeAddress(
-                addressInKeysFile)[1:]
-            logger.debug("Decoded address: version=%s, stream=%s", 
-                        addressVersionNumber, streamNumber)
-            
-            if addressVersionNumber not in (2, 3, 4):
-                logger.error(
-                    'Cannot handle address version %s for address %s',
-                    addressVersionNumber, addressInKeysFile)
-                continue
-
-            # Process private key
             privEncryptionKey = hexlify(
                 highlevelcrypto.decodeWalletImportFormat(config.get(
                     addressInKeysFile, 'privencryptionkey').encode()
                 ))
-            logger.debug("Decoded private key for address")
-
-            if len(privEncryptionKey) == 64:
-                myECCryptorObjects[hashobj] = \
-                    highlevelcrypto.makeCryptor(privEncryptionKey)
-                myAddressesByHash[bytes(hashobj)] = addressInKeysFile
-                tag = highlevelcrypto.double_sha512(
-                    encodeVarint(addressVersionNumber)
-                    + encodeVarint(streamNumber) + hashobj)[32:]
-                myAddressesByTag[bytes(tag)] = addressInKeysFile
-                logger.debug("Added cryptor objects for address")
         except ValueError:
             logger.error(
-                'Failed to decode private key for address %s',
-                addressInKeysFile)
+                'Error in reloadMyAddressHashes: failed to decode'
+                ' one of the private keys for address %s', addressInKeysFile)
             continue
-        except Exception as e:
-            logger.error(
-                'Unexpected error processing address %s: %s',
-                addressInKeysFile, str(e))
-            continue
+        # It is 32 bytes encoded as 64 hex characters
+        if len(privEncryptionKey) == 64:
+            myECCryptorObjects[hashobj] = \
+                highlevelcrypto.makeCryptor(privEncryptionKey)
+            myAddressesByHash[bytes(hashobj)] = addressInKeysFile
+            tag = highlevelcrypto.double_sha512(
+                encodeVarint(addressVersionNumber)
+                + encodeVarint(streamNumber) + hashobj)[32:]
+            myAddressesByTag[bytes(tag)] = addressInKeysFile
 
-    # Fix permissions if needed
     if not keyfileSecure:
-        logger.debug("Attempting to fix keyfile permissions")
-        fixSensitiveFilePermissions(keyfile, hasEnabledKeys)
-    else:
-        logger.debug("Keyfile permissions are secure")
+        fixSensitiveFilePermissions(os.path.join(
+            state.appdata, 'keys.dat'), hasEnabledKeys)
 
-# In shared.py oder helper_generic.py
-def safe_decode(value, encoding='utf-8', errors='ignore'):
-    """
-    Safely decode bytes to string. If it's already a string, return it.
-    """
-    if value is None:
-        return ''
-    elif isinstance(value, bytes):
-        try:
-            return value.decode(encoding, errors)
-        except:
-            # Fallback
-            try:
-                return value.decode('latin-1', errors)
-            except:
-                return str(value)[:100]
-    elif isinstance(value, str):
-        return value
-    else:
-        return str(value)
+
 def reloadBroadcastSendersForWhichImWatching():
-    """Reload broadcast senders with detailed debugging"""
-    logger.debug("Reloading broadcast senders")
-    
+    """
+    Reinitialize runtime data for the broadcasts I'm subscribed to
+    from the config file
+    """
     broadcastSendersForWhichImWatching.clear()
     MyECSubscriptionCryptorObjects.clear()
-    logger.debug("Cleared existing broadcast sender data")
-
     queryreturn = sqlQuery('SELECT address FROM subscriptions where enabled=1')
-    logger.debug("Found %d enabled subscriptions", len(queryreturn))
-    
+    logger.debug('reloading subscriptions...')
     for row in queryreturn:
-        if len(row) == 1:
-            address = row[0]
-        else:
-            # Debug-Ausgabe um zu sehen, was wirklich zurückkommt
-            logger.error("Unexpected row format in reloadBroadcastSendersForWhichImWatching: %s", row)
-            continue  # oder handle es anders
-        
-        address = safe_decode(address, "utf-8", "replace")
-        logger.debug("Processing subscription: %s", address)
-        
-        try:
-            addressVersionNumber, streamNumber, hashobj = decodeAddress(address)[1:]
-            logger.debug("Decoded subscription address: version=%s", addressVersionNumber)
-            
-            if addressVersionNumber == 2:
-                broadcastSendersForWhichImWatching[hashobj] = 0
-                logger.debug("Added version 2 address to broadcast senders")
+        address, = row
+        address = address.decode("utf-8", "replace")
+        # status
+        addressVersionNumber, streamNumber, hashobj = decodeAddress(address)[1:]
+        if addressVersionNumber == 2:
+            broadcastSendersForWhichImWatching[hashobj] = 0
+        # Now, for all addresses, even version 2 addresses,
+        # we should create Cryptor objects in a dictionary which we will
+        # use to attempt to decrypt encrypted broadcast messages.
 
-            # Create cryptor objects
-            if addressVersionNumber <= 3:
-                privEncryptionKey = hashlib.sha512(
-                    encodeVarint(addressVersionNumber)
-                    + encodeVarint(streamNumber) + hashobj
-                ).digest()[:32]
-                MyECSubscriptionCryptorObjects[bytes(hashobj)] = \
-                    highlevelcrypto.makeCryptor(hexlify(privEncryptionKey))
-                logger.debug("Created cryptor for version <= 3 address")
-            else:
-                doubleHashOfAddressData = highlevelcrypto.double_sha512(
-                    encodeVarint(addressVersionNumber)
-                    + encodeVarint(streamNumber) + hashobj
-                )
-                tag = doubleHashOfAddressData[32:]
-                privEncryptionKey = doubleHashOfAddressData[:32]
-                MyECSubscriptionCryptorObjects[bytes(tag)] = \
-                    highlevelcrypto.makeCryptor(hexlify(privEncryptionKey))
-                logger.debug("Created cryptor for version > 3 address")
-        except Exception as e:
-            logger.error("Error processing subscription %s: %s", address, str(e))
-            continue
+        if addressVersionNumber <= 3:
+            privEncryptionKey = hashlib.sha512(
+                encodeVarint(addressVersionNumber)
+                + encodeVarint(streamNumber) + hashobj
+            ).digest()[:32]
+            MyECSubscriptionCryptorObjects[bytes(hashobj)] = \
+                highlevelcrypto.makeCryptor(hexlify(privEncryptionKey))
+        else:
+            doubleHashOfAddressData = highlevelcrypto.double_sha512(
+                encodeVarint(addressVersionNumber)
+                + encodeVarint(streamNumber) + hashobj
+            )
+            tag = doubleHashOfAddressData[32:]
+            privEncryptionKey = doubleHashOfAddressData[:32]
+            MyECSubscriptionCryptorObjects[bytes(tag)] = \
+                highlevelcrypto.makeCryptor(hexlify(privEncryptionKey))
+
 
 def fixPotentiallyInvalidUTF8Data(text):
-    """Sanitize UTF-8 data with debug logging"""
-    logger.debug("Checking text for valid UTF-8 encoding")
+    """Sanitise invalid UTF-8 strings"""
     try:
-        safe_decode(text, "utf-8")
-        logger.debug("Text is valid UTF-8")
+        text.decode('utf-8')
         return text
     except UnicodeDecodeError:
-        logger.debug("Text contains invalid UTF-8, applying replacement")
         return 'Part of the message is corrupt. The message cannot be' \
-            ' displayed the normal way.\n\n' + safe_decode(text, "utf-8", "replace")
+            ' displayed the normal way.\n\n' + text.decode("utf-8", "replace")
+
 
 def checkSensitiveFilePermissions(filename):
-    """Check file permissions with debug logging"""
-    logger.debug("Checking permissions for file: %s", filename)
-    
+    """
+    :param str filename: path to the file
+    :return: True if file appears to have appropriate permissions.
+    """
     if sys.platform == 'win32':
-        logger.debug("Windows platform - skipping permission check")
+        # .. todo:: This might deserve extra checks by someone familiar with
+        # Windows systems.
         return True
-    elif sys.platform[:7] == 'freebsd' or sys.platform[:7] == 'openbsd':
-        logger.debug("FreeBSD platform - checking permissions")
+    elif sys.platform[:7] == 'freebsd':
+        # FreeBSD file systems are the same as major Linux file systems
         present_permissions = os.stat(filename)[0]
         disallowed_permissions = stat.S_IRWXG | stat.S_IRWXO
-        result = present_permissions & disallowed_permissions == 0
-        logger.debug("FreeBSD permissions check result: %s", result)
-        return result
-
-    # Try multiple stat locations with fallback
-    stat_paths = ['/usr/bin/stat', '/bin/stat', 'stat']
-    
-    for stat_path in stat_paths:
-        try:
-            logger.debug("Trying stat at: %s", stat_path)
-            fstype = subprocess.check_output(
-                [stat_path, '-f', '-c', '%T', filename],
-                stderr=subprocess.STDOUT
-            )  # nosec B603
-            
-            if b'fuseblk' in fstype:
-                logger.info(
-                    'Skipping permissions check for fuseblk filesystem: %s',
-                    filename)
-                return True
-            break  # Success, exit loop
-        except FileNotFoundError as e:
-            if stat_path == stat_paths[-1]:  # Last option failed
-                logger.error('Could not find stat command at any location: %s',
-                           ', '.join(stat_paths))
-                raise
-            else:
-                logger.debug('stat not found at %s, trying next location...', 
-                           stat_path)
-                continue
-        except Exception as e:
-            # If it's the last path, re-raise the exception
-            if stat_path == stat_paths[-1]:
-                logger.error('Could not determine filesystem type for %s: %s',
-                           filename, str(e))
-                raise
-            else:
-                logger.debug('Error with stat at %s: %s, trying next...',
-                           stat_path, str(e))
-                continue
-
+        return present_permissions & disallowed_permissions == 0
+    try:
+        # Skip known problems for non-Win32 filesystems
+        # without POSIX permissions.
+        fstype = subprocess.check_output(
+            ['/usr/bin/stat', '-f', '-c', '%T', filename],
+            stderr=subprocess.STDOUT
+        )  # nosec B603
+        if b'fuseblk' in fstype:
+            logger.info(
+                'Skipping file permissions check for %s.'
+                ' Filesystem fuseblk detected.', filename)
+            return True
+    except:  # noqa:E722
+        # Swallow exception here, but we might run into trouble later!
+        logger.error('Could not determine filesystem type. %s', filename)
     present_permissions = os.stat(filename)[0]
     disallowed_permissions = stat.S_IRWXG | stat.S_IRWXO
-    result = present_permissions & disallowed_permissions == 0
-    logger.debug("File permissions check result: %s", result)
-    return result
+    return present_permissions & disallowed_permissions == 0
 
+
+# Fixes permissions on a sensitive file.
 def fixSensitiveFilePermissions(filename, hasEnabledKeys):
-    """Fix file permissions with debug logging"""
-    logger.debug("Attempting to fix permissions for file: %s", filename)
-    
+    """Try to change file permissions to be more restrictive"""
     if hasEnabledKeys:
         logger.warning(
-            'Insecure permissions on keyfile with enabled keys - paranoid users'
-            ' should stop using them')
+            'Keyfile had insecure permissions, and there were enabled'
+            ' keys. The truly paranoid should stop using them immediately.')
     else:
-        logger.warning('Insecure permissions on keyfile without enabled keys')
-
+        logger.warning(
+            'Keyfile had insecure permissions, but there were no enabled keys.'
+        )
     try:
         present_permissions = os.stat(filename)[0]
         disallowed_permissions = stat.S_IRWXG | stat.S_IRWXO
         allowed_permissions = ((1 << 32) - 1) ^ disallowed_permissions
-        new_permissions = (allowed_permissions & present_permissions)
+        new_permissions = (
+            allowed_permissions & present_permissions)
         os.chmod(filename, new_permissions)
-        logger.info('Successfully fixed keyfile permissions')
-    except Exception as e:
-        logger.error('Failed to fix keyfile permissions: %s', str(e))
+
+        logger.info('Keyfile permissions automatically fixed.')
+
+    except Exception:
+        logger.exception('Keyfile permissions could not be fixed.')
         raise
-
-logger.debug("shared module initialization complete")
-
-# SQL Injection Protection Functions
-def validate_sql_identifier(identifier):
-    """Validate SQL table/column names to prevent injection"""
-    if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', identifier):
-        raise ValueError(f"Invalid SQL identifier: {identifier}")
-    return identifier
-
-def safe_sql_query(template, *params):
-    """Execute SQL query with safe parameter substitution"""
-    # Validate all string parameters
-    safe_params = []
-    for param in params:
-        if isinstance(param, str):
-            # Basic SQL injection prevention
-            if any(keyword in param.upper() for keyword in ['DROP', 'DELETE', 'INSERT', 'UPDATE', 'UNION', 'SELECT']):
-                raise ValueError("Potential SQL injection detected")
-        safe_params.append(param)
-    
-    return sqlQuery(template, *safe_params)
-
-# SECURITY PATCH: Safe file operations
-import os
-from pathlib import Path
-from helper_sql import safe_decode
-
-def safe_open(filepath, mode='r', *args, **kwargs):
-    """Safely open files with path traversal protection"""
-    # Convert to absolute path and validate
-    abs_path = os.path.abspath(filepath)
-    
-    # Security checks
-    if '..' in abs_path or abs_path != os.path.normpath(abs_path):
-        raise SecurityError(f"Path traversal attempt detected: {filepath}")
-    
-    # Check if path is within allowed directories
-    allowed_dirs = [
-        os.path.abspath('.'), 
-        os.path.expanduser('~/.config/PyBitMessage'),
-        state.appdata if 'state' in globals() else ''
-    ]
-    
-    is_allowed = any(abs_path.startswith(str(Path(d).resolve())) for d in allowed_dirs if d)
-    if not is_allowed:
-        raise SecurityError(f"File access outside allowed directories: {filepath}")
-    
-    return open(abs_path, mode, *args, **kwargs)
-
-def safe_path_join(*paths):
-    """Safely join paths with traversal protection"""
-    joined = os.path.join(*paths)
-    abs_path = os.path.abspath(joined)
-    
-    if '..' in abs_path or abs_path != os.path.normpath(abs_path):
-        raise SecurityError(f"Path traversal in join: {joined}")
-    
-    return abs_path
-
-# SECURITY PATCH: Memory safety for network operations
-def safe_struct_unpack(fmt, data):
-    """Safely unpack struct data with bounds checking"""
-    expected_size = struct.calcsize(fmt)
-    if len(data) < expected_size:
-        raise ValueError(f"Buffer underflow: expected {expected_size} bytes, got {len(data)}")
-    return struct.unpack(fmt, data[:expected_size])
-
-def safe_bytearray_slice(data, start, end=None):
-    """Safely slice bytearray with bounds checking"""
-    if start < 0 or start >= len(data):
-        raise ValueError(f"Start index out of bounds: {start}")
-    if end is not None and (end < 0 or end > len(data) or end < start):
-        raise ValueError(f"End index out of bounds: {end}")
-    return data[start:end] if end else data[start:]

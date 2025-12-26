@@ -1,27 +1,30 @@
-# DEBUG version of pybitmessage
-source: https://github.com/kashikoibumi/PyBitmessage
-# LibreSSL PATCH!
-look https://github.com/jon1enforce/libressl  
-PATH:  
-    elif sys.platform.startswith('openbsd'):  
-        ....libdir.append("/home/libressl-4.1.0/build/crypto/libcrypto.so")  
-        ....libdir.append("/home/libressl-4.1.0/build/ssl/libssl.so")
-# Security PATCH!
-json indead of pickle  
-whitelisted commands/message-types  
-hardened protocol and sql  
-+++  
-compare with the source to see the changelog.  
-+++  
-References:  
-https://www.cve.org/CVERecord?id=CVE-2018-1000070  
-https://nvd.nist.gov/vuln/detail/CVE-2018-1000070
-# LaTEX Bridge and Install:  
-+++   setup   +++  
-python3 setup.py build  
-python3 setup.py install  
-+++   start normal   +++  
-sh py3start.sh  
-+++   start Latex bridge  +++  
-apt install texmaker  
-sh py3start_bridge.sh  
+PyBitmessage
+============
+
+Bitmessage is a P2P communication protocol used to send encrypted messages to
+another person or to many subscribers. It is decentralized and trustless,
+meaning that you need-not inherently trust any entities like root certificate
+authorities. It uses strong authentication, which means that the sender of a
+message cannot be spoofed. BM aims to hide metadata from passive eavesdroppers 
+like those ongoing warrantless wiretapping programs. Hence the sender and receiver 
+of Bitmessages stay anonymous.
+
+
+Development
+----------
+Bitmessage is a collaborative project. You are welcome to submit pull requests 
+although if you plan to put a non-trivial amount of work into coding new
+features, it is recommended that you first describe your ideas in the
+separate issue.
+
+Feel welcome to join chan "bitmessage", BM-2cWy7cvHoq3f1rYMerRJp8PT653jjSuEdY
+
+References
+----------
+* [Project Website](https://bitmessage.org)
+* [Protocol Specification](https://pybitmessage.rtfd.io/en/v0.6/protocol.html)
+* [Whitepaper](https://bitmessage.org/bitmessage.pdf)
+* [Installation](https://bitmessage.org/wiki/Compiling_instructions)
+* [Discuss on Reddit](https://www.reddit.com/r/bitmessage)
+* [Chat on Gitter](https://gitter.im/Bitmessage/PyBitmessage)
+

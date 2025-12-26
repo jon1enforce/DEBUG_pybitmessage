@@ -32,6 +32,7 @@ from network import dandelion_ins, invQueue, portCheckerQueue
 from .node import Node, Peer
 from .objectracker import ObjectTracker, missingObjects
 
+
 logger = logging.getLogger('default')
 
 
@@ -43,14 +44,7 @@ def _hoststr(v):
 
 def _restr(v):
     if six.PY3:
-        if isinstance(v, str):
-            return v
-        elif isinstance(v, bytes):
-            return v.decode("utf-8", "replace")
-        elif isinstance(v, bytearray):
-            return bytes(v).decode("utf-8", "replace")
-        else:
-            return str(v)
+        return v.decode("utf-8", "replace")
     else:  # assume six.PY2
         return v
 
@@ -134,8 +128,8 @@ class BMProto(AdvancedDispatcher, ObjectTracker):
             self.invalid = True
         if not self.invalid:
             try:
-                command_str = _restr(self.command)
-                retval = getattr(self, "bm_command_" + command_str.lower())()
+                retval = getattr(
+                    self, "bm_command_" + self.command.decode("utf-8", "replace").lower())()
             except AttributeError:
                 # unimplemented command
                 logger.debug('unimplemented command %s', self.command)
@@ -476,7 +470,7 @@ class BMProto(AdvancedDispatcher, ObjectTracker):
             if (
                 stream not in network.connectionpool.pool.streams
                 # FIXME: should check against complete list
-                or _restr(ip).startswith('bootstrap')
+                or ip.decode("utf-8", "replace").startswith('bootstrap')
             ):
                 continue
             decodedIP = protocol.checkIPAddress(ip)
@@ -555,7 +549,7 @@ class BMProto(AdvancedDispatcher, ObjectTracker):
         logger.debug(
             'remote node incoming address: %s:%i',
             self.destination.host, self.peerNode.port)
-        logger.debug('user agent: %s', _restr(self.userAgent))
+        logger.debug('user agent: %s', self.userAgent.decode("utf-8", "replace"))
         logger.debug('streams: [%s]', ','.join(map(str, self.streams)))
         if not self.peerValidityChecks():
             # ABORT afterwards
@@ -629,6 +623,9 @@ class BMProto(AdvancedDispatcher, ObjectTracker):
                 self.destination):
             try:
                 if not protocol.checkSocksIP(self.destination.host):
+                    self.append_write_buf(protocol.assembleErrorMessage(
+                        errorText="Too many connections from your IP."
+                        " Closing connection.", fatal=2))
                     logger.debug(
                         'Closed connection to %s because we are already'
                         ' connected to that IP.', self.destination)

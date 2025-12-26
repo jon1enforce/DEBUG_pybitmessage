@@ -26,10 +26,6 @@ def randomshuffle(population):
     random.shuffle(population)
 
 
-# Einfaches Alias für shuffle - für Code der shuffle() erwartet (z.B. downloadthread.py)
-shuffle = randomshuffle
-
-
 def randomsample(population, k):
     """Method randomSample.
 
@@ -63,7 +59,3 @@ def randomchoice(population):
     IndexError.
     """
     return random.choice(population)  # nosec
-
-
-# Alias für Abwärtskompatibilität mit protocol.py
-randrange = randomrandrange

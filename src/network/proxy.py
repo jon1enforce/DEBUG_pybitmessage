@@ -1,5 +1,5 @@
 """
-Set proxy if available otherwise exception
+Set proxy if avaiable otherwise exception
 """
 # pylint: disable=protected-access
 import logging
@@ -10,17 +10,15 @@ from network import asyncore_pollchoose as asyncore
 from .advanceddispatcher import AdvancedDispatcher
 from bmconfigparser import config
 from .node import Peer
-from helper_sql import safe_decode
 
 logger = logging.getLogger('default')
 
 
 def _ends_with(s, tail):
-    """Check if s ends with tail, handling bytes/strings."""
-    if isinstance(s, bytes):
-        return s.endswith(tail.encode())
-    return s.endswith(tail)
-
+    try:
+        return s.endswith(tail)
+    except:
+        return s.decode("utf-8", "replace").endswith(tail)
 
 class ProxyError(Exception):
     """Base proxy exception class"""
@@ -36,7 +34,7 @@ class ProxyError(Exception):
 
 
 class GeneralProxyError(ProxyError):
-    """General proxy error class (not specific to an implementation)"""
+    """General proxy error class (not specfic to an implementation)"""
     errorCodes = (
         "Success",
         "Invalid data",

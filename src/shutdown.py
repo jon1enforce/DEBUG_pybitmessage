@@ -1,81 +1,94 @@
-"""shutdown function - final robust version"""
+"""shutdown function"""
 
 import os
-import sys
+import threading
 import time
-import signal
+
+from six.moves import queue
 
 import state
 from debug import logger
-from helper_sql import sqlStoredProcedure
+from helper_sql import sqlQuery, sqlStoredProcedure
+from network import StoppableThread
 from network.knownnodes import saveKnownNodes
+from queues import (
+    addressGeneratorQueue, objectProcessorQueue, UISignalQueue, workerQueue)
 
 
 def doCleanShutdown():
     """
-    ULTIMATE shutdown - saves critical data and EXITS IMMEDIATELY
-    NO thread joining, NO waiting for anything
+    Used to tell all the treads to finish work and exit.
     """
-    logger.info("⚡ ULTIMATE SHUTDOWN - FAST EXIT")
-    
-    # Step 1: Set flag
     state.shutdown = 1
-    
-    # Step 2: Save ABSOLUTELY CRITICAL data only
-    try:
-        saveKnownNodes()
-        logger.info("✓ Known nodes saved")
-    except Exception as e:
-        logger.warning("✗ Known nodes save failed: %s", e)
-    
-    try:
-        state.Inventory.flush()
-        logger.info("✓ Inventory flushed")
-    except Exception as e:
-        logger.warning("✗ Inventory flush failed: %s", e)
-    
-    # Step 3: Signal SQL to exit (but don't wait)
-    try:
-        sqlStoredProcedure('exit')
-    except Exception as e:
-        logger.warning("✗ SQL signal failed: %s", e)
-    
-    # Step 4: IMMEDIATE EXIT
-    logger.info("💨 EXITING NOW - NO WAITING")
-    
-    if state.thisapp.daemon or not state.enableGUI:
+
+    objectProcessorQueue.put(('checkShutdownVariable', 'no data'))
+    for thread in threading.enumerate():
         try:
-            state.thisapp.cleanup()
-        except:
-            pass
-        os._exit(0)
+            alive = thread.isAlive()
+        except AttributeError:
+            alive = thread.is_alive()
+        if alive and isinstance(thread, StoppableThread):
+            thread.stopThread()
+
+    UISignalQueue.put((
+        'updateStatusBar',
+        'Saving the knownNodes list of peers to disk...'))
+    logger.info('Saving knownNodes list of peers to disk')
+    saveKnownNodes()
+    logger.info('Done saving knownNodes list of peers to disk')
+    UISignalQueue.put((
+        'updateStatusBar',
+        'Done saving the knownNodes list of peers to disk.'))
+    logger.info('Flushing inventory in memory out to disk...')
+    UISignalQueue.put((
+        'updateStatusBar',
+        'Flushing inventory in memory out to disk.'
+        ' This should normally only take a second...'))
+    state.Inventory.flush()
+
+    # Verify that the objectProcessor has finished exiting. It should have
+    # incremented the shutdown variable from 1 to 2. This must finish before
+    # we command the sqlThread to exit.
+    while state.shutdown == 1:
+        time.sleep(.1)
+
+    # Wait long enough to guarantee that any running proof of work worker
+    # threads will check the shutdown variable and exit. If the main thread
+    # closes before they do then they won't stop.
+    time.sleep(.25)
+
+    for thread in threading.enumerate():
+        if (
+            thread is not threading.currentThread()
+            and isinstance(thread, StoppableThread)
+            and thread.name != 'SQL'
+        ):
+            logger.debug("Waiting for thread %s", thread.name)
+            thread.join()
+
+    # This one last useless query will guarantee that the previous flush
+    # committed and that the
+    # objectProcessorThread committed before we close the program.
+    sqlQuery('SELECT address FROM subscriptions')
+    logger.info('Finished flushing inventory.')
+    sqlStoredProcedure('exit')
+
+    # flush queues
+    for q in (
+            workerQueue, UISignalQueue, addressGeneratorQueue,
+            objectProcessorQueue):
+        while True:
+            try:
+                q.get(False)
+                q.task_done()
+            except queue.Empty:
+                break
+
+    if state.thisapp.daemon or not state.enableGUI:
+        logger.info('Clean shutdown complete.')
+        state.thisapp.cleanup()
+        os._exit(0)  # pylint: disable=protected-access
     else:
-        # For GUI mode: Qt should quit, but we'll force exit after delay
-        import threading
-        
-        def force_exit_later():
-            """Force exit after 2 seconds in case Qt hangs"""
-            time.sleep(2.0)
-            logger.warning("⚠️ GUI still running, forcing exit")
-            os._exit(0)
-        
-        threading.Thread(target=force_exit_later, daemon=True).start()
-
-
-def forceExit():
-    """Force immediate exit - last resort"""
-    try:
-        sys.stderr.write("\n[PYBITMESSAGE] FORCE EXIT\n")
-        sys.stderr.flush()
-    except:
-        pass
-    
-    # Try clean kill first
-    try:
-        os.kill(os.getpid(), signal.SIGTERM)
-    except:
-        pass
-    
-    # If still here after brief wait, use nuclear option
-    time.sleep(0.1)
-    os._exit(1)
+        logger.info('Core shutdown complete.')
+    for thread in threading.enumerate():
+        logger.debug('Thread %s still running', thread.name)

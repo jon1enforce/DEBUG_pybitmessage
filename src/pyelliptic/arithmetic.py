@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
-# Copyright (c) 2011 Yann GUIBET
 """
 Arithmetic Expressions
 """
 import hashlib
 import re
+import six
 
 P = 2**256 - 2**32 - 2**9 - 2**8 - 2**7 - 2**6 - 2**4 - 1
 A = 0
@@ -35,7 +34,11 @@ def get_code_string(base):
     if base == 58:
         return b'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
     if base == 256:
-        return bytes(range(256))
+        try:
+            return b''.join([six.int2byte(x) for x in range(256)])
+        except TypeError:
+            return bytes([x for x in range(256)])
+
     raise ValueError("Invalid base!")
 
 
@@ -55,69 +58,18 @@ def decode(string, base):
     """Returns the decoded string"""
     code_string = get_code_string(base)
     result = 0
-    
-    # Python 3 compatibility: handle string/bytes properly
-    if isinstance(string, str) and base != 256:
-        # String input for non-binary bases
-        string = string.encode('ascii')
-    
-    # Handle base 16 (hex) case
-    if base == 16 and isinstance(string, bytes):
+    if base == 16:
         string = string.lower()
-    
-    # Process each byte/character
-    for char in string:
-        if isinstance(char, int):  # Python 3: bytes iteration yields int
-            # Directly use the integer value for base 256
-            if base == 256:
-                result = result * base + char
-            else:
-                # For other bases, find character in code_string
-                try:
-                    # char is int, convert to bytes
-                    char_byte = bytes([char])
-                    index = code_string.find(char_byte)
-                    if index == -1:
-                        # Try as ASCII character
-                        char_str = chr(char)
-                        index = code_string.find(char_str.encode('ascii'))
-                    result = result * base + index
-                except:
-                    result = result * base + char
-        else:
-            # Python 2 or already bytes
-            result = result * base + code_string.find(char)
-    
+    while string:
+        result *= base
+        result += code_string.find(string[0])
+        string = string[1:]
     return result
 
 
 def changebase(string, frm, to, minlen=0):
     """Change base of the string"""
-    if frm == to:
-        # Ensure consistent type for padding
-        if isinstance(string, str):
-            string = string.encode('ascii')
-        return lpad(string, minlen, b'0')
-    
-    # Convert input to appropriate type
-    if isinstance(string, str):
-        if frm == 256:
-            string = string.encode('latin-1')
-        else:
-            string = string.encode('ascii')
-    
     return encode(decode(string, frm), to, minlen)
-
-
-def lpad(s, n, fillchar):
-    """Left pad a string/bytes"""
-    if isinstance(s, bytes):
-        if len(s) < n:
-            s = fillchar * (n - len(s)) + s
-    else:  # str
-        if len(s) < n:
-            s = fillchar.decode('ascii') * (n - len(s)) + s
-    return s
 
 
 def base10_add(a, b):
@@ -204,25 +156,10 @@ def dbl_sha256(string):
 
 def bin_to_b58check(inp):
     """Convert binary to base58"""
-    if isinstance(inp, str):
-        inp = inp.encode('latin-1')
-    
-    inp_fmtd = b'\x00' + inp
-    # Count leading zeros
-    leadingzbytes = 0
-    for b in inp_fmtd:
-        if b == 0:
-            leadingzbytes += 1
-        else:
-            break
-    
+    inp_fmtd = '\x00' + inp
+    leadingzbytes = len(re.match('^\x00*', inp_fmtd).group(0))
     checksum = dbl_sha256(inp_fmtd)[:4]
-    result = changebase(inp_fmtd + checksum, 256, 58)
-    
-    # Add leading '1's for each zero byte
-    if isinstance(result, bytes):
-        result = result.decode('ascii')
-    return '1' * leadingzbytes + result
+    return '1' * leadingzbytes + changebase(inp_fmtd + checksum, 256, 58)
 
 
 def pubkey_to_address(pubkey):

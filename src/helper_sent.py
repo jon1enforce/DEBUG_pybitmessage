@@ -10,7 +10,6 @@ from bmconfigparser import config
 from helper_ackPayload import genAckPayload
 from helper_sql import sqlExecute, sqlQuery
 from dbcompat import dbstr
-from helper_sql import safe_decode
 
 
 # pylint: disable=too-many-arguments
@@ -41,16 +40,8 @@ def insert(msgid=None, toAddress='[Broadcast subscribers]', fromAddress=None, su
 
         ttl = ttl if ttl else config.getint('bitmessagesettings', 'ttl')
 
-        # KORREKTUR: Sicherstellen, dass status ein String ist, nicht Bytes
-        if isinstance(status, bytes):
-            status = safe_decode(status, "utf-8")
-        elif not isinstance(status, str):
-            status = str(status)
-
-        # KORREKTUR: status ohne dbstr() - muss als String gespeichert werden
-        t = (sqlite3.Binary(msgid), dbstr(toAddress), sqlite3.Binary(ripe), dbstr(fromAddress), 
-             dbstr(subject), dbstr(message), sqlite3.Binary(ackdata),
-             sentTime, lastActionTime, sleeptill, dbstr(status), retryNumber, dbstr(folder),  # JETZT mit dbstr()
+        t = (sqlite3.Binary(msgid), dbstr(toAddress), sqlite3.Binary(ripe), dbstr(fromAddress), dbstr(subject), dbstr(message), sqlite3.Binary(ackdata),
+             sentTime, lastActionTime, sleeptill, dbstr(status), retryNumber, dbstr(folder),
              encoding, ttl)
 
         sqlExecute('''INSERT INTO sent VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', *t)

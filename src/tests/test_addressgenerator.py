@@ -1,6 +1,6 @@
 """Tests for AddressGenerator (with thread or not)"""
 
-from binascii import unhexlify, hexlify 
+from binascii import unhexlify
 
 import six
 from six.moves import queue

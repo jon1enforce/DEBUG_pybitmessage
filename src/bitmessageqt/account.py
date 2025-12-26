@@ -20,101 +20,45 @@ from helper_sql import sqlQuery, sqlExecute
 from .foldertree import AccountMixin
 from .utils import str_broadcast_subscribers
 from tr import _translate
-from helper_sql import safe_decode
 
 
 def getSortedSubscriptions(count=False):
     """
     Actually return a grouped dictionary rather than a sorted list
-    COMPATIBLE WITH PYTHON 2 VERSION
-    
+
     :param count: Whether to count messages for each fromaddress in the inbox
     :type count: bool, default False
-    :returns: dict keys are addresses, values are dicts containing settings
+    :retuns: dict keys are addresses, values are dicts containing settings
     :rtype: dict, default {}
     """
-    # Hole alle Abonnements
     queryreturn = sqlQuery(
-        'SELECT label, address, enabled FROM subscriptions ORDER BY label COLLATE NOCASE ASC')
-    
+        'SELECT label, address, enabled FROM subscriptions'
+        ' ORDER BY label COLLATE NOCASE ASC')
     ret = {}
-    for row in queryreturn:
-        # SICHERHEIT: Prüfe, dass row genug Werte hat
-        if len(row) < 3:
-            continue
-            
-        label, address, enabled = row
-        
-        # PYTHON 3 KOMPATIBILITÄT: Bytes zu String konvertieren
-        if isinstance(address, bytes):
-            address = address.decode('utf-8', 'replace')
-        if isinstance(label, bytes):
-            label = label.decode('utf-8', 'replace')
-        if isinstance(enabled, bytes):
-            try:
-                enabled = bool(int(enabled.decode('utf-8')))
-            except:
-                enabled = False
-        elif isinstance(enabled, int):
-            enabled = bool(enabled)
-        elif isinstance(enabled, str):
-            try:
-                enabled = bool(int(enabled))
-            except:
-                enabled = False
-        
-        if address not in ret:
-            ret[address] = {}
-        
-        ret[address]['inbox'] = {
-            'label': label,
-            'enabled': enabled,
-            'count': 0  # Wichtig: 'count' Key muss existieren!
-        }
-    
-    # Wenn count=True, zähle ungelesene Nachrichten
+    for label, address, enabled in queryreturn:
+        label = label.decode("utf-8", "replace")
+        address = address.decode("utf-8", "replace")
+        ret[address] = {'inbox': {}}
+        ret[address]['inbox'].update(label=label, enabled=enabled, count=0)
     if count:
-        try:
-            # ACHTUNG: Die Original-Query in Python 2 ist komplexer!
-            # Sie verknüpft subscriptions mit inbox
-            queryreturn = sqlQuery('''
-                SELECT fromaddress, folder, count(msgid) as cnt
-                FROM inbox, subscriptions ON subscriptions.address = inbox.fromaddress
-                WHERE read = 0 AND toaddress = ?
-                GROUP BY inbox.fromaddress, folder
-            ''', '[Broadcast subscribers]')
-            
-            for row in queryreturn:
-                if len(row) < 3:
-                    continue
-                    
-                address, folder, cnt = row
-                
-                # PYTHON 3 KOMPATIBILITÄT
-                if isinstance(address, bytes):
-                    address = address.decode('utf-8', 'replace')
-                if isinstance(folder, bytes):
-                    folder = folder.decode('utf-8', 'replace')
-                if isinstance(cnt, bytes):
-                    try:
-                        cnt = int(cnt.decode('utf-8'))
-                    except:
-                        cnt = 0
-                
-                if address in ret:  # Prüfe, ob Adresse existiert
-                    if folder not in ret[address]:
-                        ret[address][folder] = {
-                            'label': ret[address]['inbox']['label'],
-                            'enabled': ret[address]['inbox']['enabled']
-                        }
-                    ret[address][folder]['count'] = cnt
-                    
-        except Exception as e:
-            import logging
-            logger = logging.getLogger('default')
-            logger.error("Fehler beim Zählen der Nachrichten: %s", e)
-    
+        queryreturn = sqlQuery(
+            'SELECT fromaddress, folder, count(msgid) AS cnt'
+            ' FROM inbox, subscriptions'
+            ' ON subscriptions.address = inbox.fromaddress WHERE read = 0'
+            ' AND toaddress = ? GROUP BY inbox.fromaddress, folder',
+            dbstr(str_broadcast_subscribers))
+        for address, folder, cnt in queryreturn:
+            address = address.decode("utf-8", "replace")
+            folder = folder.decode("utf-8", "replace")
+            if folder not in ret[address]:
+                ret[address][folder] = {
+                    'label': ret[address]['inbox']['label'],
+                    'enabled': ret[address]['inbox']['enabled']
+                }
+            ret[address][folder]['count'] = cnt
     return ret
+
+
 def accountClass(address):
     """Return a BMAccount for the address"""
     if not config.has_section(address):
@@ -247,8 +191,6 @@ class GatewayAccount(BMAccount):
         stealthLevel = config.safeGetInt(
             'bitmessagesettings', 'ackstealthlevel')
         ackdata = genAckPayload(streamNumber, stealthLevel)
-        
-        # KORREKTUR: 'msgqueued' ohne dbstr() - muss als String, nicht als Bytes gespeichert werden
         sqlExecute(
             '''INSERT INTO sent VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
             sqlite3.Binary(b''),
@@ -261,7 +203,7 @@ class GatewayAccount(BMAccount):
             int(time.time()),  # sentTime (this will never change)
             int(time.time()),  # lastActionTime
             0,  # sleepTill time. This will get set when the POW gets done.
-            'msgqueued',  # KORREKTUR: Kein dbstr() hier - muss String bleiben
+            dbstr('msgqueued'),
             0,  # retryNumber
             dbstr('sent'),  # folder
             2,  # encodingtype

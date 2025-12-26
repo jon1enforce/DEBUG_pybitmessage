@@ -14,7 +14,8 @@ from network import connectionpool, knownnodes
 from .retranslateui import RetranslateMixin
 from tr import _translate
 from .uisignaler import UISignaler
-from codecs import decode
+from helper_sql import safe_decode
+
 
 class NetworkStatus(QtWidgets.QWidget, RetranslateMixin):
     """Network status tab"""
@@ -188,7 +189,7 @@ class NetworkStatus(QtWidgets.QWidget, RetranslateMixin):
                 0, 0, QtWidgets.QTableWidgetItem(
                     "%s:%i" % (destination.host, destination.port)))
             self.tableWidgetConnectionCount.setItem(
-                0, 2, QtWidgets.QTableWidgetItem("%s" % (decode(c.userAgent, "utf-8", "replace"))))
+                0, 2, QtWidgets.QTableWidgetItem("%s" % (safe_decode(c.userAgent, "utf-8", "replace"))))
             self.tableWidgetConnectionCount.setItem(
                 0, 3, QtWidgets.QTableWidgetItem("%s" % (c.tlsVersion)))
             self.tableWidgetConnectionCount.setItem(

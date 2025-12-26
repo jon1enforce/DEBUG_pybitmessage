@@ -24,7 +24,7 @@ if six.PY3:
 from unqstr import ustr, unic
 from dbcompat import dbstr
 from qtpy import QtCore, QtGui, QtWidgets, QtNetwork
-from PyQt5.QtCore import Qt
+
 import shared
 import state
 from debug import logger
@@ -62,7 +62,6 @@ from bitmessageqt import sound
 # This is needed for tray icon
 from bitmessageqt import bitmessage_icons_rc  # noqa:F401 pylint: disable=unused-import
 import helper_sent
-from helper_sql import safe_decode
 
 try:
     from plugins.plugin import get_plugin, get_plugins
@@ -97,8 +96,6 @@ def openKeysFile():
 
 
 def as_msgid(id_data):
-    if id_data is None:
-        return None
     if six.PY3:
         return escape_decode(id_data)[0][2:-1]
     else:  # assume six.PY2
@@ -552,8 +549,8 @@ class MyForm(settingsmixin.SMainWindow):
             "GROUP BY toaddress, folder")
         for row in queryreturn:
             toaddress, folder, cnt = row
-            toaddress = safe_decode(toaddress, "utf-8", "replace")
-            folder = safe_decode(folder, "utf-8", "replace")
+            toaddress = toaddress.decode("utf-8", "replace")
+            folder = folder.decode("utf-8", "replace")
             total += cnt
             if toaddress in db and folder in db[toaddress]:
                 db[toaddress][folder] = cnt
@@ -990,262 +987,120 @@ class MyForm(settingsmixin.SMainWindow):
         Switch unread for item of msgid and related items in
         other STableWidgets "All Accounts" and "Chans"
         """
+        status = widget.item(row, 0).unread
+        if status != unread:
+            return
+
+        widgets = [self.ui.tableWidgetInbox, self.ui.tableWidgetInboxChans]
+        rrow = None
         try:
-            # Get status safely
-            item0 = widget.item(row, 0)
-            if not item0 or not hasattr(item0, 'unread'):
-                return
-                
-            status = item0.unread
-            if status != unread:
-                return
+            widgets.remove(widget)
+            related = widgets.pop()
+        except ValueError:
+            pass
+        else:
+            # maybe use instead:
+            # rrow = related.row(msgid), msgid should be QTableWidgetItem
+            # related = related.findItems(msgid, QtCore.Qt.MatchExactly),
+            # returns an empty list
+            for rrow in range(related.rowCount()):
+                if as_msgid(related.item(rrow, 3).data()) == msgid:
+                    break
 
-            # Find related widgets
-            widgets = [self.ui.tableWidgetInbox, self.ui.tableWidgetInboxChans]
-            rrow = None
-            related = None
-            
-            try:
-                widgets.remove(widget)
-                related = widgets[0] if widgets else None
-            except (ValueError, IndexError):
-                related = None
-            
-            # Find matching row in related widget
-            if related and msgid:
-                for r in range(related.rowCount()):
-                    try:
-                        item = related.item(r, 3)
-                        if item:
-                            # KORREKTUR: data() mit QtCore.Qt.UserRole
-                            item_data = item.data(QtCore.Qt.UserRole)
-                            if item_data and as_msgid(item_data) == msgid:
-                                rrow = r
-                                break
-                    except Exception:
-                        continue
+        for col in range(widget.columnCount()):
+            widget.item(row, col).setUnread(not status)
+            if rrow:
+                related.item(rrow, col).setUnread(not status)
 
-            # Update unread status in current widget
-            for col in range(widget.columnCount()):
-                item = widget.item(row, col)
-                if item and hasattr(item, 'setUnread'):
-                    item.setUnread(not status)
-            
-            # Update unread status in related widget if found
-            if rrow is not None and related:
-                for col in range(related.columnCount()):
-                    item = related.item(rrow, col)
-                    if item and hasattr(item, 'setUnread'):
-                        item.setUnread(not status)
-                        
-        except Exception as e:
-            logger.error("Error in updateUnreadStatus: %s", e)
+    # Here we need to update unread count for:
+    # - all widgets if there is no args
+    # - All accounts
+    # - corresponding account if current is "All accounts"
+    # - current account otherwise
     def propagateUnreadCount(self, folder=None, widget=None):
-        """
-        Update unread message counts for all folders and widgets
-        with robust error handling
-        """
-        try:
-            # ROBUSTE SQL-Abfrage mit Fehlerbehandlung
+        queryReturn = sqlQuery(
+            'SELECT toaddress, folder, COUNT(msgid) AS cnt'
+            ' FROM inbox WHERE read = 0 GROUP BY toaddress, folder')
+        totalUnread = {}
+        normalUnread = {}
+        broadcastsUnread = {}
+        for addr, fld, count in queryReturn:
+            addr = addr.decode("utf-8", "replace")
+            fld = fld.decode("utf-8", "replace")
             try:
-                queryReturn = sqlQuery(
-                    'SELECT toaddress, folder, COUNT(msgid) AS cnt '
-                    'FROM inbox WHERE read = 0 GROUP BY toaddress, folder')
-            except Exception as e:
-                logger.error("SQL query failed in propagateUnreadCount: %s", e)
-                return
-            
-            totalUnread = {}
-            normalUnread = {}
-            broadcastsUnread = {}
-            
-            # SICHERE Verarbeitung der SQL-Ergebnisse
-            if queryReturn:
-                for row in queryReturn:
-                    # Prüfe ob row valide ist
-                    if not isinstance(row, (tuple, list)):
-                        logger.debug("Invalid row format, skipping: %s", row)
-                        continue
-                    
-                    # Prüfe ob genügend Elemente vorhanden sind
-                    if len(row) < 3:
-                        logger.debug("Row has insufficient elements (%d), skipping: %s", 
-                                    len(row), row)
-                        continue
-                    
-                    try:
-                        addr, fld, count = row[0], row[1], row[2]
-                        
-                        # Konvertiere bytes zu strings falls nötig
-                        if isinstance(addr, bytes):
-                            addr = safe_decode(addr, "utf-8", "replace")
-                        if isinstance(fld, bytes):
-                            fld = safe_decode(fld, "utf-8", "replace")
-                        
-                        # Konvertiere count zu int
-                        try:
-                            count = int(count)
-                        except (TypeError, ValueError):
-                            count = 0
-                            logger.debug("Invalid count value: %s", row[2])
-                        
-                        # Speichere in normalUnread
-                        if addr not in normalUnread:
-                            normalUnread[addr] = {}
-                        normalUnread[addr][fld] = count
-                        
-                        # Speichere in totalUnread
-                        if fld not in totalUnread:
-                            totalUnread[fld] = 0
-                        totalUnread[fld] += count
-                        
-                    except Exception as e:
-                        logger.error("Error processing row %s: %s", row, e)
-                        continue
-            
-            # Abfrage für Broadcasts
+                normalUnread[addr][fld] = count
+            except KeyError:
+                normalUnread[addr] = {fld: count}
             try:
-                queryReturn = sqlQuery(
-                    'SELECT fromaddress, folder, COUNT(msgid) AS cnt '
-                    'FROM inbox WHERE read = 0 AND toaddress = ? '
-                    'GROUP BY fromaddress, folder', dbstr(str_broadcast_subscribers))
-                
-                if queryReturn:
-                    for row in queryReturn:
-                        if len(row) < 3:
-                            continue
-                        
-                        addr, fld, count = row[0], row[1], row[2]
-                        
-                        if isinstance(addr, bytes):
-                            addr = safe_decode(addr, "utf-8", "replace")
-                        if isinstance(fld, bytes):
-                            fld = safe_decode(fld, "utf-8", "replace")
-                        
-                        try:
-                            count = int(count)
-                        except (TypeError, ValueError):
-                            count = 0
-                        
-                        if addr not in broadcastsUnread:
-                            broadcastsUnread[addr] = {}
-                        broadcastsUnread[addr][fld] = count
-                        
-            except Exception as e:
-                logger.error("Broadcast SQL query failed: %s", e)
-            
-            # Update der TreeWidgets
-            widgets = []
-            if widget in (self.ui.treeWidgetSubscriptions, self.ui.treeWidgetChans):
-                widgets = (self.ui.treeWidgetYourIdentities,)
-            else:
-                widgets = (
-                    self.ui.treeWidgetYourIdentities,
-                    self.ui.treeWidgetSubscriptions, 
-                    self.ui.treeWidgetChans
-                )
-            
-            for treeWidget in widgets:
-                if not treeWidget:
-                    continue
-                    
-                root = treeWidget.invisibleRootItem()
-                if not root:
-                    continue
-                    
+                totalUnread[fld] += count
+            except KeyError:
+                totalUnread[fld] = count
+        if widget in (
+                self.ui.treeWidgetSubscriptions, self.ui.treeWidgetChans):
+            widgets = (self.ui.treeWidgetYourIdentities,)
+        else:
+            widgets = (
+                self.ui.treeWidgetYourIdentities,
+                self.ui.treeWidgetSubscriptions, self.ui.treeWidgetChans
+            )
+            queryReturn = sqlQuery(
+                'SELECT fromaddress, folder, COUNT(msgid) AS cnt'
+                ' FROM inbox WHERE read = 0 AND toaddress = ?'
+                ' GROUP BY fromaddress, folder', dbstr(str_broadcast_subscribers))
+            for addr, fld, count in queryReturn:
+                addr = addr.decode("utf-8", "replace")
+                fld = fld.decode("utf-8", "replace")
                 try:
-                    for i in range(root.childCount()):
-                        addressItem = root.child(i)
-                        if not addressItem:
-                            continue
-                        
-                        # Berechne neue Unread-Count
-                        if addressItem.type == AccountMixin.ALL:
-                            newCount = sum(six.itervalues(totalUnread))
-                            # Tray-Icon nur einmal updaten
-                            if treeWidget == self.ui.treeWidgetYourIdentities:
-                                self.drawTrayIcon(self.currentTrayIconFileName, newCount)
-                        else:
-                            try:
-                                if addressItem.type == AccountMixin.SUBSCRIPTION:
-                                    unread_data = broadcastsUnread
-                                else:
-                                    unread_data = normalUnread
-                                
-                                if addressItem.address in unread_data:
-                                    newCount = sum(six.itervalues(unread_data[addressItem.address]))
-                                else:
-                                    newCount = 0
-                            except KeyError:
-                                newCount = 0
-                        
-                        # Update nur wenn sich was geändert hat
-                        if newCount != addressItem.unreadCount:
-                            addressItem.setUnreadCount(newCount)
-                        
-                        # Update der Folders
-                        for j in range(addressItem.childCount()):
-                            folderItem = addressItem.child(j)
-                            if not folderItem:
-                                continue
-                                
-                            folderName = folderItem.folderName
-                            if folderName == "new":
-                                folderName = "inbox"
-                            
-                            # Skip wenn nicht gewünschter folder
-                            if folder and folderName != folder:
-                                continue
-                            
-                            # Berechne folder count
-                            if addressItem.type == AccountMixin.ALL:
-                                newFolderCount = totalUnread.get(folderName, 0)
-                            else:
-                                try:
-                                    if addressItem.type == AccountMixin.SUBSCRIPTION:
-                                        unread_data = broadcastsUnread
-                                    else:
-                                        unread_data = normalUnread
-                                    
-                                    newFolderCount = unread_data[addressItem.address].get(folderName, 0)
-                                except KeyError:
-                                    newFolderCount = 0
-                            
-                            # Update nur wenn nötig
-                            if newFolderCount != folderItem.unreadCount:
-                                folderItem.setUnreadCount(newFolderCount)
-                                
-                except Exception as e:
-                    logger.error("Error updating tree widget %s: %s", treeWidget.objectName(), e)
-                    
-        except Exception as e:
-            logger.error("Critical error in propagateUnreadCount: %s", e, exc_info=True)
+                    broadcastsUnread[addr][fld] = count
+                except KeyError:
+                    broadcastsUnread[addr] = {fld: count}
+
+        for treeWidget in widgets:
+            root = treeWidget.invisibleRootItem()
+            for i in range(root.childCount()):
+                addressItem = root.child(i)
+                if addressItem.type == AccountMixin.ALL:
+                    newCount = sum(six.itervalues(totalUnread))
+                    self.drawTrayIcon(self.currentTrayIconFileName, newCount)
+                else:
+                    try:
+                        newCount = sum(six.itervalues((
+                            broadcastsUnread
+                            if addressItem.type == AccountMixin.SUBSCRIPTION
+                            else normalUnread
+                        )[addressItem.address]))
+                    except KeyError:
+                        newCount = 0
+                if newCount != addressItem.unreadCount:
+                    addressItem.setUnreadCount(newCount)
+                for j in range(addressItem.childCount()):
+                    folderItem = addressItem.child(j)
+                    folderName = folderItem.folderName
+                    if folderName == "new":
+                        folderName = "inbox"
+                    if folder and folderName != folder:
+                        continue
+                    if addressItem.type == AccountMixin.ALL:
+                        newCount = totalUnread.get(folderName, 0)
+                    else:
+                        try:
+                            newCount = (
+                                broadcastsUnread
+                                if addressItem.type == AccountMixin.SUBSCRIPTION
+                                else normalUnread
+                            )[addressItem.address][folderName]
+                        except KeyError:
+                            newCount = 0
+                    if newCount != folderItem.unreadCount:
+                        folderItem.setUnreadCount(newCount)
 
     def addMessageListItem(self, tableWidget, items):
         sortingEnabled = tableWidget.isSortingEnabled()
         if sortingEnabled:
             tableWidget.setSortingEnabled(False)
-        
-        row_position = tableWidget.rowCount()
-        tableWidget.insertRow(row_position)
-        
+        tableWidget.insertRow(0)
         for i, item in enumerate(items):
-            tableWidget.setItem(row_position, i, item)
-            
-            # KORREKTUR: Für Custom Widgets sicherstellen, dass Daten gesetzt sind
-            if hasattr(item, 'address'):
-                # MessageList_AddressWidget
-                if item.data(QtCore.Qt.UserRole) is None:
-                    item.setData(QtCore.Qt.UserRole, item.address)
-            elif hasattr(item, 'subject'):
-                # MessageList_SubjectWidget
-                if item.data(QtCore.Qt.UserRole) is None:
-                    item.setData(QtCore.Qt.UserRole, item.subject)
-            elif hasattr(item, 'msgid'):
-                # MessageList_TimeWidget
-                if item.data(QtCore.Qt.UserRole) is None:
-                    item.setData(QtCore.Qt.UserRole, item.msgid)
-        
+            tableWidget.setItem(0, i, item)
         if sortingEnabled:
             tableWidget.setSortingEnabled(True)
 
@@ -1330,541 +1185,112 @@ class MyForm(settingsmixin.SMainWindow):
         self, tableWidget, toAddress, fromAddress, subject,
         msgid, received, read
     ):
-        """Add message to inbox list - COMPLETELY BULLETPROOF"""
-        try:
-            # SAFETY CHECK: Ensure we have a valid tableWidget
-            if not tableWidget or not hasattr(tableWidget, 'insertRow'):
-                logger.error("Invalid tableWidget in addMessageListItemInbox")
-                return None
-                
-            # SANITIZE ALL INPUTS
-            toAddress = self._safe_str(toAddress)
-            fromAddress = self._safe_str(fromAddress)
-            subject = self._safe_str(subject)
-            msgid = self._safe_str(msgid)
-            
-            # Convert received to string if needed
-            if received is None:
-                received = str(time.time())
-            else:
-                received = self._safe_str(received)
-                
-            # Ensure read is boolean
-            if not isinstance(read, bool):
-                try:
-                    read = bool(int(read))
-                except:
-                    read = True
-            
-            # GET LABELS WITH COMPLETE ERROR HANDLING
-            toLabel = toAddress  # Default fallback
-            fromLabel = fromAddress  # Default fallback
-            subjectText = subject  # Default fallback
-            
-            try:
-                # Try to get account info - but don't crash if it fails
-                if toAddress == str_broadcast_subscribers:
-                    acct = accountClass(fromAddress) if fromAddress else None
-                else:
-                    acct = accountClass(toAddress) or accountClass(fromAddress)
-                    
-                if acct is None:
-                    acct = BMAccount(fromAddress) if fromAddress else BMAccount("")
-                    
-                # Try to parse message - silently fail if it doesn't work
-                try:
-                    acct.parseMessage(toAddress, fromAddress, subject, "")
-                except:
-                    pass
-                    
-                # Get labels with fallbacks
-                try:
-                    toLabel = self._safe_str(acct.toLabel) if hasattr(acct, 'toLabel') else toAddress
-                    fromLabel = self._safe_str(acct.fromLabel) if hasattr(acct, 'fromLabel') else fromAddress
-                    subjectText = self._safe_str(acct.subject) if hasattr(acct, 'subject') else subject
-                except:
-                    # If label extraction fails, use addresses as labels
-                    toLabel = toAddress
-                    fromLabel = fromAddress
-                    subjectText = subject
-                    
-            except Exception as acct_err:
-                logger.debug("Account processing failed (using fallbacks): %s", acct_err)
-                toLabel = toAddress
-                fromLabel = fromAddress
-                subjectText = subject
-            
-            # ENSURE LABELS ARE NOT EMPTY
-            if not toLabel or toLabel.strip() == "":
-                toLabel = toAddress if toAddress else "[Unknown]"
-            if not fromLabel or fromLabel.strip() == "":
-                fromLabel = fromAddress if fromAddress else "[Unknown]"
-            if not subjectText or subjectText.strip() == "":
-                subjectText = _translate("MainWindow", "(No subject)")
-            
-            # CREATE WIDGET ITEMS WITH MAXIMUM SAFETY
-            try:
-                # Item 0: To Address
-                item0 = MessageList_AddressWidget(toAddress, toLabel, not read)
-            except Exception as e:
-                logger.error("Failed to create To Address widget: %s", e)
-                item0 = QtWidgets.QTableWidgetItem(toLabel)
-                item0.setData(QtCore.Qt.UserRole, toAddress)
-            
-            try:
-                # Item 1: From Address
-                item1 = MessageList_AddressWidget(fromAddress, fromLabel, not read)
-            except Exception as e:
-                logger.error("Failed to create From Address widget: %s", e)
-                item1 = QtWidgets.QTableWidgetItem(fromLabel)
-                item1.setData(QtCore.Qt.UserRole, fromAddress)
-            
-            try:
-                # Item 2: Subject
-                item2 = MessageList_SubjectWidget(subject, subjectText, not read)
-            except Exception as e:
-                logger.error("Failed to create Subject widget: %s", e)
-                item2 = QtWidgets.QTableWidgetItem(subjectText)
-                item2.setData(QtCore.Qt.UserRole, subject)
-            
-            try:
-                # Item 3: Time/Received
-                # Format timestamp safely
-                try:
-                    if received and received.strip():
-                        time_text = l10n.formatTimestamp(received)
-                    else:
-                        time_text = _translate("MainWindow", "No date")
-                except:
-                    time_text = _translate("MainWindow", "No date")
-                    
-                item3 = MessageList_TimeWidget(time_text, not read, received, msgid)
-            except Exception as e:
-                logger.error("Failed to create Time widget: %s", e)
-                item3 = QtWidgets.QTableWidgetItem(_translate("MainWindow", "No date"))
-                item3.setData(QtCore.Qt.UserRole, msgid)
-            
-            # ADD TO TABLE WITH COMPLETE ERROR HANDLING
-            try:
-                # Save sorting state
-                was_sorting = tableWidget.isSortingEnabled()
-                if was_sorting:
-                    tableWidget.setSortingEnabled(False)
-                
-                # Insert row
-                row_position = tableWidget.rowCount()
-                tableWidget.insertRow(row_position)
-                
-                # Add items to columns
-                items = [item0, item1, item2, item3]
-                for col, item in enumerate(items):
-                    if col < tableWidget.columnCount():
-                        try:
-                            tableWidget.setItem(row_position, col, item)
-                        except Exception as set_err:
-                            logger.error("Failed to set item in column %d: %s", col, set_err)
-                            # Create fallback item
-                            fallback_item = QtWidgets.QTableWidgetItem("Error")
-                            tableWidget.setItem(row_position, col, fallback_item)
-                
-                # Restore sorting
-                if was_sorting:
-                    tableWidget.setSortingEnabled(True)
-                    
-                logger.debug("Successfully added message row %d", row_position)
-                
-                # Return minimal account info
-                class SimpleAccount:
-                    def __init__(self, to_label, from_label, subj, addr):
-                        self.toLabel = to_label
-                        self.fromLabel = from_label
-                        self.subject = subj
-                        self.address = addr
-                        
-                return SimpleAccount(toLabel, fromLabel, subjectText, toAddress or fromAddress)
-                
-            except Exception as table_err:
-                logger.error("Failed to add row to table: %s", table_err)
-                return None
-                
-        except Exception as global_err:
-            logger.error("CRITICAL ERROR in addMessageListItemInbox: %s", global_err)
-            return None
+        if toAddress == str_broadcast_subscribers:
+            acct = accountClass(fromAddress)
+        else:
+            acct = accountClass(toAddress) or accountClass(fromAddress)
+        if acct is None:
+            acct = BMAccount(fromAddress)
+        acct.parseMessage(toAddress, fromAddress, subject, "")
 
-    def _safe_str(self, value):
-        """Convert ANY value to safe string - ULTRA ROBUST"""
-        if value is None:
-            return ""
-        
-        try:
-            if isinstance(value, bytes):
-                return safe_decode(value, "utf-8", "replace")
-            elif isinstance(value, (int, float, bool)):
-                return str(value)
-            elif hasattr(value, '__str__'):
-                result = str(value)
-                if result:
-                    return result
-                else:
-                    return ""
-            else:
-                return ""
-        except Exception:
-            return ""
+        items = [
+            MessageList_AddressWidget(
+                toAddress, unic(ustr(acct.toLabel)), not read),
+            MessageList_AddressWidget(
+                fromAddress, unic(ustr(acct.fromLabel)), not read),
+            MessageList_SubjectWidget(
+                ustr(subject), unic(ustr(acct.subject)),
+                not read),
+            MessageList_TimeWidget(
+                l10n.formatTimestamp(received), not read, received, msgid)
+        ]
+        self.addMessageListItem(tableWidget, items)
+
+        return acct
 
     # Load Sent items from database
     def loadSent(self, tableWidget, account, where="", what=""):
-        """Load sent messages - handles empty database"""
-        try:
-            tableWidget.setRowCount(0)
-            
-            # Show loading
-            loading_row = tableWidget.rowCount()
-            tableWidget.insertRow(loading_row)
-            loading_item = QtWidgets.QTableWidgetItem("Loading sent messages...")
-            loading_item.setTextAlignment(QtCore.Qt.AlignCenter)
-            tableWidget.setItem(loading_row, 0, loading_item)
-            
-            # Process UI
-            QtCore.QCoreApplication.processEvents()
-            
-            try:
-                # Determine query type
-                if tableWidget == self.ui.tableWidgetInboxSubscriptions:
-                    xAddress = 'toaddress'
-                elif tableWidget == self.ui.tableWidgetInboxChans:
-                    xAddress = 'both'
-                else:
-                    xAddress = 'fromaddress'
-                    
-                # Execute query
-                queryresult = helper_search.search_sql(
-                    xAddress, account, "sent", where, what, False)
-                    
-                # Remove loading
-                tableWidget.removeRow(loading_row)
-                
-                # Process results
-                if queryresult and len(queryresult) > 0:
-                    for row in queryresult:
-                        try:
-                            # Add sent message
-                            self._add_simple_sent_row(tableWidget, row)
-                        except:
-                            continue
-                            
-                    # Setup table
-                    if tableWidget.rowCount() > 0:
-                        tableWidget.setSortingEnabled(True)
-                        tableWidget.horizontalHeader().setSortIndicator(
-                            3, QtCore.Qt.DescendingOrder)
-                        tableWidget.selectRow(0)
-                else:
-                    # No sent messages
-                    self._show_empty_table_message(tableWidget, "sent", account)
-                    
-            except Exception as e:
-                # Clean up on error
-                if tableWidget.rowCount() > 0:
-                    tableWidget.removeRow(loading_row)
-                self._show_error_message(tableWidget, str(e))
-                
-        except Exception as e:
-            logger.error("loadSent error: %s", e)
-            tableWidget.setSortingEnabled(True)
+        if tableWidget == self.ui.tableWidgetInboxSubscriptions:
+            tableWidget.setColumnHidden(0, True)
+            tableWidget.setColumnHidden(1, False)
+            xAddress = 'toaddress'
+        elif tableWidget == self.ui.tableWidgetInboxChans:
+            tableWidget.setColumnHidden(0, False)
+            tableWidget.setColumnHidden(1, True)
+            xAddress = 'both'
+        else:
+            tableWidget.setColumnHidden(0, False)
+            tableWidget.setColumnHidden(1, bool(account))
+            xAddress = 'fromaddress'
 
-    def _add_simple_sent_row(self, tableWidget, row):
-        """Add a simple sent message row"""
-        try:
-            r = tableWidget.rowCount()
-            tableWidget.insertRow(r)
-            
-            # Extract data
-            to = str(row[0]) if len(row) > 0 else ""
-            from_addr = str(row[1]) if len(row) > 1 else ""
-            subject = str(row[2]) if len(row) > 2 else ""
-            status = str(row[3]) if len(row) > 3 else ""
-            
-            # Add columns
-            tableWidget.setItem(r, 0, QtWidgets.QTableWidgetItem(to[:50]))
-            tableWidget.setItem(r, 1, QtWidgets.QTableWidgetItem(from_addr[:50]))
-            tableWidget.setItem(r, 2, QtWidgets.QTableWidgetItem(subject[:100]))
-            tableWidget.setItem(r, 3, QtWidgets.QTableWidgetItem(status[:50]))
-            
-        except Exception as e:
-            logger.error("Failed to add sent row: %s", e)
+        queryreturn = helper_search.search_sql(
+            xAddress, account, "sent", where, what, False)
+
+        for row in queryreturn:
+            r = []
+            r.append(row[0].decode("utf-8", "replace"))  # toaddress
+            r.append(row[1].decode("utf-8", "replace"))  # fromaddress
+            r.append(row[2].decode("utf-8", "replace"))  # subject
+            r.append(row[3].decode("utf-8", "replace"))  # status
+            r.append(row[4])  # ackdata
+            r.append(row[5])  # lastactiontime
+            self.addMessageListItemSent(tableWidget, *r)
+
+        tableWidget.horizontalHeader().setSortIndicator(
+            3, QtCore.Qt.DescendingOrder)
+        tableWidget.setSortingEnabled(True)
+        tableWidget.horizontalHeaderItem(3).setText(
+            _translate("MainWindow", "Sent"))
+        tableWidget.setUpdatesEnabled(True)
+
     # Load messages from database file
     def loadMessagelist(
         self, tableWidget, account, folder="inbox", where="", what="",
         unreadOnly=False
     ):
-        """Load messages - HANDLES EMPTY DATABASE GRACEFULLY"""
-        try:
-            # Reset table
-            tableWidget.setRowCount(0)
-            
-            # Handle sent folder separately
-            if folder == 'sent':
-                self.loadSent(tableWidget, account, where, what)
-                return
-                
-            # Show loading message
-            loading_row = tableWidget.rowCount()
-            tableWidget.insertRow(loading_row)
-            loading_item = QtWidgets.QTableWidgetItem("Loading messages...")
-            loading_item.setTextAlignment(QtCore.Qt.AlignCenter)
-            tableWidget.setItem(loading_row, 0, loading_item)
-            tableWidget.setSpan(loading_row, 0, 1, tableWidget.columnCount())
-            
-            # Process UI events to show loading message
-            QtCore.QCoreApplication.processEvents()
-            
-            try:
-                # Determine query type
-                if tableWidget == self.ui.tableWidgetInboxSubscriptions:
-                    xAddress = "fromaddress"
-                    if not what:
-                        where = _translate("MainWindow", "To")
-                        what = str_broadcast_subscribers
-                else:
-                    xAddress = "toaddress"
-                    
-                # Execute query
-                queryresult = helper_search.search_sql(
-                    xAddress, account, folder, where, what, unreadOnly)
-                    
-                # Remove loading message
-                tableWidget.removeRow(loading_row)
-                
-                # Process results if any
-                if queryresult and len(queryresult) > 0:
-                    for row in queryresult:
-                        try:
-                            # Extract data (simplified)
-                            toAddress = str(row[0]) if len(row) > 0 else ""
-                            fromAddress = str(row[1]) if len(row) > 1 else ""
-                            subject = str(row[2]) if len(row) > 2 else ""
-                            msgid = str(row[4]) if len(row) > 4 else ""
-                            received = str(row[5]) if len(row) > 5 else str(time.time())
-                            read = bool(row[6]) if len(row) > 6 else True
-                            
-                            # Add to table
-                            self._add_simple_message_row(
-                                tableWidget, toAddress, fromAddress, 
-                                subject, msgid, received, read)
-                                
-                        except Exception as row_err:
-                            logger.debug("Error processing row: %s", row_err)
-                            continue
-                            
-                    # Setup table after adding messages
-                    if tableWidget.rowCount() > 0:
-                        tableWidget.setSortingEnabled(True)
-                        tableWidget.horizontalHeader().setSortIndicator(
-                            3, QtCore.Qt.DescendingOrder)
-                        tableWidget.selectRow(0)
-                        
-                else:
-                    # NO MESSAGES FOUND - show friendly message
-                    self._show_empty_table_message(tableWidget, folder, account)
-                    
-            except Exception as query_err:
-                # Remove loading message on error
-                if tableWidget.rowCount() > 0:
-                    tableWidget.removeRow(loading_row)
-                    
-                # Show error message
-                self._show_error_message(tableWidget, str(query_err))
-                
-        except Exception as e:
-            logger.error("loadMessagelist error: %s", e)
-            # Ensure table is in usable state
-            tableWidget.setSortingEnabled(True)
+        tableWidget.setUpdatesEnabled(False)
+        tableWidget.setSortingEnabled(False)
+        tableWidget.setRowCount(0)
 
-    def _add_simple_message_row(self, tableWidget, toAddress, fromAddress, 
-                               subject, msgid, received, read):
-        """Add a simple message row without complex dependencies"""
-        try:
-            row = tableWidget.rowCount()
-            tableWidget.insertRow(row)
-            
-            # Column 0: To
-            item0 = QtWidgets.QTableWidgetItem(toAddress[:50])
-            item0.setData(QtCore.Qt.UserRole, toAddress)
-            
-            # Setze fett für ungelesene Nachrichten
-            if not read:
-                font = item0.font()
-                font.setBold(True)
-                item0.setFont(font)
-            
-            # NICHT: item0.setLabel() aufrufen - einfache Items haben diese Methode nicht
-            tableWidget.setItem(row, 0, item0)
-            
-            # Column 1: From
-            item1 = QtWidgets.QTableWidgetItem(fromAddress[:50])
-            item1.setData(QtCore.Qt.UserRole, fromAddress)
-            
-            if not read:
-                font = item1.font()
-                font.setBold(True)
-                item1.setFont(font)
-            
-            # NICHT: item1.setLabel() aufrufen
-            tableWidget.setItem(row, 1, item1)
-            
-            # Column 2: Subject
-            item2 = QtWidgets.QTableWidgetItem(subject[:100])
-            item2.setData(QtCore.Qt.UserRole, subject)
-            
-            if not read:
-                font = item2.font()
-                font.setBold(True)
-                item2.setFont(font)
-            
-            tableWidget.setItem(row, 2, item2)
-            
-            # Column 3: Time
-            try:
-                time_text = l10n.formatTimestamp(received)
-            except:
-                time_text = received[:20] if received else "No date"
-            
-            item3 = QtWidgets.QTableWidgetItem(time_text)
-            item3.setData(QtCore.Qt.UserRole, msgid)
-            
-            if not read:
-                font = item3.font()
-                font.setBold(True)
-                item3.setFont(font)
-            
-            tableWidget.setItem(row, 3, item3)
-            
-            logger.debug(f"Added simple message row {row}: {subject[:30]}...")
-            
-        except Exception as e:
-            logger.error("Failed to add message row: %s", e)
+        if folder == 'sent':
+            self.loadSent(tableWidget, account, where, what)
+            return
 
-    def _show_empty_table_message(self, tableWidget, folder, account):
-        """Show user-friendly message when table is empty"""
-        try:
-            row = tableWidget.rowCount()
-            tableWidget.insertRow(row)
-            
-            if folder == "inbox":
-                if account:
-                    message = _translate("MainWindow", 
-                        "No messages for this address yet")
-                else:
-                    message = _translate("MainWindow", 
-                        "No messages in your inbox yet")
-            elif folder == "sent":
-                message = _translate("MainWindow", 
-                    "No sent messages yet")
-            elif folder == "trash":
-                message = _translate("MainWindow", 
-                    "Trash is empty")
-            else:
-                message = _translate("MainWindow", 
-                    "No messages")
-                
-            item = QtWidgets.QTableWidgetItem(message)
-            item.setTextAlignment(QtCore.Qt.AlignCenter)
-            item.setForeground(QtGui.QBrush(QtGui.QColor(150, 150, 150)))
-            item.setFlags(QtCore.Qt.ItemIsEnabled)
-            
-            tableWidget.setItem(row, 0, item)
-            tableWidget.setSpan(row, 0, 1, tableWidget.columnCount())
-            
-        except Exception as e:
-            logger.error("Failed to show empty message: %s", e)
-
-    def _show_error_message(self, tableWidget, error):
-        """Show error message in table"""
-        try:
-            row = tableWidget.rowCount()
-            tableWidget.insertRow(row)
-            
-            item = QtWidgets.QTableWidgetItem(
-                _translate("MainWindow", "Error loading messages"))
-            item.setTextAlignment(QtCore.Qt.AlignCenter)
-            item.setForeground(QtGui.QBrush(QtGui.QColor(255, 0, 0)))
-            item.setFlags(QtCore.Qt.ItemIsEnabled)
-            
-            tableWidget.setItem(row, 0, item)
-            tableWidget.setSpan(row, 0, 1, tableWidget.columnCount())
-            
-        except Exception as e:
-            logger.error("Failed to show error message: %s", e)
-
-    def _add_info_message(self, tableWidget, message):
-        """Add an informational message to empty table"""
-        try:
-            sortingEnabled = tableWidget.isSortingEnabled()
-            if sortingEnabled:
-                tableWidget.setSortingEnabled(False)
-                
-            row = tableWidget.rowCount()
-            tableWidget.insertRow(row)
-            
-            item = QtWidgets.QTableWidgetItem(message)
-            item.setFlags(QtCore.Qt.ItemIsEnabled)
-            item.setTextAlignment(QtCore.Qt.AlignCenter)
-            item.setForeground(QtGui.QBrush(QtGui.QColor(100, 100, 100)))
-            
-            # Span across all columns
-            tableWidget.setItem(row, 0, item)
-            if tableWidget.columnCount() > 1:
-                tableWidget.setSpan(row, 0, 1, tableWidget.columnCount())
-                
-            if sortingEnabled:
-                tableWidget.setSortingEnabled(True)
-        except Exception as e:
-            logger.error("Error adding info message: %s", e)
-
-    def _safe_decode(self, value):
-        """Safely convert any value to string - SIMPLIFIED VERSION"""
-        if value is None:
-            return ""
-        
-        try:
-            if isinstance(value, bytes):
-                return safe_decode(value, "utf-8", "replace")
-            else:
-                return str(value)
-        except:
-            return ""
-
-
-
-    def _show_no_messages(self, tableWidget):
-        """Display 'no messages' in table"""
-        try:
-            # Just clear the table - no special message needed
-            pass
-        except:
-            pass
-
-    def _show_error(self, tableWidget, error):
-        """Display error in table"""
-        try:
-            # Don't add error rows - just log it
-            logger.error("Table error: %s", error)
-        except:
-            pass
-    def _safe_decode(self, value):
-        """Safely decode bytes to string or return string as-is"""
-        if value is None:
-            return ""
-        if isinstance(value, bytes):
-            try:
-                return safe_decode(value, "utf-8", "replace")
-            except Exception:
-                return str(value)
-        elif isinstance(value, int):
-            return str(value)
+        if tableWidget == self.ui.tableWidgetInboxSubscriptions:
+            xAddress = "fromaddress"
+            if not what:
+                where = _translate("MainWindow", "To")
+                what = str_broadcast_subscribers
         else:
-            return str(value)
+            xAddress = "toaddress"
+        if account is not None:
+            tableWidget.setColumnHidden(0, True)
+            tableWidget.setColumnHidden(1, False)
+        else:
+            tableWidget.setColumnHidden(0, False)
+            tableWidget.setColumnHidden(1, False)
+
+        queryreturn = helper_search.search_sql(
+            xAddress, account, folder, where, what, unreadOnly)
+
+        for row in queryreturn:
+            toAddress, fromAddress, subject, _, msgid, received, read = row
+            toAddress = toAddress.decode("utf-8", "replace")
+            fromAddress = fromAddress.decode("utf-8", "replace")
+            subject = subject.decode("utf-8", "replace")
+            received = received.decode("utf-8", "replace")
+            self.addMessageListItemInbox(
+                tableWidget, toAddress, fromAddress, subject,
+                msgid, received, read)
+
+        tableWidget.horizontalHeader().setSortIndicator(
+            3, QtCore.Qt.DescendingOrder)
+        tableWidget.setSortingEnabled(True)
+        tableWidget.selectRow(0)
+        tableWidget.horizontalHeaderItem(3).setText(
+            _translate("MainWindow", "Received"))
+        tableWidget.setUpdatesEnabled(True)
+
     # create application indicator
     def appIndicatorInit(self, app):
         self.initTrayIcon("can-icon-24px-red.png", app)
@@ -1936,7 +1362,7 @@ class MyForm(settingsmixin.SMainWindow):
         SELECT msgid, toaddress, read FROM inbox where folder='inbox'
         ''')
         for msgid, toAddress, read in queryreturn:
-            toAddress = safe_decode(toAddress, "utf-8", "replace")
+            toAddress = toAddress.decode("utf-8", "replace")
 
             if not read:
                 # increment the unread subscriptions if True (1)
@@ -2391,21 +1817,16 @@ class MyForm(settingsmixin.SMainWindow):
                 "MainWindow", "Connected"))
             self.setTrayIconFile("can-icon-24px-%s.png" % color)
 
+    def initTrayIcon(self, iconFileName, app):
+        self.currentTrayIconFileName = iconFileName
+        self.tray = QtWidgets.QSystemTrayIcon(
+            self.calcTrayIcon(iconFileName, self.findInboxUnreadCount()), app)
 
+    def setTrayIconFile(self, iconFileName):
+        self.currentTrayIconFileName = iconFileName
+        self.drawTrayIcon(iconFileName, self.findInboxUnreadCount())
 
     def calcTrayIcon(self, iconFileName, inboxUnreadCount):
-        """Calculate tray icon with optional unread count overlay"""
-        # PYTHON 3 KOMPATIBILITÄT: Konvertiere bytes/string zu int
-        try:
-            if isinstance(inboxUnreadCount, bytes):
-                inboxUnreadCount = int(inboxUnreadCount.decode('utf-8'))
-            elif isinstance(inboxUnreadCount, str):
-                inboxUnreadCount = int(inboxUnreadCount)
-            # Falls es schon ein int ist, bleibt es unverändert
-        except (ValueError, AttributeError):
-            # Bei Konvertierungsfehler: 0 anzeigen
-            inboxUnreadCount = 0
-        
         pixmap = QtGui.QPixmap(":/newPrefix/images/" + iconFileName)
         if inboxUnreadCount > 0:
             # choose font and calculate font parameters
@@ -2447,43 +1868,16 @@ class MyForm(settingsmixin.SMainWindow):
         self.rerenderTabTreeSubscriptions()
         self.rerenderTabTreeChans()
 
-    def findInboxUnreadCount(self):
-        """Find the number of unread messages in the inbox"""
-        try:
-            queryreturn = sqlQuery('''SELECT COUNT(*) FROM inbox WHERE read=0''')
-            if queryreturn and len(queryreturn) > 0:
-                row = queryreturn[0]
-                # Statt cnt, = row verwenden wir:
-                if len(row) == 1:
-                    cnt = row[0]
-                    return cnt
-                else:
-                    logger.error("Unexpected row format in findInboxUnreadCount: %s", row)
-                    return 0
-            return 0
-        except Exception as e:
-            logger.error("Error in findInboxUnreadCount: %s", e)
-            return 0
-
-    def initTrayIcon(self, iconFileName, app):
-        self.currentTrayIconFileName = iconFileName
-        self.tray = QtWidgets.QSystemTrayIcon(
-            self.calcTrayIcon(iconFileName, self.findInboxUnreadCount()), app)
-
-    def setTrayIconFile(self, iconFileName, unreadCount=None):
-        """Set tray icon with optional unread count badge"""
-        self.currentTrayIconFileName = iconFileName
-        if unreadCount is None:
-            unreadCount = self.findInboxUnreadCount()
+    def findInboxUnreadCount(self, count=None):
+        if count is None:
+            queryreturn = sqlQuery('''SELECT count(*) from inbox WHERE folder='inbox' and read=0''')
+            cnt = 0
+            for row in queryreturn:
+                cnt, = row
+            self.unreadCount = int(cnt)
         else:
-            # Sicherstellen, dass unreadCount eine gültige Zahl ist
-            try:
-                unreadCount = int(unreadCount)
-            except (ValueError, TypeError):
-                print(f"DEBUG: Invalid unreadCount parameter: {unreadCount}, using findInboxUnreadCount()")
-                unreadCount = self.findInboxUnreadCount()
-        
-        self.drawTrayIcon(iconFileName, unreadCount)
+            self.unreadCount = count
+        return self.unreadCount
 
     def updateSentItemStatusByToAddress(self, toAddress, textToDisplay):
         for sent in (
@@ -2518,21 +1912,6 @@ class MyForm(settingsmixin.SMainWindow):
                         sent.item(i, 3).setText(textToDisplay)
 
     def updateSentItemStatusByAckdata(self, ackdata, textToDisplay):
-        
-        def get_item_data(item):
-            """Get data from QTableWidgetItem with PyQt5/PyQt6 compatibility"""
-            if item is None:
-                return None
-            try:
-                # Try PyQt6 style with role parameter
-                return item.data(Qt.DisplayRole)
-            except TypeError:
-                try:
-                    # Try PyQt5 style without parameter
-                    return item.data()
-                except:
-                    return None
-        
         for sent in (
             self.ui.tableWidgetInbox,
             self.ui.tableWidgetInboxSubscriptions,
@@ -2542,17 +1921,12 @@ class MyForm(settingsmixin.SMainWindow):
             if self.getCurrentFolder(treeWidget) != "sent":
                 continue
             for i in range(sent.rowCount()):
-                # Get the item and its data with compatibility wrapper
-                item = sent.item(i, 3)
-                if item is None:
-                    continue
-                    
-                # Use the compatibility function
-                tableAckdata_raw = get_item_data(item)
-                tableAckdata = as_msgid(tableAckdata_raw)
-                
+                # toAddress = sent.item(i, 0).data(QtCore.Qt.UserRole)
+                tableAckdata = as_msgid(sent.item(i, 3).data())
+                # status, addressVersionNumber, streamNumber, ripe = decodeAddress(
+                #     toAddress)
                 if ackdata == tableAckdata:
-                    item.setToolTip(textToDisplay)
+                    sent.item(i, 3).setToolTip(textToDisplay)
                     try:
                         newlinePosition = textToDisplay.find('\n')
                     # If someone misses adding a "_translate" to a string
@@ -2563,7 +1937,7 @@ class MyForm(settingsmixin.SMainWindow):
                     if newlinePosition > 1:
                         textToDisplay = textToDisplay[:newlinePosition]
 
-                    item.setText(textToDisplay)
+                    sent.item(i, 3).setText(textToDisplay)
 
     def removeInboxRowByMsgid(self, msgid):
         # msgid and inventoryHash are the same thing
@@ -2607,86 +1981,15 @@ class MyForm(settingsmixin.SMainWindow):
         for messagelist in (self.ui.tableWidgetInbox,
                             self.ui.tableWidgetInboxChans,
                             self.ui.tableWidgetInboxSubscriptions):
-            if not messagelist:
-                continue
-                
             for i in range(messagelist.rowCount()):
-                item = messagelist.item(i, 1)
-                if item is None:
-                    # Erstelle ein neues Item falls es nicht existiert
-                    try:
-                        # Versuche, die Daten aus anderen Spalten zu holen
-                        address_item = messagelist.item(i, 0)
-                        if address_item and hasattr(address_item, 'data'):
-                            address_data = address_item.data(QtCore.Qt.UserRole)
-                            if address_data:
-                                # Erstelle ein neues Item
-                                fromAddress = str(address_data)
-                                acct = accountClass(fromAddress) if fromAddress else None
-                                if acct is None:
-                                    acct = BMAccount(fromAddress) if fromAddress else BMAccount("")
-                                
-                                try:
-                                    acct.parseMessage("", fromAddress, "", "")
-                                except:
-                                    pass
-                                    
-                                label = acct.fromLabel if hasattr(acct, 'fromLabel') else fromAddress
-                                new_item = MessageList_AddressWidget(fromAddress, label, True)
-                                messagelist.setItem(i, 1, new_item)
-                                item = new_item
-                    except Exception as e:
-                        logger.debug(f"Could not create missing item at row {i}, col 1: {e}")
-                        continue
-                
-                # Jetzt sicher auf setLabel() zugreifen
-                if item is not None and hasattr(item, 'setLabel'):
-                    try:
-                        item.setLabel()
-                    except Exception as e:
-                        logger.debug(f"Error calling setLabel() at row {i}: {e}")
+                messagelist.item(i, 1).setLabel()
 
     def rerenderMessagelistToLabels(self):
         for messagelist in (self.ui.tableWidgetInbox,
                             self.ui.tableWidgetInboxChans,
                             self.ui.tableWidgetInboxSubscriptions):
-            if not messagelist:
-                continue
-                
             for i in range(messagelist.rowCount()):
-                item = messagelist.item(i, 0)
-                if item is None:
-                    # Erstelle ein neues Item falls es nicht existiert
-                    try:
-                        # Versuche, die Daten aus anderen Spalten zu holen
-                        from_item = messagelist.item(i, 1)
-                        if from_item and hasattr(from_item, 'data'):
-                            address_data = from_item.data(QtCore.Qt.UserRole)
-                            if address_data:
-                                toAddress = str(address_data)
-                                acct = accountClass(toAddress) if toAddress else None
-                                if acct is None:
-                                    acct = BMAccount(toAddress) if toAddress else BMAccount("")
-                                
-                                try:
-                                    acct.parseMessage(toAddress, "", "", "")
-                                except:
-                                    pass
-                                    
-                                label = acct.toLabel if hasattr(acct, 'toLabel') else toAddress
-                                new_item = MessageList_AddressWidget(toAddress, label, True)
-                                messagelist.setItem(i, 0, new_item)
-                                item = new_item
-                    except Exception as e:
-                        logger.debug(f"Could not create missing item at row {i}, col 0: {e}")
-                        continue
-                
-                # Jetzt sicher auf setLabel() zugreifen
-                if item is not None and hasattr(item, 'setLabel'):
-                    try:
-                        item.setLabel()
-                    except Exception as e:
-                        logger.debug(f"Error calling setLabel() at row {i}: {e}")
+                messagelist.item(i, 0).setLabel()
 
     def rerenderAddressBook(self):
         def addRow(address, label, type):
@@ -2712,8 +2015,8 @@ class MyForm(settingsmixin.SMainWindow):
         queryreturn = sqlQuery('SELECT label, address FROM subscriptions WHERE enabled = 1')
         for row in queryreturn:
             label, address = row
-            label = safe_decode(label, "utf-8", "replace")
-            address = safe_decode(address, "utf-8", "replace")
+            label = label.decode("utf-8", "replace")
+            address = address.decode("utf-8", "replace")
             newRows[address] = [label, AccountMixin.SUBSCRIPTION]
         # chans
         for address in config.addresses(True):
@@ -2727,8 +2030,8 @@ class MyForm(settingsmixin.SMainWindow):
         queryreturn = sqlQuery('SELECT label, address FROM addressbook')
         for row in queryreturn:
             label, address = row
-            label = safe_decode(label, "utf-8", "replace")
-            address = safe_decode(address, "utf-8", "replace")
+            label = label.decode("utf-8", "replace")
+            address = address.decode("utf-8", "replace")
             newRows[address] = [label, AccountMixin.NORMAL]
 
         completerList = []
@@ -2995,21 +2298,7 @@ class MyForm(settingsmixin.SMainWindow):
                         if queryreturn != []:
                             for row in queryreturn:
                                 toLabel, = row
-                            try:
-                                # Sicherstellen, dass toLabel ein String ist
-                                if isinstance(toLabel, bytes):
-                                    toLabel = safe_decode(toLabel, "utf-8", "replace")
-                                elif isinstance(toLabel, int):
-                                    # WICHTIG: Integer zu String konvertieren
-                                    toLabel = str(toLabel)
-                                elif toLabel is None:
-                                    toLabel = ""
-                                else:
-                                    # Alle anderen Typen zu String konvertieren
-                                    toLabel = str(toLabel)
-                            except Exception as e:
-                                logger.error(f"Error processing toLabel: {e}, type: {type(toLabel)}, value: {toLabel}")
-                                toLabel = ""
+                            toLabel = toLabel.decode("utf-8", "replace")
 
                         self.displayNewSentMessage(
                             toAddress, toLabel, fromAddress, subject, message, ackdata)
@@ -3662,7 +2951,7 @@ class MyForm(settingsmixin.SMainWindow):
             lines_raw = queryreturn[-1][0].split('\n')
             lines = []
             for line in lines_raw:
-                lines.append(safe_decode(line, "utf-8", "replace"))
+                lines.append(line.decode("utf-8", "replace"))
         except IndexError:
             lines = ''
 
@@ -3694,42 +2983,29 @@ class MyForm(settingsmixin.SMainWindow):
             return
 
         msgids = set()
+        # modified = 0
         for row in tableWidget.selectedIndexes():
             currentRow = row.row()
-            try:
-                item = tableWidget.item(currentRow, 3)
-                if not item:
-                    continue
-                    
-                msgid = as_msgid(item.data())
-                if msgid:
-                    msgids.add(sqlite3.Binary(msgid))
-                
-                # Update UI status
-                self.updateUnreadStatus(tableWidget, currentRow, msgid, False)
-                
-            except Exception as e:
-                logger.error("Error processing row %d: %s", currentRow, e)
-                continue
+            msgid = as_msgid(tableWidget.item(currentRow, 3).data())
+            msgids.add(sqlite3.Binary(msgid))
+            # if not tableWidget.item(currentRow, 0).unread:
+            #     modified += 1
+            self.updateUnreadStatus(tableWidget, currentRow, msgid, False)
 
-        # Update database
-        if msgids:
-            idCount = len(msgids)
-            try:
-                total_row_count = sqlExecuteChunked(
-                    '''UPDATE inbox SET read=0 WHERE msgid IN ({}) AND read=1''',
-                    False, idCount, *msgids
-                )
-                if total_row_count < 1:
-                    sqlExecuteChunked(
-                        '''UPDATE inbox SET read=0 WHERE msgid IN ({}) AND read=1''',
-                        True, idCount, *msgids
-                    )
-                
-                self.propagateUnreadCount()
-                
-            except Exception as e:
-                logger.error("Error updating database: %s", e)
+        # for 1081
+        idCount = len(msgids)
+        # rowcount =
+        total_row_count = sqlExecuteChunked(
+            '''UPDATE inbox SET read=0 WHERE msgid IN ({0}) AND read=1''',
+            False, idCount, *msgids
+        )
+        if total_row_count < 1:
+            sqlExecuteChunked(
+                '''UPDATE inbox SET read=0 WHERE msgid IN ({0}) AND read=1''',
+                True, idCount, *msgids
+            )
+
+        self.propagateUnreadCount()
 
     # Format predefined text on message reply.
     def quoted_text(self, message):
@@ -3796,65 +3072,26 @@ class MyForm(settingsmixin.SMainWindow):
         column_from = 0 if reply_type == self.REPLY_TYPE_UPD else 1
 
         currentInboxRow = tableWidget.currentRow()
-        if currentInboxRow < 0:
-            return
-        
-        # KORREKTUR 1: Adresse aus Daten holen, nicht aus address-Attribut
-        to_item = tableWidget.item(currentInboxRow, column_to)
-        from_item = tableWidget.item(currentInboxRow, column_from)
-        subject_item = tableWidget.item(currentInboxRow, 2)
-        msgid_item = tableWidget.item(currentInboxRow, 3)
-        
-        if not to_item or not from_item or not subject_item or not msgid_item:
-            return
-        
-        # Adressen aus UserRole holen
-        toAddressAtCurrentInboxRow = to_item.data(QtCore.Qt.UserRole)
-        fromAddressAtCurrentInboxRow = from_item.data(QtCore.Qt.UserRole)
-        subject_data = subject_item.data(QtCore.Qt.UserRole)
-        msgid_data = msgid_item.data(QtCore.Qt.UserRole)
-        
-        # KORREKTUR 2: Konvertiere Bytes zu String falls nötig
-        def safe_decode(data):
-            if data is None:
-                return ""
-            if isinstance(data, bytes):
-                return safe_decode(data, "utf-8", "replace")
-            elif isinstance(data, bytearray):
-                return bytes(data).decode("utf-8", "replace")
-            else:
-                return str(data)
-        
-        toAddressAtCurrentInboxRow = safe_decode(toAddressAtCurrentInboxRow)
-        fromAddressAtCurrentInboxRow = safe_decode(fromAddressAtCurrentInboxRow)
-        subject = safe_decode(subject_data)
-        msgid = as_msgid(msgid_data)
-        
-        # KORREKTUR 3: Labels aus Text holen (falls Custom Widget nicht verfügbar)
-        to_label = to_item.text() if hasattr(to_item, 'text') else toAddressAtCurrentInboxRow
-        from_label = from_item.text() if hasattr(from_item, 'text') else fromAddressAtCurrentInboxRow
-        subject_label = subject_item.text() if hasattr(subject_item, 'text') else subject
-        
+        toAddressAtCurrentInboxRow = tableWidget.item(
+            currentInboxRow, column_to).address
         acct = accountClass(toAddressAtCurrentInboxRow)
-        
-        # Nachricht aus Datenbank holen
-        messageAtCurrentInboxRow = ""
-        if msgid:
+        fromAddressAtCurrentInboxRow = tableWidget.item(
+            currentInboxRow, column_from).address
+        msgid = as_msgid(tableWidget.item(currentInboxRow, 3).data())
+        queryreturn = sqlQuery(
+            "SELECT message FROM inbox WHERE msgid=?", sqlite3.Binary(msgid)
+        ) or sqlQuery("SELECT message FROM sent WHERE ackdata=?", sqlite3.Binary(msgid))
+        if len(queryreturn) < 1:
             queryreturn = sqlQuery(
-                "SELECT message FROM inbox WHERE msgid=?", sqlite3.Binary(msgid)
-            ) or sqlQuery("SELECT message FROM sent WHERE ackdata=?", sqlite3.Binary(msgid))
-            if len(queryreturn) < 1:
-                queryreturn = sqlQuery(
-                    "SELECT message FROM inbox WHERE msgid=CAST(? AS TEXT)", msgid
-                ) or sqlQuery("SELECT message FROM sent WHERE ackdata=CAST(? AS TEXT)", msgid)
-            if queryreturn != []:
-                for row in queryreturn:
-                    message_data, = row
-                    messageAtCurrentInboxRow = safe_decode(message_data)
-        
+                "SELECT message FROM inbox WHERE msgid=CAST(? AS TEXT)", msgid
+            ) or sqlQuery("SELECT message FROM sent WHERE ackdata=CAST(? AS TEXT)", msgid)
+        if queryreturn != []:
+            for row in queryreturn:
+                messageAtCurrentInboxRow, = row
+            messageAtCurrentInboxRow = messageAtCurrentInboxRow.decode("utf-8", "replace")
         acct.parseMessage(
             toAddressAtCurrentInboxRow, fromAddressAtCurrentInboxRow,
-            subject,
+            tableWidget.item(currentInboxRow, 2).subject,
             messageAtCurrentInboxRow
         )
         widget = {
@@ -3867,6 +3104,7 @@ class MyForm(settingsmixin.SMainWindow):
             self.ui.tabWidgetSend.setCurrentIndex(
                 self.ui.tabWidgetSend.indexOf(self.ui.sendDirect)
             )
+#            toAddressAtCurrentInboxRow = fromAddressAtCurrentInboxRow
         elif not config.has_section(toAddressAtCurrentInboxRow):
             QtWidgets.QMessageBox.information(
                 self,
@@ -3877,7 +3115,6 @@ class MyForm(settingsmixin.SMainWindow):
                     " removed it?"
                 ).format(toAddressAtCurrentInboxRow),
                 QtWidgets.QMessageBox.Ok)
-            return
         elif not config.getboolean(
                 toAddressAtCurrentInboxRow, 'enabled'):
             QtWidgets.QMessageBox.information(
@@ -3889,7 +3126,6 @@ class MyForm(settingsmixin.SMainWindow):
                     " is disabled. You\'ll have to enable it on the \'Your"
                     " Identities\' tab before using it."
                 ), QtWidgets.QMessageBox.Ok)
-            return
         else:
             self.setBroadcastEnablementDependingOnWhetherThisIsAMailingListAddress(toAddressAtCurrentInboxRow)
             broadcast_tab_index = self.ui.tabWidgetSend.indexOf(
@@ -3903,22 +3139,15 @@ class MyForm(settingsmixin.SMainWindow):
                 }
                 self.ui.tabWidgetSend.setCurrentIndex(broadcast_tab_index)
                 toAddressAtCurrentInboxRow = fromAddressAtCurrentInboxRow
-        
-        # KORREKTUR 4: Label-Vergleich mit Text statt Attribut
-        if fromAddressAtCurrentInboxRow == from_label or (
+        if fromAddressAtCurrentInboxRow == \
+            tableWidget.item(currentInboxRow, column_from).label or (
                 isinstance(acct, GatewayAccount) and
                 fromAddressAtCurrentInboxRow == acct.relayAddress):
             self.ui.lineEditTo.setText(ustr(acct.fromAddress))
         else:
-            # Versuche accountString() zu verwenden, fallback zu label
-            try:
-                # Prüfe ob das Item eine accountString()-Methode hat
-                if hasattr(from_item, 'accountString'):
-                    self.ui.lineEditTo.setText(from_item.accountString())
-                else:
-                    self.ui.lineEditTo.setText(from_label + " <" + fromAddressAtCurrentInboxRow + ">")
-            except:
-                self.ui.lineEditTo.setText(from_label + " <" + fromAddressAtCurrentInboxRow + ">")
+            self.ui.lineEditTo.setText(
+                tableWidget.item(currentInboxRow, column_from).accountString()
+            )
 
         # If the previous message was to a chan then we should send our
         # reply to the chan rather than to the particular person who sent
@@ -3927,33 +3156,30 @@ class MyForm(settingsmixin.SMainWindow):
             logger.debug(
                 'Original sent to a chan. Setting the to address in the'
                 ' reply to the chan address.')
-            if toAddressAtCurrentInboxRow == to_label:
+            if toAddressAtCurrentInboxRow == \
+                    tableWidget.item(currentInboxRow, column_to).label:
                 self.ui.lineEditTo.setText(ustr(toAddressAtCurrentInboxRow))
             else:
-                try:
-                    if hasattr(to_item, 'accountString'):
-                        self.ui.lineEditTo.setText(to_item.accountString())
-                    else:
-                        self.ui.lineEditTo.setText(to_label + " <" + toAddressAtCurrentInboxRow + ">")
-                except:
-                    self.ui.lineEditTo.setText(to_label + " <" + toAddressAtCurrentInboxRow + ">")
+                self.ui.lineEditTo.setText(
+                    tableWidget.item(currentInboxRow, column_to).accountString()
+                )
 
         self.setSendFromComboBox(toAddressAtCurrentInboxRow)
 
         quotedText = self.quoted_text(
             unic(ustr(messageAtCurrentInboxRow)))
         widget['message'].setPlainText(quotedText)
-        
-        # KORREKTUR 5: Subject-Label-Vergleich
         if acct.subject[0:3] in ('Re:', 'RE:'):
-            widget['subject'].setText(subject_label)
+            widget['subject'].setText(
+                tableWidget.item(currentInboxRow, 2).label)
         else:
-            widget['subject'].setText('Re: ' + subject_label)
-        
+            widget['subject'].setText(
+                'Re: ' + tableWidget.item(currentInboxRow, 2).label)
         self.ui.tabWidget.setCurrentIndex(
             self.ui.tabWidget.indexOf(self.ui.send)
         )
         widget['message'].setFocus()
+
     def on_action_InboxAddSenderToAddressBook(self):
         tableWidget = self.getCurrentMessagelist()
         if not tableWidget:
@@ -4026,80 +3252,37 @@ class MyForm(settingsmixin.SMainWindow):
         tableWidget = self.getCurrentMessagelist()
         if not tableWidget:
             return
-        
         currentRow = 0
         folder = self.getCurrentFolder()
         shifted = (QtWidgets.QApplication.queryKeyboardModifiers() &
                    QtCore.Qt.ShiftModifier)
-        
         tableWidget.setUpdatesEnabled(False)
         inventoryHashesToTrash = set()
-        
-        # Sicherheitsprüfung
-        try:
-            selectedRanges = tableWidget.selectedRanges()
-            if not selectedRanges:
-                return
-                
-            # Ranges in umgekehrter Reihenfolge
-            for r in sorted(selectedRanges, key=lambda r: r.topRow())[::-1]:
-                for i in range(r.bottomRow() - r.topRow() + 1):
-                    try:
-                        item = tableWidget.item(r.topRow() + i, 3)
-                        if item and item.data():
-                            msgid = as_msgid(item.data())
-                            if msgid:  # WICHTIG: Nur hinzufügen wenn nicht None
-                                inventoryHashesToTrash.add(sqlite3.Binary(msgid))
-                    except Exception as e:
-                        logger.debug("Error getting msgid from row %d: %s", 
-                                    r.topRow() + i, e)
-                
-                currentRow = r.topRow()
-                self.getCurrentMessageTextedit().setText("")
-                
-                # Entferne rows
-                try:
-                    tableWidget.model().removeRows(
-                        r.topRow(), r.bottomRow() - r.topRow() + 1)
-                except Exception as e:
-                    logger.error("Error removing rows: %s", e)
-                    
-            # Update database nur wenn IDs vorhanden
-            if inventoryHashesToTrash:
-                idCount = len(inventoryHashesToTrash)
-                try:
-                    if folder == "trash" or shifted:
-                        sql_template = "DELETE FROM inbox WHERE msgid IN ({})"
-                    else:
-                        sql_template = "UPDATE inbox SET folder='trash', read=1 WHERE msgid IN ({})"
-                    
-                    sqlExecuteChunked(sql_template, False, idCount, *inventoryHashesToTrash)
-                    
-                except Exception as e:
-                    logger.error("Error updating database: %s", e)
-            
-            # Wähle nächste Zeile
-            if tableWidget.rowCount() > 0:
-                if currentRow >= tableWidget.rowCount():
-                    currentRow = tableWidget.rowCount() - 1
-                if currentRow >= 0:
-                    tableWidget.selectRow(currentRow)
-            else:
-                self.getCurrentMessageTextedit().setText("")
-                
-            tableWidget.setUpdatesEnabled(True)
-            
-            # Update counts
-            try:
-                self.propagateUnreadCount(folder)
-            except Exception as e:
-                logger.error("Error in propagateUnreadCount: %s", e)
-                
-            self.updateStatusBar(_translate("MainWindow", "Moved items to trash."))
-            
-        except Exception as e:
-            logger.error("Critical error in on_action_InboxTrash: %s", e, exc_info=True)
-            tableWidget.setUpdatesEnabled(True)
+        # ranges in reversed order
+        for r in sorted(
+            tableWidget.selectedRanges(), key=lambda r: r.topRow()
+        )[::-1]:
+            for i in range(r.bottomRow() - r.topRow() + 1):
+                inventoryHashesToTrash.add(
+                    sqlite3.Binary(as_msgid(tableWidget.item(r.topRow() + i, 3).data())))
+            currentRow = r.topRow()
+            self.getCurrentMessageTextedit().setText("")
+            tableWidget.model().removeRows(
+                r.topRow(), r.bottomRow() - r.topRow() + 1)
+        idCount = len(inventoryHashesToTrash)
+        total_row_count = sqlExecuteChunked(
+            ("DELETE FROM inbox" if folder == "trash" or shifted else
+             "UPDATE inbox SET folder='trash', read=1") +
+            " WHERE msgid IN ({0})", False, idCount, *inventoryHashesToTrash)
+        if total_row_count < 1:
+            sqlExecuteChunked(
+                ("DELETE FROM inbox" if folder == "trash" or shifted else
+                 "UPDATE inbox SET folder='trash', read=1") +
+                " WHERE msgid IN ({0})", True, idCount, *inventoryHashesToTrash)
+        tableWidget.selectRow(0 if currentRow == 0 else currentRow - 1)
+        tableWidget.setUpdatesEnabled(True)
+        self.propagateUnreadCount(folder)
+        self.updateStatusBar(_translate("MainWindow", "Moved items to trash."))
 
     def on_action_TrashUndelete(self):
         tableWidget = self.getCurrentMessagelist()
@@ -4154,7 +3337,7 @@ class MyForm(settingsmixin.SMainWindow):
         if queryreturn != []:
             for row in queryreturn:
                 message, = row
-            message = safe_decode(message, "utf-8", "replace")
+            message = message.decode("utf-8", "replace")
 
         defaultFilename = "".join(
             x for x in subjectAtCurrentInboxRow if x.isalnum()) + '.txt'
@@ -4172,7 +3355,6 @@ class MyForm(settingsmixin.SMainWindow):
             self.updateStatusBar(_translate("MainWindow", "Write error."))
 
     # Send item on the Sent tab to trash
-    # Send item on the Sent tab to trash
     def on_action_SentTrash(self):
         currentRow = 0
         tableWidget = self.getCurrentMessagelist()
@@ -4181,53 +3363,27 @@ class MyForm(settingsmixin.SMainWindow):
         folder = self.getCurrentFolder()
         shifted = (QtWidgets.QApplication.queryKeyboardModifiers() &
                    QtCore.Qt.ShiftModifier)
-        
-        # Hole alle ausgewählten Zeilen zuerst
-        selected_rows = []
-        for index in tableWidget.selectedIndexes():
-            row = index.row()
-            if row not in selected_rows:
-                selected_rows.append(row)
-        
-        # Sortiere absteigend, damit Zeilenindizes beim Entfernen stimmen
-        selected_rows.sort(reverse=True)
-        
-        for row in selected_rows:
-            item = tableWidget.item(row, 3)
-            if item:
-                ackdataToTrash = as_msgid(item.data(QtCore.Qt.UserRole))
-            else:
-                ackdataToTrash = None
-                
-            if ackdataToTrash:  # WICHTIG: Nur verarbeiten wenn nicht None
-                rowcount = sqlExecute(
+        while tableWidget.selectedIndexes() != []:
+            currentRow = tableWidget.selectedIndexes()[0].row()
+            ackdataToTrash = as_msgid(tableWidget.item(currentRow, 3).data())
+            rowcount = sqlExecute(
+                "DELETE FROM sent" if folder == "trash" or shifted else
+                "UPDATE sent SET folder='trash'"
+                " WHERE ackdata = ?", sqlite3.Binary(ackdataToTrash)
+            )
+            if rowcount < 1:
+                sqlExecute(
                     "DELETE FROM sent" if folder == "trash" or shifted else
                     "UPDATE sent SET folder='trash'"
-                    " WHERE ackdata = ?", sqlite3.Binary(ackdataToTrash)
+                    " WHERE ackdata = CAST(? AS TEXT)", ackdataToTrash
                 )
-                if rowcount < 1:
-                    sqlExecute(
-                        "DELETE FROM sent" if folder == "trash" or shifted else
-                        "UPDATE sent SET folder='trash'"
-                        " WHERE ackdata = CAST(? AS TEXT)", ackdataToTrash
-                    )
-                self.getCurrentMessageTextedit().setPlainText("")
-                tableWidget.removeRow(row)
-        
-        if selected_rows:
-            # Aktualisiere StatusBar nur einmal
+            self.getCurrentMessageTextedit().setPlainText("")
+            tableWidget.removeRow(currentRow)
             self.updateStatusBar(_translate(
                 "MainWindow", "Moved items to trash."))
-            
-            # Wähle eine Zeile nach der Operation
-            new_row = selected_rows[-1] - len(selected_rows) + 1
-            if new_row < 0:
-                new_row = 0
-            elif new_row >= tableWidget.rowCount():
-                new_row = tableWidget.rowCount() - 1
-                
-            if tableWidget.rowCount() > 0:
-                self.ui.tableWidgetInbox.selectRow(new_row)
+
+        self.ui.tableWidgetInbox.selectRow(
+            currentRow if currentRow == 0 else currentRow - 1)
 
     def on_action_ForceSend(self):
         currentRow = self.ui.tableWidgetInbox.currentRow()
@@ -4489,23 +3645,10 @@ class MyForm(settingsmixin.SMainWindow):
 
     def getCurrentMessageId(self):
         messagelist = self.getCurrentMessagelist()
-        if not messagelist:
-            return None
-            
-        currentRow = messagelist.currentRow()
-        if currentRow < 0 or currentRow >= messagelist.rowCount():
-            return None
-        
-        item = messagelist.item(currentRow, 3)  # Spalte 3 enthält msgid/ackdata
-        if not item:
-            return None
-        
-        # KORREKTUR: Daten mit korrekter Rolle holen
-        item_data = item.data(QtCore.Qt.UserRole)
-        if item_data is None:
-            return None
-        
-        return as_msgid(item_data)
+        if messagelist:
+            currentRow = messagelist.currentRow()
+            if currentRow >= 0:
+                return as_msgid(messagelist.item(currentRow, 3).data())
 
     def getCurrentMessageTextedit(self):
         currentIndex = self.ui.tabWidget.currentIndex()
@@ -4902,188 +4045,66 @@ class MyForm(settingsmixin.SMainWindow):
             self.on_context_menuSent(point)
             return
 
-        # SICHERSTELLEN, DASS EINE ZEILE AUSGEWÄHLT IST
-        currentRow = tableWidget.currentRow()
-        if currentRow < 0 or currentRow >= tableWidget.rowCount():
-            logger.warning("No row selected or invalid row index")
-            return
-        
-        # SICHERER ZUGRIFF AUF DAS ITEM
-        item0 = tableWidget.item(currentRow, 0)
-        if item0 is None:
-            logger.warning(f"No item at row {currentRow}, column 0")
-            return
-        
-        # SICHERER ZUGRIFF AUF DIE DATEN
-        address_data = None
-        if hasattr(item0, 'data'):
-            address_data = item0.data(QtCore.Qt.UserRole)
-        
-        if address_data is None:
-            logger.warning(f"No address data in row {currentRow}")
-            # Versuche, die Adresse aus einem anderen Attribut zu holen
-            if hasattr(item0, 'address'):
-                address_data = item0.address
-            else:
-                # Wenn keine Daten verfügbar sind, zeige ein eingeschränktes Menü
-                self._show_limited_context_menu(tableWidget, point)
-                return
-        
-        try:
-            account = accountClass(address_data)
-        except Exception as e:
-            logger.error(f"Error creating account from data: {e}")
-            account = None
-
         self.popMenuInbox = QtWidgets.QMenu(self)
-        
-        # Füge nur Aktionen hinzu, die ohne Account funktionieren
         self.popMenuInbox.addAction(self.actionForceHtml)
         self.popMenuInbox.addAction(self.actionMarkUnread)
         self.popMenuInbox.addSeparator()
-        
-        # Füge kontextabhängige Aktionen hinzu, wenn Account verfügbar
-        if account is not None:
-            if account.type == AccountMixin.CHAN:
-                self.popMenuInbox.addAction(self.actionReplyChan)
-            self.popMenuInbox.addAction(self.actionReply)
-            self.popMenuInbox.addAction(self.actionAddSenderToAddressBook)
-        
-        # Clipboard-Aktion (funktioniert immer)
+        currentRow = tableWidget.currentRow()
+        account = accountClass(
+            tableWidget.item(currentRow, 0).data(QtCore.Qt.UserRole))
+
+        if account.type == AccountMixin.CHAN:
+            self.popMenuInbox.addAction(self.actionReplyChan)
+        self.popMenuInbox.addAction(self.actionReply)
+        self.popMenuInbox.addAction(self.actionAddSenderToAddressBook)
         self.actionClipboardMessagelist = self.ui.inboxContextMenuToolbar.addAction(
             _translate("MainWindow", "Copy subject to clipboard")
             if tableWidget.currentColumn() == 2 else
             _translate("MainWindow", "Copy address to clipboard"),
             self.on_action_ClipboardMessagelist)
         self.popMenuInbox.addAction(self.actionClipboardMessagelist)
-        
-        # Kontakt auswählen nur wenn verfügbar
-        item1 = tableWidget.item(currentRow, 1)
-        if item1 is not None:
-            # pylint: disable=no-member
-            self._contact_selected = item1
-        
+        # pylint: disable=no-member
+        self._contact_selected = tableWidget.item(currentRow, 1)
         # preloaded gui.menu plugins with prefix 'address'
         for plugin in self.menu_plugins['address']:
             self.popMenuInbox.addAction(plugin)
-        
         self.popMenuInbox.addSeparator()
-        
-        # Blacklist-Aktion nur wenn Account verfügbar
-        if account is not None:
-            self.popMenuInbox.addAction(self.actionAddSenderToBlackList)
-        
+        self.popMenuInbox.addAction(self.actionAddSenderToBlackList)
         self.popMenuInbox.addSeparator()
         self.popMenuInbox.addAction(self.actionSaveMessageAs)
-        
-        # Trash/Undelete Aktionen
         if currentFolder == "trash":
             self.popMenuInbox.addAction(self.actionUndeleteTrashedMessage)
         else:
             self.popMenuInbox.addAction(self.actionTrashInboxMessage)
-        
         self.popMenuInbox.exec_(tableWidget.mapToGlobal(point))
 
-    def _show_limited_context_menu(self, tableWidget, point):
-        """Zeige ein eingeschränktes Kontextmenü, wenn keine vollständigen Daten verfügbar sind"""
-        limited_menu = QtWidgets.QMenu(self)
-        
-        # Nur grundlegende Aktionen
-        limited_menu.addAction(self.actionForceHtml)
-        limited_menu.addAction(self.actionMarkUnread)
-        limited_menu.addSeparator()
-        
-        # Clipboard-Aktion
-        currentRow = tableWidget.currentRow()
-        currentColumn = tableWidget.currentColumn()
-        
-        # Bestimme, was kopiert werden soll
-        if currentColumn == 2:  # Subject
-            clipboard_text = _translate("MainWindow", "Copy subject to clipboard")
-        else:  # Address
-            clipboard_text = _translate("MainWindow", "Copy to clipboard")
-        
-        action = limited_menu.addAction(clipboard_text)
-        action.triggered.connect(lambda: self._safe_clipboard_copy(tableWidget, currentRow, currentColumn))
-        
-        # Trash-Aktion
-        currentFolder = self.getCurrentFolder()
-        if currentFolder == "trash":
-            limited_menu.addAction(self.actionUndeleteTrashedMessage)
-        else:
-            limited_menu.addAction(self.actionTrashInboxMessage)
-        
-        limited_menu.exec_(tableWidget.mapToGlobal(point))
-
-    def _safe_clipboard_copy(self, tableWidget, row, column):
-        """Sicheres Kopieren in die Zwischenablage"""
-        try:
-            item = tableWidget.item(row, column)
-            if item is None:
-                logger.warning(f"No item at row {row}, column {column}")
-                return
-            
-            text_to_copy = ""
-            
-            # Versuche verschiedene Methoden, um Text zu erhalten
-            if hasattr(item, 'text') and callable(item.text):
-                text_to_copy = item.text()
-            elif hasattr(item, 'label'):
-                text_to_copy = item.label
-            elif hasattr(item, 'data'):
-                data = item.data(QtCore.Qt.UserRole)
-                if data:
-                    text_to_copy = str(data)
-            
-            if text_to_copy:
-                clipboard = QtWidgets.QApplication.clipboard()
-                clipboard.setText(text_to_copy)
-                logger.info(f"Copied to clipboard: {text_to_copy[:50]}...")
-            else:
-                logger.warning("No text to copy")
-                
-        except Exception as e:
-            logger.error(f"Error copying to clipboard: {e}")
     def on_context_menuSent(self, point):
         currentRow = self.ui.tableWidgetInbox.currentRow()
-        # Get the ackdata safely with proper role parameter
-        ackData = None
-        if currentRow >= 0:
-            item = self.ui.tableWidgetInbox.item(currentRow, 3)
-            if item:
-                ackData = as_msgid(item.data(QtCore.Qt.UserRole))
-        
         self.popMenuSent = QtWidgets.QMenu(self)
         self.popMenuSent.addAction(self.actionSentClipboard)
-        self._contact_selected = self.ui.tableWidgetInbox.item(currentRow, 0) if currentRow >= 0 else None
-        
+        self._contact_selected = self.ui.tableWidgetInbox.item(currentRow, 0)
         # preloaded gui.menu plugins with prefix 'address'
         for plugin in self.menu_plugins['address']:
             self.popMenuSent.addAction(plugin)
-        
         self.popMenuSent.addSeparator()
         self.popMenuSent.addAction(self.actionTrashSentMessage)
         self.popMenuSent.addAction(self.actionSentReply)
 
         # Check to see if this item is toodifficult and display an additional
         # menu option (Force Send) if it is.
-        if ackData:  # WICHTIG: Nur verarbeiten wenn nicht None
-            try:
-                queryreturn = sqlQuery('''SELECT status FROM sent where ackdata=?''', sqlite3.Binary(ackData))
-                if len(queryreturn) < 1:
-                    queryreturn = sqlQuery('''SELECT status FROM sent where ackdata=CAST(? AS TEXT)''', ackData)
-                
-                if queryreturn:  # Nur verarbeiten wenn Ergebnisse existieren
-                    status = queryreturn[0][0]
-                    status = safe_decode(status, "utf-8", "replace") if isinstance(status, bytes) else str(status)
-                    
-                    if status == 'toodifficult':
-                        self.popMenuSent.addAction(self.actionForceSend)
-                        
-            except Exception as e:
-                logger.error(f"Error getting status: {e}")
+        if currentRow >= 0:
+            ackData = as_msgid(self.ui.tableWidgetInbox.item(currentRow, 3).data())
+            queryreturn = sqlQuery('''SELECT status FROM sent where ackdata=?''', sqlite3.Binary(ackData))
+            if len(queryreturn) < 1:
+                queryreturn = sqlQuery('''SELECT status FROM sent where ackdata=CAST(? AS TEXT)''', ackData)
+            for row in queryreturn:
+                status, = row
+            status = status.decode("utf-8", "replace")
+            if status == 'toodifficult':
+                self.popMenuSent.addAction(self.actionForceSend)
 
         self.popMenuSent.exec_(self.ui.tableWidgetInbox.mapToGlobal(point))
+
     def inboxSearchLineEditUpdated(self, text):
         # dynamic search for too short text is slow
         text = ustr(text)
@@ -5113,213 +4134,117 @@ class MyForm(settingsmixin.SMainWindow):
         messagelist = self.getCurrentMessagelist()
         if not messagelist:
             return
-            
         messageTextedit = self.getCurrentMessageTextedit()
         if messageTextedit:
             messageTextedit.setPlainText("")
-            
         account = self.getCurrentAccount()
         folder = self.getCurrentFolder()
-        
-        # refresh count indicator - mit Fehlerbehandlung
-        try:
-            self.propagateUnreadCount(folder)
-        except Exception as e:
-            logger.error("Error in propagateUnreadCount from treeWidgetItemClicked: %s", e)
-        
-        # Load messages
-        try:
-            self.loadMessagelist(
-                messagelist, account, folder,
-                self.getCurrentSearchOption(), self.getCurrentSearchLine())
-        except Exception as e:
-            logger.error("Error loading messagelist: %s", e)
-            QtWidgets.QMessageBox.warning(
-                self, 
-                _translate("MainWindow", "Error"),
-                _translate("MainWindow", "Could not load messages: {}").format(str(e))
-            )
+        # refresh count indicator
+        self.propagateUnreadCount(folder)
+        self.loadMessagelist(
+            messagelist, account, folder,
+            self.getCurrentSearchOption(), self.getCurrentSearchLine())
 
     def treeWidgetItemChanged(self, item, column):
-        """Handle tree widget item changes - ROBUST VERSION"""
-        try:
-            # only for manual edits. automatic edits (setText) are ignored
-            if column != 0:
-                return
-            
-            # Validate item
-            if item is None:
-                return
-                
-            # only account names of normal addresses (no chans/mailinglists)
-            if (not isinstance(item, Ui_AddressWidget)) or \
-                    (not self.getCurrentTreeWidget()) or \
-                    self.getCurrentTreeWidget().currentItem() is None:
-                return
-            
-            # not visible
-            current_item = self.getCurrentItem()
-            if (not current_item) or (not isinstance(current_item, Ui_AddressWidget)):
-                return
-            
-            # only currently selected item
-            if not hasattr(item, 'address') or item.address != self.getCurrentAccount():
-                return
-            
-            # "All accounts" can't be renamed
-            if not hasattr(item, 'type') or item.type == AccountMixin.ALL:
-                return
+        # only for manual edits. automatic edits (setText) are ignored
+        if column != 0:
+            return
+        # only account names of normal addresses (no chans/mailinglists)
+        if (not isinstance(item, Ui_AddressWidget)) or \
+                (not self.getCurrentTreeWidget()) or \
+                self.getCurrentTreeWidget().currentItem() is None:
+            return
+        # not visible
+        if (not self.getCurrentItem()) or (not isinstance(self.getCurrentItem(), Ui_AddressWidget)):
+            return
+        # only currently selected item
+        if item.address != self.getCurrentAccount():
+            return
+        # "All accounts" can't be renamed
+        if item.type == AccountMixin.ALL:
+            return
 
-            newLabel = unic(ustr(item.text(0)))
-            oldLabel = item.defaultLabel() if hasattr(item, 'defaultLabel') else ""
+        newLabel = unic(ustr(item.text(0)))
+        oldLabel = item.defaultLabel()
 
-            # unchanged, do not do anything either
-            if newLabel == oldLabel:
-                return
+        # unchanged, do not do anything either
+        if newLabel == oldLabel:
+            return
 
-            # recursion prevention
-            if self.recurDepth > 0:
-                return
+        # recursion prevention
+        if self.recurDepth > 0:
+            return
 
-            self.recurDepth += 1
-            try:
-                if item.type == AccountMixin.NORMAL or item.type == AccountMixin.MAILINGLIST:
-                    self.rerenderComboBoxSendFromBroadcast()
-                if item.type == AccountMixin.NORMAL or item.type == AccountMixin.CHAN:
-                    self.rerenderComboBoxSendFrom()
-                
-                # SICHERE AUFRUFE MIT EXCEPTION HANDLING
-                try:
-                    self.rerenderMessagelistFromLabels()
-                except Exception as e:
-                    logger.error(f"Error in rerenderMessagelistFromLabels: {e}")
-                
-                if item.type != AccountMixin.SUBSCRIPTION:
-                    try:
-                        self.rerenderMessagelistToLabels()
-                    except Exception as e:
-                        logger.error(f"Error in rerenderMessagelistToLabels: {e}")
-                
-                if item.type in (
-                    AccountMixin.NORMAL, AccountMixin.CHAN, AccountMixin.SUBSCRIPTION
-                ):
-                    try:
-                        self.rerenderAddressBook()
-                    except Exception as e:
-                        logger.error(f"Error in rerenderAddressBook: {e}")
-                        
-            finally:
-                self.recurDepth -= 1
-                
-        except Exception as e:
-            logger.error(f"Error in treeWidgetItemChanged: {e}")
+        self.recurDepth += 1
+        if item.type == AccountMixin.NORMAL or item.type == AccountMixin.MAILINGLIST:
+            self.rerenderComboBoxSendFromBroadcast()
+        if item.type == AccountMixin.NORMAL or item.type == AccountMixin.CHAN:
+            self.rerenderComboBoxSendFrom()
+        self.rerenderMessagelistFromLabels()
+        if item.type != AccountMixin.SUBSCRIPTION:
+            self.rerenderMessagelistToLabels()
+        if item.type in (
+            AccountMixin.NORMAL, AccountMixin.CHAN, AccountMixin.SUBSCRIPTION
+        ):
+            self.rerenderAddressBook()
+        self.recurDepth -= 1
+
     def tableWidgetInboxItemClicked(self):
         messageTextedit = self.getCurrentMessageTextedit()
         if not messageTextedit:
             return
 
-        try:
-            msgid = self.getCurrentMessageId()
-            folder = self.getCurrentFolder()
-            
-            if msgid:  # Nur verarbeiten wenn nicht None
-                try:
-                    # Query database safely
-                    queryreturn = None
-                    if folder == 'sent':
-                        queryreturn = sqlQuery(
-                            'SELECT message FROM sent WHERE ackdata=?', 
-                            sqlite3.Binary(msgid))
-                        if not queryreturn:
-                            queryreturn = sqlQuery(
-                                'SELECT message FROM sent WHERE ackdata=CAST(? AS TEXT)', 
-                                str(msgid))
-                    else:
-                        queryreturn = sqlQuery(
-                            'SELECT message FROM inbox WHERE msgid=?', 
-                            sqlite3.Binary(msgid))
-                        if not queryreturn:
-                            queryreturn = sqlQuery(
-                                'SELECT message FROM inbox WHERE msgid=CAST(? AS TEXT)', 
-                                str(msgid))
+        msgid = self.getCurrentMessageId()
+        folder = self.getCurrentFolder()
+        if msgid:
+            queryreturn = sqlQuery(
+                'SELECT message FROM %s WHERE %s=?' % (
+                    ('sent', 'ackdata') if folder == 'sent'
+                    else ('inbox', 'msgid')
+                ), sqlite3.Binary(msgid)
+            )
+            if len(queryreturn) < 1:
+                queryreturn = sqlQuery(
+                    'SELECT message FROM %s WHERE %s=CAST(? AS TEXT)' % (
+                        ('sent', 'ackdata') if folder == 'sent'
+                        else ('inbox', 'msgid')
+                    ), msgid
+                )
 
-                    # Get message content
-                    message = ""
-                    if queryreturn and len(queryreturn) > 0:
-                        try:
-                            message_data = queryreturn[-1][0]
-                            # KORREKTUR: Bessere Bytes zu String Konvertierung
-                            if isinstance(message_data, bytes):
-                                message = safe_decode(message_data, "utf-8", "replace")
-                            elif isinstance(message_data, bytearray):
-                                message = bytes(message_data).decode("utf-8", "replace")
-                            elif isinstance(message_data, memoryview):
-                                message = bytes(message_data).decode("utf-8", "replace")
-                            elif isinstance(message_data, str):
-                                message = message_data
-                            else:
-                                # Fallback für andere Typen
-                                try:
-                                    message = str(message_data)
-                                except:
-                                    message = "[Binary data]"
-                        except Exception as decode_err:
-                            logger.error("Error decoding message: %s, type: %s", 
-                                        decode_err, type(message_data))
-                            message = _translate("MainWindow", 
-                                "Error: Could not decode message.")
-                    else:
-                        message = _translate("MainWindow", 
-                            "Message not found in database.")
-                        
-                    # Display message
-                    messageTextedit.setPlainText(message)
-                    
-                    # Mark as read if unread (nur für inbox, nicht sent)
-                    if folder != 'sent':
-                        tableWidget = self.getCurrentMessagelist()
-                        if tableWidget:
-                            currentRow = tableWidget.currentRow()
-                            if currentRow >= 0:
-                                # Check if message is unread
-                                to_item = tableWidget.item(currentRow, 0)
-                                if to_item and hasattr(to_item, 'unread') and to_item.unread:
-                                    # Update database
-                                    try:
-                                        sqlExecute(
-                                            'UPDATE inbox SET read=1 WHERE msgid=? AND read=0',
-                                            sqlite3.Binary(msgid))
-                                    except:
-                                        try:
-                                            sqlExecute(
-                                                'UPDATE inbox SET read=1 WHERE msgid=CAST(? AS TEXT) AND read=0',
-                                                str(msgid))
-                                        except Exception as db_err:
-                                            logger.error("Database update error: %s", db_err)
-                                            
-                                    # Update UI
-                                    try:
-                                        self.updateUnreadStatus(tableWidget, currentRow, msgid)
-                                        self.propagateUnreadCount()
-                                    except Exception as ui_err:
-                                        logger.error("UI update error: %s", ui_err)
-                                    
-                except Exception as query_err:
-                    logger.error("Database query failed: %s", query_err, exc_info=True)
-                    messageTextedit.setPlainText(
-                        _translate("MainWindow", 
-                        "Database error occurred: could not load message."))
-            else:
-                # No message selected
-                messageTextedit.setPlainText("")
-                
-        except Exception as e:
-            logger.error("Error in tableWidgetInboxItemClicked: %s", e, exc_info=True)
-            try:
-                messageTextedit.setPlainText(
-                    _translate("MainWindow", "Error loading message."))
-            except:
-                pass
+        try:
+            message = queryreturn[-1][0].decode("utf-8", "replace")
+        except NameError:
+            message = u''
+        except IndexError:
+            # _translate() often returns unicode, no redefinition here!
+            # pylint: disable=redefined-variable-type
+            message = _translate(
+                "MainWindow",
+                "Error occurred: could not load message from disk."
+            )
+        else:
+            tableWidget = self.getCurrentMessagelist()
+            currentRow = tableWidget.currentRow()
+            # refresh
+            if tableWidget.item(currentRow, 0).unread is True:
+                self.updateUnreadStatus(tableWidget, currentRow, msgid)
+            # propagate
+            rowcount = sqlExecute(
+                'UPDATE inbox SET read=1 WHERE msgid=? AND read=0',
+                sqlite3.Binary(msgid)
+            )
+            if rowcount < 1:
+                rowcount = sqlExecute(
+                    'UPDATE inbox SET read=1 WHERE msgid=CAST(? AS TEXT) AND read=0',
+                    msgid
+                )
+            if folder != 'sent' and rowcount > 0:
+                self.propagateUnreadCount()
+
+        messageTextedit.setCurrentFont(QtGui.QFont())
+        messageTextedit.setTextColor(QtGui.QColor())
+        messageTextedit.setContent(message)
+
     def tableWidgetAddressBookItemChanged(self, item):
         if item.type == AccountMixin.CHAN:
             self.rerenderComboBoxSendFrom()

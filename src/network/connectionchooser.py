@@ -13,17 +13,15 @@ import state
 
 from bmconfigparser import config
 from network import portCheckerQueue
-from helper_sql import safe_decode
 
 logger = logging.getLogger('default')
 
 
 def _ends_with(s, tail):
-    """Check if s ends with tail, handling bytes/strings."""
-    if isinstance(s, bytes):
-        return s.endswith(tail.encode())
-    return s.endswith(tail)
-
+    try:
+        return s.endswith(tail)
+    except:
+        return s.decode("utf-8", "replace").endswith(tail)
 
 def getDiscoveredPeer():
     """Get a peer from the local peer discovery list"""

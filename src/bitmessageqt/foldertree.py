@@ -126,41 +126,28 @@ class AccountMixin(object):
 
     def defaultLabel(self):
         """Default label (in case no label is set manually)"""
-        # Use cached label if available
-        if hasattr(self, '_cached_label'):
-            return self._cached_label
-            
         queryreturn = retval = None
-        try:
-            if self.type in (
-                    AccountMixin.NORMAL,
-                    AccountMixin.CHAN, AccountMixin.MAILINGLIST):
-                try:
-                    retval = unic(ustr(config.get(self.address, 'label')))
-                except Exception:
-                    queryreturn = sqlQuery(
-                        'SELECT label FROM addressbook WHERE address=?',
-                        dbstr(self.address)
-                    )
-            elif self.type == AccountMixin.SUBSCRIPTION:
+        if self.type in (
+                AccountMixin.NORMAL,
+                AccountMixin.CHAN, AccountMixin.MAILINGLIST):
+            try:
+                retval = unic(ustr(config.get(self.address, 'label')))
+            except Exception:
                 queryreturn = sqlQuery(
-                    'SELECT label FROM subscriptions WHERE address=?',
+                    'SELECT label FROM addressbook WHERE address=?',
                     dbstr(self.address)
                 )
-            if queryreturn:
-                retval = unic(ustr(queryreturn[-1][0]))
-            elif self.address is None or self.type == AccountMixin.ALL:
-                retval = unic(_translate("MainWindow", "All accounts"))
-        except Exception:
-            # Fallback if SQL is locked
-            if self.address is None or self.type == AccountMixin.ALL:
-                retval = unic(_translate("MainWindow", "All accounts"))
-            else:
-                retval = unic(self.address)
-        
-        # Cache the result
-        self._cached_label = retval or unic(self.address)
-        return self._cached_label
+        elif self.type == AccountMixin.SUBSCRIPTION:
+            queryreturn = sqlQuery(
+                'SELECT label FROM subscriptions WHERE address=?',
+                dbstr(self.address)
+            )
+        if queryreturn:
+            retval = unic(ustr(queryreturn[-1][0]))
+        elif self.address is None or self.type == AccountMixin.ALL:
+            return unic(_translate("MainWindow", "All accounts"))
+
+        return retval or unic(self.address)
 
 
 class BMTreeWidgetItem(QtWidgets.QTreeWidgetItem, AccountMixin):
@@ -171,28 +158,16 @@ class BMTreeWidgetItem(QtWidgets.QTreeWidgetItem, AccountMixin):
         self.setAddress(address)
         self.setUnreadCount(unreadCount)
         self._setup(parent, pos)
-        self._cached_label = None  # Initialize cache
 
     def _getAddressBracket(self, unreadCount=False):
         return " (" + ustr(self.unreadCount) + ")" if unreadCount else ""
 
     def data(self, column, role):
         """Override internal Qt method for returning object data"""
-        # Handle both QModelIndex and int column parameter
-        if isinstance(column, QtCore.QModelIndex):
-            col = column.column()
-        else:
-            col = column
-            
-        if col == 0:
+        if column == 0:
             if role == QtCore.Qt.DisplayRole:
-                # Try to get label without blocking
-                try:
-                    label = self._getLabel()
-                    return label + self._getAddressBracket(self.unreadCount > 0)
-                except Exception:
-                    # Fallback to address if label query fails
-                    return (self.address or "All accounts") + self._getAddressBracket(self.unreadCount > 0)
+                return self._getLabel() + self._getAddressBracket(
+                    self.unreadCount > 0)
             elif role == QtCore.Qt.EditRole:
                 return self._getLabel()
             elif role == QtCore.Qt.ToolTipRole:
@@ -226,13 +201,7 @@ class Ui_FolderWidget(BMTreeWidgetItem):
 
     def data(self, column, role):
         """Override internal Qt method for returning object data"""
-        # Handle both QModelIndex and int column parameter
-        if isinstance(column, QtCore.QModelIndex):
-            col = column.column()
-        else:
-            col = column
-            
-        if col == 0 and role == QtCore.Qt.ForegroundRole:
+        if column == 0 and role == QtCore.Qt.ForegroundRole:
             return self.folderBrush()
         return super(Ui_FolderWidget, self).data(column, role)
 
@@ -288,13 +257,7 @@ class Ui_AddressWidget(BMTreeWidgetItem, SettingsMixin):
 
     def data(self, column, role):
         """Override internal QT method for returning object data"""
-        # Handle both QModelIndex and int column parameter
-        if isinstance(column, QtCore.QModelIndex):
-            col = column.column()
-        else:
-            col = column
-            
-        if col == 0:
+        if column == 0:
             if role == QtCore.Qt.DecorationRole:
                 return avatarize(
                     self.address or self._getLabel().encode('utf8'))
@@ -317,8 +280,6 @@ class Ui_AddressWidget(BMTreeWidgetItem, SettingsMixin):
         """Set address to object (for QT UI)"""
         super(Ui_AddressWidget, self).setAddress(address)
         self.setData(0, QtCore.Qt.UserRole, self.address)
-        # Clear cache when address changes
-        self._cached_label = None
 
     def _getSortRank(self):
         return self.type if self.isEnabled else (self.type + 100)
@@ -352,14 +313,11 @@ class Ui_SubscriptionWidget(Ui_AddressWidget):
             parent, pos, address, unreadCount, enabled)
 
     def _getLabel(self):
-        try:
-            queryreturn = sqlQuery(
-                'SELECT label FROM subscriptions WHERE address=?',
-                dbstr(self.address))
-            if queryreturn:
-                return unic(ustr(queryreturn[-1][0]))
-        except Exception:
-            pass  # Fallback to address if SQL fails
+        queryreturn = sqlQuery(
+            'SELECT label FROM subscriptions WHERE address=?',
+            dbstr(self.address))
+        if queryreturn:
+            return unic(ustr(queryreturn[-1][0]))
         return unic(self.address)
 
     def setType(self):
@@ -446,25 +404,22 @@ class MessageList_AddressWidget(BMAddressWidget):
             return
         newLabel = self.address
         queryreturn = None
-        try:
-            if self.type in (
-                    AccountMixin.NORMAL,
-                    AccountMixin.CHAN, AccountMixin.MAILINGLIST):
-                try:
-                    newLabel = unic(ustr(config.get(self.address, 'label')))
-                except:
-                    queryreturn = sqlQuery(
-                        'SELECT label FROM addressbook WHERE address=?',
-                        dbstr(self.address))
-            elif self.type == AccountMixin.SUBSCRIPTION:
+        if self.type in (
+                AccountMixin.NORMAL,
+                AccountMixin.CHAN, AccountMixin.MAILINGLIST):
+            try:
+                newLabel = unic(ustr(config.get(self.address, 'label')))
+            except:
                 queryreturn = sqlQuery(
-                    'SELECT label FROM subscriptions WHERE address=?',
+                    'SELECT label FROM addressbook WHERE address=?',
                     dbstr(self.address))
-            if queryreturn:
-                newLabel = unic(ustr(queryreturn[-1][0]))
-        except Exception:
-            pass  # Keep address as label if SQL fails
-        
+        elif self.type == AccountMixin.SUBSCRIPTION:
+            queryreturn = sqlQuery(
+                'SELECT label FROM subscriptions WHERE address=?',
+                dbstr(self.address))
+        if queryreturn:
+            newLabel = unic(ustr(queryreturn[-1][0]))
+
         self.label = newLabel
 
     def data(self, role):
@@ -524,24 +479,10 @@ class MessageList_TimeWidget(BMTableWidgetItem):
     def __init__(self, label=None, unread=False, timestamp=None, msgid=b''):
         super(MessageList_TimeWidget, self).__init__(label, unread)
         self.setData(QtCore.Qt.UserRole, QtCore.QByteArray(bytes(msgid)))
-        # Stelle sicher, dass timestamp ein gültiger int ist
-        if timestamp is None:
-            timestamp = 0
         self.setData(TimestampRole, int(timestamp))
 
     def __lt__(self, other):
-        # Hole die Timestamps sicher
-        self_timestamp = self.data(TimestampRole)
-        other_timestamp = other.data(TimestampRole) if hasattr(other, 'data') else 0
-        
-        # Konvertiere zu int mit Default-Wert 0 falls None
-        if self_timestamp is None:
-            self_timestamp = 0
-        if other_timestamp is None:
-            other_timestamp = 0
-            
-        # Vergleiche als ints
-        return int(self_timestamp) < int(other_timestamp)
+        return self.data(TimestampRole) < other.data(TimestampRole)
 
     def data(self, role=QtCore.Qt.UserRole):
         """
@@ -550,14 +491,11 @@ class MessageList_TimeWidget(BMTableWidgetItem):
         """
         data = super(MessageList_TimeWidget, self).data(role)
         if role == TimestampRole:
-            # Stelle sicher, dass wir einen int zurückgeben
-            try:
-                return int(data) if data is not None else 0
-            except (ValueError, TypeError):
-                return 0
+            return int(data)
         if role == QtCore.Qt.UserRole:
-            return ustr(data) if data is not None else ""
+            return ustr(data)
         return data
+
 
 class Ui_AddressBookWidgetItem(BMAddressWidget):
     """Addressbook item"""

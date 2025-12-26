@@ -31,7 +31,6 @@ from network.socks4a import Socks4aConnection
 from network.socks5 import Socks5Connection
 from network.tls import TLSDispatcher
 from .node import Peer
-from helper_sql import safe_decode
 
 
 logger = logging.getLogger('default')
@@ -42,11 +41,10 @@ maximumTimeOffsetWrongCount = 3  #: Connections with wrong time offset
 
 
 def _ends_with(s, tail):
-    """Check if s ends with tail, handling bytes/strings."""
-    if isinstance(s, bytes):
-        return s.endswith(tail.encode())
-    return s.endswith(tail)
-
+    try:
+        return s.endswith(tail)
+    except:
+        return s.decode("utf-8", "replace").endswith(tail)
 
 class TCPConnection(BMProto, TLSDispatcher):
     # pylint: disable=too-many-instance-attributes

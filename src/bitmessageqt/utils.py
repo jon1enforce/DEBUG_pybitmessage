@@ -1,6 +1,5 @@
 import hashlib
 import os
-import logging
 
 from qtpy import QtGui
 
@@ -8,144 +7,109 @@ import state
 from addresses import addBMIfNotPresent
 from bmconfigparser import config
 
-# Debugging setup
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-
 str_broadcast_subscribers = '[Broadcast subscribers]'
 str_chan = '[chan]'
 
+
 def identiconize(address):
-    """
-    Generate an identicon for the given address using the configured library.
-    
-    Args:
-        address (str): The address to generate identicon for
-        
-    Returns:
-        QtGui.QIcon: Generated identicon or empty icon if disabled in config
-    """
-    logger.debug(f"DEBUG: identiconize() called with address='{address}'")
     size = 48
 
     if not config.getboolean('bitmessagesettings', 'useidenticons'):
-        logger.debug("DEBUG: Identicons disabled in config, returning empty icon")
         return QtGui.QIcon()
+
+    # If you include another identicon library, please generate an
+    # example identicon with the following md5 hash:
+    # 3fd4bf901b9d4ea1394f0fb358725b28
 
     identicon_lib = config.safeGet(
         'bitmessagesettings', 'identiconlib', 'qidenticon_two_x')
-    logger.debug(f"DEBUG: Using identicon library: '{identicon_lib}'")
 
+    # As an 'identiconsuffix' you could put "@bitmessge.ch" or "@bm.addr"
+    # to make it compatible with other identicon generators. (Note however,
+    # that E-Mail programs might convert the BM-address to lowercase first.)
+    # It can be used as a pseudo-password to salt the generation of
+    # the identicons to decrease the risk of attacks where someone creates
+    # an address to mimic someone else's identicon.
     data = addBMIfNotPresent(address) + config.get(
         'bitmessagesettings', 'identiconsuffix')
     data = data.encode("utf-8", "replace")
-    logger.debug(f"DEBUG: Identicon generation data: '{data}'")
-
     if identicon_lib[:len('qidenticon')] == 'qidenticon':
-        logger.debug("DEBUG: Using qidenticon library")
+        # originally by:
+        # :Author:Shin Adachi <shn@glucose.jp>
+        # Licesensed under FreeBSD License.
+        # stripped from PIL and uses QT instead (by sendiulo, same license)
         import qidenticon
-        icon_hash = hashlib.sha256(data).hexdigest()
-        logger.debug(f"DEBUG: Generated MD5 hash: {icon_hash}")
-        
-        use_two_colors = (identicon_lib[:len('qidenticon_two')] == 'qidenticon_two')
+        icon_hash = hashlib.md5(data).hexdigest()
+        use_two_colors = (
+            identicon_lib[:len('qidenticon_two')] == 'qidenticon_two')
         opacity = int(
             identicon_lib not in (
                 'qidenticon_x', 'qidenticon_two_x',
                 'qidenticon_b', 'qidenticon_two_b'
             )) * 255
         penwidth = 0
-        
-        logger.debug(f"DEBUG: qidenticon params - two_colors: {use_two_colors}, opacity: {opacity}, penwidth: {penwidth}")
-        
-        try:
-            image = qidenticon.render_identicon(
-                int(icon_hash, 16), size, use_two_colors, opacity, penwidth)
-            idcon = QtGui.QIcon()
-            idcon.addPixmap(image, QtGui.QIcon.Normal, QtGui.QIcon.Off)
-            logger.debug("DEBUG: Successfully generated qidenticon")
-            return idcon
-        except Exception as e:
-            logger.error(f"DEBUG: Error generating qidenticon: {str(e)}")
-            return QtGui.QIcon()
-            
+        image = qidenticon.render_identicon(
+            int(icon_hash, 16), size, use_two_colors, opacity, penwidth)
+        # filename = './images/identicons/'+hash+'.png'
+        # image.save(filename)
+        idcon = QtGui.QIcon()
+        idcon.addPixmap(image, QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        return idcon
     elif identicon_lib == 'pydenticon':
-        logger.debug("DEBUG: Using pydenticon library")
-        try:
-            from pydenticon import Pydenticon
-            idcon_render = Pydenticon(data, size * 3)
-            rendering = idcon_render._render()
-            data = rendering.convert("RGBA").tostring("raw", "RGBA")
-            qim = QtGui.QImage(data, size, size, QtGui.QImage.Format_ARGB32)
-            pix = QtGui.QPixmap.fromImage(qim)
-            idcon = QtGui.QIcon()
-            idcon.addPixmap(pix, QtGui.QIcon.Normal, QtGui.QIcon.Off)
-            logger.debug("DEBUG: Successfully generated pydenticon")
-            return idcon
-        except ImportError:
-            logger.error("DEBUG: pydenticon library not available")
-        except Exception as e:
-            logger.error(f"DEBUG: Error generating pydenticon: {str(e)}")
-    
-    logger.warning("DEBUG: No valid identicon library found, returning empty icon")
-    return QtGui.QIcon()
+        # Here you could load pydenticon.py
+        # (just put it in the "src" folder of your Bitmessage source)
+        from pydenticon import Pydenticon
+        # It is not included in the source, because it is licensed under GPLv3
+        # GPLv3 is a copyleft license that would influence our licensing
+        # Find the source here:
+        # https://github.com/azaghal/pydenticon
+        # note that it requires pillow (or PIL) to be installed:
+        # https://python-pillow.org/
+        idcon_render = Pydenticon(data, size * 3)
+        rendering = idcon_render._render()
+        data = rendering.convert("RGBA").tostring("raw", "RGBA")
+        qim = QtGui.QImage(data, size, size, QtGui.QImage.Format_ARGB32)
+        pix = QtGui.QPixmap.fromImage(qim)
+        idcon = QtGui.QIcon()
+        idcon.addPixmap(pix, QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        return idcon
+
 
 def avatarize(address):
     """
-    Loads a supported image for the given address' hash from 'avatars' folder.
-    Falls back to default avatar if 'default.*' file exists.
-    Falls back to identiconize(address) if no avatar found.
-    
-    Args:
-        address (str): The address to find/generate avatar for
-        
-    Returns:
-        QtGui.QIcon: Found or generated avatar icon
+    Loads a supported image for the given address' hash form 'avatars' folder
+    falls back to default avatar if 'default.*' file exists
+    falls back to identiconize(address)
     """
-    logger.debug(f"DEBUG: avatarize() called with address='{address}'")
-    
     idcon = QtGui.QIcon()
-    
+    icon_hash = hashlib.md5(addBMIfNotPresent(address).encode("utf-8", "replace")).hexdigest()
     if address == str_broadcast_subscribers:
-        logger.debug("DEBUG: Handling broadcast subscribers special case")
+        # don't hash [Broadcast subscribers]
         icon_hash = address
-    else:
-        icon_hash = hashlib.sha256(addBMIfNotPresent(address).encode("utf-8", "replace")).hexdigest()
-    
-    logger.debug(f"DEBUG: Avatar hash: '{icon_hash}'")
-    
+    # https://www.riverbankcomputing.com/static/Docs/PyQt4/qimagereader.html#supportedImageFormats
+    # QImageReader.supportedImageFormats ()
     extensions = [
         'PNG', 'GIF', 'JPG', 'JPEG', 'SVG', 'BMP', 'MNG', 'PBM', 'PGM', 'PPM',
         'TIFF', 'XBM', 'XPM', 'TGA']
-    
-    # Try to find specific avatar
+    # try to find a specific avatar
     for ext in extensions:
         lower_hash = state.appdata + 'avatars/' + icon_hash + '.' + ext.lower()
         upper_hash = state.appdata + 'avatars/' + icon_hash + '.' + ext.upper()
-        
         if os.path.isfile(lower_hash):
-            logger.debug(f"DEBUG: Found avatar at: '{lower_hash}'")
             idcon.addFile(lower_hash)
             return idcon
         elif os.path.isfile(upper_hash):
-            logger.debug(f"DEBUG: Found avatar at: '{upper_hash}'")
             idcon.addFile(upper_hash)
             return idcon
-    
-    logger.debug("DEBUG: No specific avatar found, checking for default avatar")
-    
-    # Try to find default avatar
+    # if we haven't found any, try to find a default avatar
     for ext in extensions:
         lower_default = state.appdata + 'avatars/' + 'default.' + ext.lower()
         upper_default = state.appdata + 'avatars/' + 'default.' + ext.upper()
-        
         if os.path.isfile(lower_default):
-            logger.debug(f"DEBUG: Found default avatar at: '{lower_default}'")
             idcon.addFile(lower_default)
             return idcon
         elif os.path.isfile(upper_default):
-            logger.debug(f"DEBUG: Found default avatar at: '{upper_default}'")
             idcon.addFile(upper_default)
             return idcon
-    
-    logger.debug("DEBUG: No avatar found, falling back to identicon")
+    # If no avatar is found
     return identiconize(address)
