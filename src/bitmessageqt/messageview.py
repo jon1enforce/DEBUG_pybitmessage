@@ -9,7 +9,6 @@ import os
 from pathlib import Path
 from qtpy import QtCore, QtGui, QtWidgets
 from unqstr import ustr, unic
-
 from .safehtmlparser import SafeHTMLParser
 from tr import _translate
 
@@ -341,7 +340,7 @@ class MessageView(QtWidgets.QTextBrowser):
         return info_html
     
     def _create_action_buttons(self):
-        """Create action buttons below the text field"""
+        """Create action buttons below the text field - Simple version"""
         if not self.parent():
             return
         
@@ -353,65 +352,43 @@ class MessageView(QtWidgets.QTextBrowser):
         self.button_layout = QtWidgets.QHBoxLayout(self.button_container)
         self.button_layout.setContentsMargins(10, 5, 10, 10)
         
-        # Download Button
-        download_btn = QtWidgets.QPushButton("💾 Download PDF")
-        download_btn.clicked.connect(self.downloadPDF)
-        download_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                padding: 8px 15px;
-                font-weight: bold;
-                font-size: 12px;
-                min-width: 150px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-        """)
-        self.button_layout.addWidget(download_btn)
+        # Define the dark colors as requested
+        colors = {
+            'download': '#1b5e20',     # Darkest green
+            'open': '#2e7d32',         # Dark green
+            'source': '#8d6e63'        # Brown with yellow tint (caramel)
+        }
         
-        # Open Button
-        open_btn = QtWidgets.QPushButton("📖 Open PDF")
-        open_btn.clicked.connect(self.openPDFExternal)
-        open_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2196F3;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                padding: 8px 15px;
-                font-weight: bold;
-                font-size: 12px;
-                min-width: 120px;
-            }
-            QPushButton:hover {
-                background-color: #1976D2;
-            }
-        """)
-        self.button_layout.addWidget(open_btn)
+        # Create buttons
+        buttons_data = [
+            ("💾 Download PDF", colors['download'], self.downloadPDF),
+            ("📖 Open PDF", colors['open'], self.openPDFExternal),
+            ("📝 View Source", colors['source'], self.showLatexSource)
+        ]
         
-        # Source Button
-        source_btn = QtWidgets.QPushButton("📝 View Source")
-        source_btn.clicked.connect(self.showLatexSource)
-        source_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #FF9800;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                padding: 8px 15px;
-                font-weight: bold;
-                font-size: 12px;
-                min-width: 120px;
-            }
-            QPushButton:hover {
-                background-color: #F57C00;
-            }
-        """)
-        self.button_layout.addWidget(source_btn)
+        for text, base_color, callback in buttons_data:
+            btn = QtWidgets.QPushButton(text)
+            btn.clicked.connect(callback)
+            
+            hover_color = self._darken_color(base_color, 15)
+            
+            btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {base_color};
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    padding: 8px 15px;
+                    font-weight: bold;
+                    font-size: 12px;
+                    min-width: {'150px' if 'Download' in text else '120px'};
+                }}
+                QPushButton:hover {{
+                    background-color: {hover_color};
+                }}
+            """)
+            
+            self.button_layout.addWidget(btn)
         
         # Position button container (below the text field)
         parent_layout = self.parent().layout()
@@ -419,7 +396,15 @@ class MessageView(QtWidgets.QTextBrowser):
             parent_layout.addWidget(self.button_container)
         
         self.button_container.show()
-    
+
+    def _darken_color(self, hex_color, percent):
+        """Darken a hex color by percentage"""
+        hex_color = hex_color.lstrip('#')
+        r, g, b = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+        r = max(0, int(r * (100 - percent) / 100))
+        g = max(0, int(g * (100 - percent) / 100))
+        b = max(0, int(b * (100 - percent) / 100))
+        return f'#{r:02x}{g:02x}{b:02x}'    
     def _hide_buttons(self):
         """Hide the buttons"""
         if self.button_container:
