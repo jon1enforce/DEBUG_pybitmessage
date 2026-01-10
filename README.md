@@ -1,4 +1,7 @@
-## LaTeX bridge based on pybitmessage
+## LaTeX bridge with hardened protocol - whitelisted LaTeX, and json instead of pickle to prevent possible code injection execution.
+## other languages may fail.
+
+## LaTeX bridge based on pybitmessage - install
 pip3 install -r requirements.txt  
 python3 setup.py build  
 python3 setup.py install  
