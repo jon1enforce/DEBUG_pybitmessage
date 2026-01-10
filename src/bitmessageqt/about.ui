@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>aboutDialog</class>
+ <widget class="QDialog" name="aboutDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>430</width>
+    <height>340</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>About</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+    <item alignment="Qt::AlignHCenter">
+      <widget class="QLabel" name="label_4">
+	<property name="text">
+	  <string notr="true"/>
+	</property>
+	<property name="pixmap">
+	  <pixmap resource="bitmessage_icons.qrc">:/newPrefix/images/can-icon-24px.png</pixmap>
+	</property>
+	<property name="alignment">
+	  <set>Qt::AlignCenter</set>
+	</property>
+      </widget>
+    </item>
+    <item alignment="Qt::AlignHCenter">
+      <widget class="QLabel" name="labelVersion">
+	<property name="font">
+	  <font>
+            <weight>75</weight>
+            <bold>true</bold>
+	  </font>
+	</property>
+	<property name="text">
+	  <string notr="true">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;https://github.com/Bitmessage/PyBitmessage/tree/:branch:&quot;&gt;&lt;span style=&quot;text-decoration:none; color:#0000ff;&quot;&gt;PyBitmessage :version:&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+	</property>
+	<property name="alignment">
+	  <set>Qt::AlignCenter</set>
+	</property>
+      </widget>
+    </item>
+    <item alignment="Qt::AlignLeft">
+      <widget class="QLabel" name="label_2">
+	<property name="text">
+	  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Copyright © 2012-2016 Jonathan Warren&lt;br/&gt;Copyright © 2012-2022 The Bitmessage Developers&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+	</property>
+	<property name="alignment">
+	  <set>Qt::AlignLeft</set>
+	</property>
+      </widget>
+    </item>
+    <item>
+      <widget class="QLabel" name="label_5">
+	<property name="text">
+	  <string>This is Beta software.</string>
+	</property>
+	<property name="alignment">
+	  <set>Qt::AlignCenter</set>
+	</property>
+      </widget>
+    </item>
+    <item>
+      <widget class="QLabel" name="label_3">
+	<property name="text">
+	  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Distributed under the MIT/X11 software license; see &lt;a href=&quot;https://www.opensource.org/licenses/mit-license.php&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;https://www.opensource.org/licenses/mit-license.php&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+	</property>
+	<property name="wordWrap">
+	  <bool>true</bool>
+	</property>
+	<property name="openExternalLinks">
+	  <bool>true</bool>
+	</property>
+      </widget>
+    </item>
+    <item>
+      <widget class="QDialogButtonBox" name="buttonBox">
+	<property name="orientation">
+	  <enum>Qt::Horizontal</enum>
+	</property>
+	<property name="standardButtons">
+	  <set>QDialogButtonBox::Ok</set>
+	</property>
+      </widget>
+    </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="bitmessage_icons.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>aboutDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>248</x>
+     <y>254</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>aboutDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>316</x>
+     <y>260</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>EmailGatewayDialog</class>
+ <widget class="QDialog" name="EmailGatewayDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>386</width>
+    <height>240</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Email gateway</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="3" column="0">
+    <widget class="QLabel" name="label_2">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="text">
+      <string>Desired email address (including @mailchuck.com):</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QRadioButton" name="radioButtonRegister">
+     <property name="text">
+      <string>Register on email gateway</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="0">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="minimumSize">
+      <size>
+       <width>368</width>
+       <height>0</height>
+      </size>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLineEdit" name="lineEditEmail">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="text">
+      <string>@mailchuck.com</string>
+     </property>
+     <property name="cursorPosition">
+      <number>0</number>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Email gateway allows you to communicate with email users. Currently, only the Mailchuck email gateway (@mailchuck.com) is available.</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0">
+    <widget class="QRadioButton" name="radioButtonStatus">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>Account status at email gateway</string>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0">
+    <widget class="QRadioButton" name="radioButtonSettings">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>Change account settings at email gateway</string>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0">
+    <widget class="QRadioButton" name="radioButtonUnregister">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>Unregister from email gateway</string>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <tabstops>
+  <tabstop>radioButtonRegister</tabstop>
+  <tabstop>lineEditEmail</tabstop>
+  <tabstop>radioButtonStatus</tabstop>
+  <tabstop>radioButtonSettings</tabstop>
+  <tabstop>radioButtonUnregister</tabstop>
+  <tabstop>buttonBox</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>EmailGatewayDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>227</x>
+     <y>152</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>171</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>EmailGatewayDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>295</x>
+     <y>158</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>171</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonRegister</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>lineEditEmail</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>95</x>
+     <y>40</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>94</x>
+     <y>123</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonUnregister</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>lineEditEmail</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>139</x>
+     <y>19</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>187</x>
+     <y>123</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonStatus</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>lineEditEmail</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonSettings</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>lineEditEmail</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
