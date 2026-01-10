@@ -4,6 +4,7 @@ python3 setup.py build
 python3 setup.py install  
 sh py3start.sh  
 ## libressl 4.1.0 pre-compiled support - no binary blobs
+cd /home  
 sh libressl.sh  
 -> /home/libressl-4.1.0/build/ssl/libssl.so  
 -> /home/libressl-4.1.0/build/crypto/libcrypto.so  
