@@ -12,6 +12,7 @@ sh libressl.sh
 ## source
 https://github.com/kashikoibumi/PyBitmessage.git  
 https://github.com/jon1enforce/DEBUG_pybitmessage.git  
+https://codeberg.org/jon1enforce/LaTeX_bridge
 ## preview
 ![receive](./receive.png)  
 ![send](./send.png)
