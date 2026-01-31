@@ -53,7 +53,7 @@ class LatexPDFProcessor:
 
 
 class LatexTemplateManager:
-    """Manages 8 LaTeX templates by status/profession"""
+    """Manages 9 LaTeX templates by status/profession (now with APS template)"""
     
     TEMPLATES = {
         "standard": {
@@ -134,6 +134,8 @@ Email: +++your email+++
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{geometry}
+\usepackage{amssymb}  % Für das Herzsymbol $\heartsuit$
+\usepackage{xcolor}    % JETZT HINZUGEFÜGT für \textcolor
 \geometry{a4paper, left=3.5cm, right=2.5cm, top=3cm, bottom=3cm}
 
 \begin{document}
@@ -288,6 +290,160 @@ E &= mc^2 \tag{Mass-energy equivalence}
 \end{center}
 
 \end{document}"""
+        },
+        
+        "aps": {
+            "name": "📚 APS Physics Paper",
+            "button": "APS",
+            "description": "American Physical Society REVTeX 4.1 template (original apssamp.tex)",
+            "icon": "📚",
+            "template": r"""% ****** Start of file apssamp.tex ******
+%
+%   This file is part of the APS files in the REVTeX 4.1 distribution.
+%   Version 4.1r of REVTeX, August 2010
+%
+%   Copyright (c) 2009, 2010 The American Physical Society.
+%
+%   See the REVTeX 4 README file for restrictions and more information.
+%
+% TeX'ing this file requires that you have AMS-LaTeX 2.0 installed
+% as well as the rest of the prerequisites for REVTeX 4.1
+%
+% See the REVTeX 4 README file
+% It also requires running BibTeX. The commands are as follows:
+%
+%  1)  latex apssamp.tex
+%  2)  bibtex apssamp
+%  3)  latex apssamp.tex
+%  4)  latex apssamp.tex
+%
+\documentclass[%
+ reprint,
+%superscriptaddress,
+%groupedaddress,
+%unsortedaddress,
+%runinaddress,
+%frontmatterverbose, 
+%preprint,
+%showpacs,preprintnumbers,
+%nofootinbib,
+%nobibnotes,
+%bibnotes,
+ amsmath,amssymb,
+ aps,
+%pra,
+%prb,
+%rmp,
+%prstab,
+%prstper,
+%floatfix,
+]{revtex4-1}
+
+\usepackage{graphicx}% Include figure files
+\usepackage{dcolumn}% Align table columns on decimal point
+\usepackage{bm}% bold math
+%\usepackage{hyperref}% add hypertext capabilities
+%\usepackage[mathlines]{lineno}% Enable numbering of text and display math
+%\linenumbers\relax % Commence numbering lines
+
+%\usepackage[showframe,%Uncomment any one of the following lines to test 
+%%scale=0.7, marginratio={1:1, 2:3}, ignoreall,% default settings
+%%text={7in,10in},centering,
+%%margin=1.5in,
+%%total={6.5in,8.75in}, top=1.2in, left=0.9in, includefoot,
+%%height=10in,a5paper,hmargin={3cm,0.8in},
+%]{geometry}
+
+\begin{document}
+
+\preprint{APS/123-QED}
+
+\title{+++paper title+++}% Force line breaks with \\
+\thanks{A footnote to the article title}%
+
+\author{+++first author+++}
+ \altaffiliation[Also at ]{Physics Department, +++university+++.}%Lines break automatically or can be forced with \\
+\author{+++second author+++}%
+ \email{+++author email+++}
+\affiliation{%
+ +++authors institution+++\\
+ +++additional info+++
+}%
+
+%\collaboration{MUSO Collaboration}%\noaffiliation
+
+\date{\today}% It is always \today, today,
+             %  but any date may be explicitly specified
+
+\begin{abstract}
++++abstract text+++
+\end{abstract}
+
+\pacs{+++PACS number+++}% PACS, the Physics and Astronomy
+                             % Classification Scheme.
+%\keywords{Suggested keywords}%Use showkeys class option if keyword
+                              %display desired
+\maketitle
+
+%\tableofcontents
+
+\section{\label{sec:intro}Introduction}
++++introduction text+++
+
+\section{\label{sec:theory}Theoretical Framework}
++++theory text+++
+
+\section{\label{sec:experiment}Experimental Setup}
+The experimental apparatus is shown in Fig.~\ref{fig:setup}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.8\columnwidth]{example-image}
+\caption{\label{fig:setup} Schematic of the experimental setup.}
+\end{figure}
+
+\section{\label{sec:results}Results and Discussion}
+The main results are presented in Table~\ref{tab:results}.
+
+\begin{table}[h]
+\centering
+\caption{\label{tab:results} Experimental measurements.}
+\begin{ruledtabular}
+\begin{tabular}{lccc}
+Sample & $T$ (K) & $\rho$ ($\Omega\cdot$cm) & $\chi$ (emu/mol) \\
+\hline
+A & 300 & 1.23$\times10^{-3}$ & 2.45$\times10^{-6}$ \\
+B & 150 & 4.56$\times10^{-4}$ & 3.78$\times10^{-6}$ \\
+C & 77 & 7.89$\times10^{-5}$ & 5.12$\times10^{-6}$ \\
+\end{tabular}
+\end{ruledtabular}
+\end{table}
+
+The temperature dependence follows the relation:
+\begin{equation}
+R(T) = R_0 \exp\left(\frac{\Delta}{k_B T}\right)
+\label{eq:arrhenius}
+\end{equation}
+where $\Delta$ is the activation energy.
+
+\section{\label{sec:conclusion}Conclusion}
++++conclusion text+++
+
+\begin{acknowledgments}
+This work was supported by +++funding source+++.
+\end{acknowledgments}
+
+% The \nocite command causes all entries in a bibliography to be printed out
+% whether or not they are actually referenced in the text. This is appropriate
+% for the sample file to show the different styles of references, but authors
+% most likely will not want to use it.
+%\nocite{*}
+
+\bibliography{apssamp}% Produces the bibliography via BibTeX.
+
+\end{document}
+%
+% ****** End of file apssamp.tex ******"""
         },
         
         "president": {
@@ -728,8 +884,8 @@ class MessageCompose(QtWidgets.QTextEdit):
         # Buttons for each template
         button_count = 0
         for key, name, button_text, icon in template_manager.get_template_buttons():
-            # Show only 8 buttons (all 8 templates)
-            if button_count >= 8:
+            # Show only 9 buttons (all 9 templates including APS)
+            if button_count >= 9:
                 break
                 
             btn = QtWidgets.QPushButton(f"{icon} {button_text}")
