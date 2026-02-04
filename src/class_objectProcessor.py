@@ -123,7 +123,7 @@ class objectProcessor(threading.Thread):
                         objectType, data = queues.objectProcessorQueue.get()
                         sql.execute(
                             'INSERT INTO objectprocessorqueue VALUES (?,?)',
-                            objectType, sqlite3.Binary(data))
+                            objectType, sqlite3.Binary(data.encode() if isinstance(data, str) else data))
                         numberOfObjectsThatWereInTheObjectProcessorQueue += 1
                 logger.debug(
                     'Saved %s objects from the objectProcessorQueue to'
