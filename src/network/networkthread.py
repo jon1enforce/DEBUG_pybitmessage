@@ -21,19 +21,30 @@ class BMNetworkThread(StoppableThread):
 
     def stopThread(self):
         super(BMNetworkThread, self).stopThread()
-        for i in connectionpool.pool.listeningSockets.values():
+        
+        # Kopien der Dictionaries erstellen, um Concurrent Modification zu vermeiden
+        listening_sockets = list(connectionpool.pool.listeningSockets.values())
+        outbound_connections = list(connectionpool.pool.outboundConnections.values())
+        inbound_connections = list(connectionpool.pool.inboundConnections.values())
+        
+        # Alle Sockets schließen
+        for sock in listening_sockets:
             try:
-                i.close()
+                sock.close()
             except:  # nosec B110 # pylint:disable=bare-except
                 pass
-        for i in connectionpool.pool.outboundConnections.values():
+        
+        # Outbound Connections schließen
+        for conn in outbound_connections:
             try:
-                i.close()
+                conn.close()
             except:  # nosec B110 # pylint:disable=bare-except
                 pass
-        for i in connectionpool.pool.inboundConnections.values():
+        
+        # Inbound Connections schließen
+        for conn in inbound_connections:
             try:
-                i.close()
+                conn.close()
             except:  # nosec B110 # pylint:disable=bare-except
                 pass
 
