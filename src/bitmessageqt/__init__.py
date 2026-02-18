@@ -1380,11 +1380,12 @@ class MyForm(settingsmixin.SMainWindow):
             for ext in sound.extensions:
                 if os.path.isfile(os.extsep.join([basename, ext])):
                     return os.extsep + ext
+            return None
 
         # if the address had a known label in the address book
         if label:
             # Does a sound file exist for this particular contact?
-            soundFilename = state.appdata + 'sounds/' + label
+            soundFilename = os.path.join(state.appdata, 'sounds', label)
             ext = _choose_ext(soundFilename)
             if not ext:
                 category = sound.SOUND_KNOWN
@@ -1403,19 +1404,19 @@ class MyForm(settingsmixin.SMainWindow):
 
             # the sound is for an address which exists in the address book
             if category is sound.SOUND_KNOWN:
-                soundFilename = state.appdata + 'sounds/known'
+                soundFilename = os.path.join(state.appdata, 'sounds', 'known')
             # the sound is for an unknown address
             elif category is sound.SOUND_UNKNOWN:
-                soundFilename = state.appdata + 'sounds/unknown'
+                soundFilename = os.path.join(state.appdata, 'sounds', 'unknown')
             # initial connection sound
             elif category is sound.SOUND_CONNECTED:
-                soundFilename = state.appdata + 'sounds/connected'
+                soundFilename = os.path.join(state.appdata, 'sounds', 'connected')
             # disconnected sound
             elif category is sound.SOUND_DISCONNECTED:
-                soundFilename = state.appdata + 'sounds/disconnected'
+                soundFilename = os.path.join(state.appdata, 'sounds', 'disconnected')
             # sound when the connection status becomes green
             elif category is sound.SOUND_CONNECTION_GREEN:
-                soundFilename = state.appdata + 'sounds/green'
+                soundFilename = os.path.join(state.appdata, 'sounds', 'green')
 
         if soundFilename is None:
             logger.warning("Probably wrong category number in playSound()")
@@ -1425,20 +1426,21 @@ class MyForm(settingsmixin.SMainWindow):
             # record the last time that a received message sound was played
             self.lastSoundTime = datetime.now()
 
-        try:  # try already known format
-            soundFilename += ext
-        except (TypeError, NameError):
-            ext = _choose_ext(soundFilename)
-            if not ext:
-                try:  # if no user sound file found try to play from theme
-                    return self._theme_player(category, label)
-                except TypeError:
-                    return
-
-            soundFilename += ext
-
-        self._player(soundFilename)
-
+        # Versuche zuerst, eine Datei mit Erweiterung zu finden
+        ext = _choose_ext(soundFilename)
+        if ext:
+            try:
+                self._player(soundFilename + ext)
+                return
+            except Exception as e:
+                logger.warning("Could not play sound file: %s", e)
+        
+        # Fallback: Versuche Theme-Player, wenn verfügbar
+        if hasattr(self, '_theme_player') and self._theme_player:
+            try:
+                return self._theme_player(category, label)
+            except Exception as e:
+                logger.warning("Could not play theme sound: %s", e)
     # Adapters and converters for QT <-> sqlite
     def sqlInit(self):
         register_adapter(QtCore.QByteArray, bytes)
@@ -1464,29 +1466,57 @@ class MyForm(settingsmixin.SMainWindow):
             self.tray.showMessage(
                 title, subtitle, self.tray.NoIcon, msecs=2000)
 
-        self._notifier = _simple_notify
-
-        if not get_plugins:
+        def _noop_player(*args, **kwargs):
+            logger.debug("No sound player available")
             return
 
-        _plugin = get_plugin('notification.message')
-        if _plugin:
-            self._notifier = _plugin
-        else:
-            logger.warning("No notification.message plugin found")
+        self._notifier = _simple_notify
+        self._player = _noop_player
+        self._theme_player = None
 
-        self._theme_player = get_plugin('notification.sound', 'theme')
+        if not get_plugins:
+            logger.debug("No plugins available")
+            return
 
+        # Notification plugin
         try:
+            _plugin = get_plugin('notification.message')
+            if _plugin:
+                self._notifier = _plugin
+            else:
+                logger.warning("No notification.message plugin found")
+        except (NameError, TypeError) as e:
+            logger.debug("Could not load notification.message plugin: %s", e)
+
+        # Theme sound plugin
+        try:
+            self._theme_player = get_plugin('notification.sound', 'theme')
+            if self._theme_player:
+                logger.debug("Theme sound plugin loaded successfully")
+        except (NameError, TypeError) as e:
+            self._theme_player = None
+            logger.debug("No theme sound plugin found: %s", e)
+
+        # File sound player
+        try:
+            # Try QtMultimedia first
             from qtpy import QtMultimedia
             self._player = QtMultimedia.QSound.play
+            logger.debug("QtMultimedia sound player loaded")
         except ImportError:
-            _plugin = get_plugin(
-                'notification.sound', 'file', fallback='file.fallback')
-            if _plugin:
-                self._player = _plugin
-            else:
-                logger.warning("No notification.sound plugin found")
+            try:
+                # Try plugin fallback
+                _plugin = get_plugin(
+                    'notification.sound', 'file', fallback='file.fallback')
+                if _plugin:
+                    self._player = _plugin
+                    logger.debug("File sound plugin loaded")
+                else:
+                    logger.warning("No notification.sound plugin found")
+                    self._player = _noop_player
+            except (NameError, TypeError) as e:
+                logger.warning("Could not load sound plugin: %s", e)
+                self._player = _noop_player
 
     def notifierShow(
             self, title, subtitle, category, label=None, icon=None):
