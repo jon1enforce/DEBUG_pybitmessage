@@ -217,7 +217,6 @@ def check_sqlite():
     if not sqlite3:
         return False
 
-    logger.info('sqlite3 Module Version: %s', sqlite3.version)
     logger.info('SQLite Library Version: %s', sqlite3.sqlite_version)
     # sqlite_version_number formula: https://sqlite.org/c3ref/c_source_id.html
     sqlite_version_number = (
