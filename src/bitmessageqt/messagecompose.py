@@ -293,8 +293,8 @@ E &= mc^2 \tag{Mass-energy equivalence}
         },
         
         "aps": {
-            "name": "📚 APS Physics Paper",
-            "button": "APS",
+            "name": "📚 APS Physics Template",
+            "button": "APSSAMP",
             "description": "American Physical Society REVTeX 4.1 template (original apssamp.tex)",
             "icon": "📚",
             "template": r"""% ****** Start of file apssamp.tex ******
